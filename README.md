@@ -1,4 +1,4 @@
-# kng2-web3
+# kng2-web3 😸
 This is a private challenge to develop an open-source TWINT competitor.
 The purpose of this project is to provide a simple and intuitive API to handle a browser wallet for payment, swap, and lending. The APIs are specifically designed for XCHF, USDC, BTC, and ETH (on Optimism network).
 
@@ -16,7 +16,7 @@ The purpose of this project is to provide a simple and intuitive API to handle a
 * `networks`
 
 ### Tools
-- `tools.config`: Configuration tools for the project.
+- `tools.config`: Secure configuration tools for the project.
 - `tools.utils`: Utility functions for the project.
 
 ### Core
