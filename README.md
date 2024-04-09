@@ -16,7 +16,7 @@ The purpose of this project is to provide a simple and intuitive API to handle a
 * `networks`
 
 ### Tools
-- `tools.config`: Configuration tools for the project.
+- `tools.config`: secure configuration for the project.
 - `tools.utils`: Utility functions for the project.
 
 ### Core
