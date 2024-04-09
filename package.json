@@ -1,0 +1,30 @@
+{
+  "name": "kng2-web3",
+  "private": true,
+  "version": "0.0.0",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "test": "ts-mocha test/**/*.spec.ts"
+  },
+  "devDependencies": {
+    "@types/chai": "^4.3.14",
+    "@types/mocha": "^10.0.6",
+    "@types/node": "^20.12.5",
+    "chai": "^5.1.0",
+    "mocha": "^10.4.0",
+    "ts-mocha": "^10.0.0",
+    "ts-node": "^10.9.2",
+    "typescript": "^5.2.2",
+    "vite": "^5.2.8",
+    "vite-plugin-dts": "^3.8.1"
+  },
+  "dependencies": {
+    "ethers": "^5.5.4",
+    "install": "^0.13.0",
+    "npm": "^10.5.1",
+    "secrets.js-34r7h": "^2.0.2",
+    "shamirs-secret-sharing": "^2.0.0"
+  }
+}
