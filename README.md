@@ -1,8 +1,19 @@
 # kng2-web3
 This is a private challenge to develop an open-source TWINT competitor.
-The purpose of this project is to provide a simple and intuitive API to handle a browser wallet for payment, swap, and lending. The APIs are specifically designed for XCHF, USDC, BTC, and ETH (on the Optimism network).
+The purpose of this project is to provide a simple and intuitive API to handle a browser wallet for payment, swap, and lending. The APIs are specifically designed for XCHF, USDC, BTC, and ETH (on Optimism network).
 
-## APIs
+## config.options
+* `aavePoolProviderAddress`
+* `aavePoolProviderABI`
+* `aaveContractAddress`
+* `aaveTokenAddress`
+* `rocketPoolContractAddress`
+* `USDC_CONTRACT_ADDRESS`
+* `RPL_CONTRACT_ADDRESS`
+* `XCHF_CONTRACT_ADDRESS`
+* `salt`
+* `allowedTokens`
+* `networks`
 
 ### Tools
 - `tools.config`: Configuration tools for the project.
@@ -28,4 +39,4 @@ The purpose of this project is to provide a simple and intuitive API to handle a
 - `defi.uniswap`: Interact with Uniswap to swap XCHF <=> USDC.
 
 ### Others
-- [ ] Use [scam-database/blacklist](https://github.com/scamsniffer/scam-database/tree/main/blacklist)
+- [ ] Use [scam-database/blacklist](https://github.com/scamsniffer/scam-database/tree/main/blacklist) (**TODO**)

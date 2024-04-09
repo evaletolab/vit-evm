@@ -52,6 +52,9 @@ class Config {
       case 'aavePoolProviderABI':
       case 'aaveContractAddress':
       case 'aaveTokenAddress':
+      case 'rocketPoolContractAddress':
+      case 'rocketPoolContractAddress':
+      case 'rocketPoolContractAddress':        
       case 'USDC_CONTRACT_ADDRESS':
       case 'RPL_CONTRACT_ADDRESS':
       case 'XCHF_CONTRACT_ADDRESS':
