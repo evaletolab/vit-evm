@@ -9,6 +9,7 @@ The purpose of this project is to provide a simple and intuitive API to handle a
 * `aaveContractAddress`
 * `aaveTokenAddress`
 * `rocketPoolContractAddress`
+* `uniswapRouterAddress` 
 * `USDC_CONTRACT_ADDRESS`
 * `RPL_CONTRACT_ADDRESS`
 * `XCHF_CONTRACT_ADDRESS`
