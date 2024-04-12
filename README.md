@@ -31,9 +31,9 @@ The purpose of this project is to provide a simple and intuitive API to handle a
 - `core.derivation`: API related to key derivation.
 
 ### Tx
-- `eth.transaction`: Interact with the ETH network to send/read/list transactions (**TODO**).
+- `evm.transaction`: Interact with the ETH network to send/read/list transactions (**TODO**).
 - `btc.transaction`: Interact with the BTC network to send/read/list transactions (**TODO**).
-- `transaction`: Common tools for transactions that include scam-database and white-list.
+- `transaction`: high level api for transactions that include  black/white-addresses.
 
 ### DeFi
 - `defi.aave`: Interact with the Aave protocol to lend USDC.
