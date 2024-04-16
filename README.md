@@ -24,7 +24,7 @@ But the main feature provides a solid solution to protect you **Digital Identity
 
 ### Tools
 - `tools.config`: Secure configuration for the project.
-- `tools.utils`: Utility functions for the project.
+- `tools`: Utilities (secure-session-storage, ...).
 
 ### Core
 - `core.identity`: Manage and secure an identity associated with the device (**DOING**)
