@@ -38,6 +38,7 @@ But the main feature provides a solid solution to protect you **Digital Identity
 - `evm.transaction`: Interact with the ETH network to send/read/list transactions (**TODO**).
 - `btc.transaction`: Interact with the BTC network to send/read/list transactions (**TODO**).
 - `transaction`: high level api for transactions that include  black/white-addresses.
+- `paymaster`: paymasters allow users to sponsor transactions or accept  **xCHF** (ERC20 tokens) for gas payment (**TODO**).
 
 ### DeFi
 - `defi.aave`: Interact with the Aave protocol to lend USDC.
