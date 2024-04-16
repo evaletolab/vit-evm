@@ -53,7 +53,7 @@ Digital identity is a new reality, it appears complex or wird because we have no
 
 A Digital Identity is simply a 32-bytes large number, often represented as a mnemonic of 12/15/24 words (to facilitate human memorization of words instead of numbers). With this large number, you are able to generate an infinite number of Wallets and public identities.
 
-Okay, but what it means for a day-to-day life? With this **secret large number**, you can generate multiple digital identities (one for cash transactions, one to collect funds for a birthday, some publicm and some privates) with various levels of privacy depending on the purpose.
+Okay, but what it means for a day-to-day life? With this **secret large number**, you can generate multiple digital identities: one for cash transactions, one to collect funds for a birthday, some for social networks, some are publics, some are privates.
 
 To achieve that goal, we built a simple and deterministic API as a frictionless solution to manage your own private mnemonic.
 
