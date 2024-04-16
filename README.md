@@ -1,6 +1,6 @@
 # VIT Isn't TWINT
 This is a private initiative to create an open-source competitor to TWINT. 
-Our primary objective is straightforward: acquiring all the genz.
+Our primary objective is straightforward: acquiring all the world.
 
 ## kng2-web3 😸 (AKA. King Kong II for Web3)
 The purpose of this project is to provide a simple and intuitive API for our VIT Wallet. This API facilitates spending, swapping, and lending, and is specifically designed for certain tokens such as XCHF, USDC, (BTC), and ETH (on the Optimism network).
