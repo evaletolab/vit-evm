@@ -1,5 +1,8 @@
 
 
+// 
+// https://github.com/ProtonMail/proton-shared/blob/master/lib/authentication/cryptoHelper.ts
+
 
 /**
  * Imports the secret key for AES encryption and decryption.

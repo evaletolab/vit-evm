@@ -1,6 +1,6 @@
 import { BigNumber, ethers } from "ethers";
 import { requiresWork } from "./core.POW";
-import { strHEX256 } from "./tools.utils";
+import { strHEX256 } from "./tools";
 
 
 export function identity(username: string, difficulty: number = 0.1) {

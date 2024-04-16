@@ -1,6 +1,6 @@
 // TOOLS
 export * from './tools.config';
-export * from './tools.utils';
+export * from './tools';
 
 // CORE
 export * from './core.AES';
