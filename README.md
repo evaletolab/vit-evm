@@ -1,5 +1,5 @@
 # VIT Isn't TWINT
-This is a private initiative to create an open-source competitor to TWINT. 
+VIT is a private initiative to create an open-source competitor to TWINT. 
 Our primary objective is straightforward: acquiring all the world.
 
 ## kng2-web3 😸 (AKA. King Kong II for Web3)
