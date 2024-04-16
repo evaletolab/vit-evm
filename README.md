@@ -4,7 +4,7 @@ This is a private initiative aimed at developing an open-source competitor to TW
 ## kng2-web3 😸 (AKA. King Kong II for Web3)
 The purpose of this project is to provide a simple and intuitive API for our VIT Wallet. This API facilitates spending, swapping, and lending, and is specifically designed for certain tokens such as XCHF, USDC, (BTC), and ETH (on the Optimism network).
 
-But the main feature is to provide a solid solution protect you **Digital Identity**.
+But the main feature provides a solid solution protect you **Digital Identity**.
 
 ## APIs
 ### config.option
