@@ -1,4 +1,4 @@
-# VIT is Not TWINT
+# VIT Isn't TWINT
 This is a private initiative aimed at developing an open-source competitor to TWINT. Our primary objective is straightforward: acquiring all grandma.
 
 ## kng2-web3 😸 (AKA. King Kong II for Web3)
