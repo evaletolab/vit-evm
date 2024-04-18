@@ -7,39 +7,39 @@ The purpose of this project is to provide a simple and intuitive API for our VIT
 
 But the main feature provides a solid solution to protect you **Digital Identity**.
 
-## APIs
+## APIs (checked for v0.01)
 ### config.option
-* `aavePoolProviderAddress`
-* `aavePoolProviderABI`
-* `aaveContractAddress`
-* `aaveTokenAddress`
-* `rocketPoolContractAddress`
-* `uniswapRouterAddress` 
-* `USDC_CONTRACT_ADDRESS`
-* `RPL_CONTRACT_ADDRESS`
-* `XCHF_CONTRACT_ADDRESS`
-* `salt`
-* `allowedTokens`
-* `networks`
+* [ ] `aavePoolProviderAddress`
+* [ ] `aavePoolProviderABI`
+* [ ] `aaveContractAddress`
+* [ ] `aaveTokenAddress`
+* [ ] `rocketPoolContractAddress`
+* [ ] `uniswapRouterAddress` 
+* [ ] `USDC_CONTRACT_ADDRESS`
+* [ ] `RPL_CONTRACT_ADDRESS`
+* [x] `XCHF_CONTRACT_ADDRESS`
+* [x] `salt`
+* [x] `allowedTokens`
+* [x] `networks`
 
 ### Tools
-- `tools.config`: Secure configuration for the project.
-- `tools`: Utilities (secure-session-storage, ...).
+- [x] `tools.config`: Secure configuration for the project.
+- [x] `tools`: Utilities (secure-session-storage, ...).
 
 ### Core
-- `core.identity`: Manage and secure an identity associated with the device (**DOING**)
-- `core.AES`: Simple AES encryption wrapper available natively on the browser.
-- `core.POW`: Simple Proof-of-Work API.
-- `core.SSS`: Shamir's Secret Sharing Wrapper.
-- `core.XOR`: Shuffle operations to avoid clear content.
-- `core.entropy`: API related to Mnemonics and seed.
-- `core.derivation`: API related to key derivation.
+- [x] `core.identity`: Manage and secure an identity associated with the device (**DOING**)
+- [x] `core.AES`: Simple AES encryption wrapper available natively on the browser.
+- [x] `core.POW`: Simple Proof-of-Work API.
+- [x] `core.SSS`: Shamir's Secret Sharing Wrapper.
+- [x] `core.XOR`: Shuffle operations to avoid clear content.
+- [x] `core.entropy`: API related to Mnemonics and seed.
+- [x] `core.derivation`: API related to key derivation.
 
 ### Tx
-- `evm.transaction`: Interact with the ETH network to send/read/list transactions (**TODO**).
+- [x] `evm.transaction`: Interact with the ETH network to send/read/list transactions (**TODO**).
 - `btc.transaction`: Interact with the BTC network to send/read/list transactions (**TODO**).
-- `transaction`: high level api for transactions that include  black/white-addresses.
-- `paymaster`: paymasters allow users to sponsor transactions or accept  **xCHF** (ERC20 tokens) for gas payment (**TODO**).
+- [x] `transaction`: high level api for transactions that include  black/white-addresses.
+- [x] `paymaster`: paymasters allow users to sponsor transactions or accept  **xCHF** (ERC20 tokens) for gas payment (**TODO**).
 
 ### DeFi
 - `defi.aave`: Interact with the Aave protocol to lend USDC.
