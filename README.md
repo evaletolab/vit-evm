@@ -24,7 +24,7 @@ But the main feature provides a solid solution to protect you **Digital Identity
 
 ### Tools
 - [x] `tools.config`: Secure configuration for the project.
-- [x] `tools`: Utilities (secure-session-storage, ...).
+- [x] `tools`: Utilities (Secure Session Storage , Converters, ...).
 
 ### Core
 - [x] `core.identity`: Manage and secure an identity associated with the device (**DOING**)
@@ -37,14 +37,14 @@ But the main feature provides a solid solution to protect you **Digital Identity
 
 ### Tx
 - [x] `evm.transaction`: Interact with the ETH network to send/read/list transactions (**TODO**).
-- `btc.transaction`: Interact with the BTC network to send/read/list transactions (**TODO**).
+- [ ] `btc.transaction`: Interact with the BTC network to send/read/list transactions (**TODO**).
 - [x] `transaction`: high level api for transactions that include  black/white-addresses.
 - [x] `paymaster`: paymasters allow users to sponsor transactions or accept  **xCHF** (ERC20 tokens) for gas payment (**TODO**).
 
 ### DeFi
-- `defi.aave`: Interact with the Aave protocol to lend USDC.
-- `defi.rocketpool`: Interact with the Rocket Pool to stake ETH.
-- `defi.uniswap`: Interact with Uniswap to swap XCHF <=> USDC.
+- [ ] `defi.aave`: Interact with the Aave protocol to lend USDC.
+- [ ] `defi.rocketpool`: Interact with the Rocket Pool to stake ETH.
+- [ ] `defi.uniswap`: Interact with Uniswap to swap XCHF <=> USDC.
 
 ### Others
 - [ ] Use [scam-database/blacklist](https://github.com/scamsniffer/scam-database/tree/main/blacklist) (**TODO**)
