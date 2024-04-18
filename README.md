@@ -36,8 +36,8 @@ But the main feature provides a solid solution to protect you **Digital Identity
 - [x] `core.derivation`: API related to key derivation.
 
 ### Tx
-- [x] `evm.transaction`: Interact with the ETH network to send/read/list transactions (**TODO**).
-- [ ] `btc.transaction`: Interact with the BTC network to send/read/list transactions (**TODO**).
+- [x] `evm.transaction`: Interact with the ETH network to sign/send/read/list transactions (**TODO**).
+- [ ] `btc.transaction`: Interact with the BTC network to sign/send/read/list transactions (**TODO**).
 - [x] `transaction`: high level api for transactions that include  black/white-addresses.
 - [x] `paymaster`: paymasters allow users to sponsor transactions or accept  **xCHF** (ERC20 tokens) for gas payment (**TODO**).
 
