@@ -71,7 +71,8 @@ To increase the security of your identity, we break the Mnemonic phrase (**the s
 Before storing Horcruxes on your devices or on public ledgers, we use our API to protect the content.
 
 * **Secret-Leafs (A/B)** are generated client-side with the preimage of a pseudo, password, and POW. 
-* The POW element is the [puzzle](https://en.wikipedia.org/wiki/Proof_of_work#List_of_proof-of-work_functions) result of user sha256(username, password). It's a simple way to protect against DoS attacks. 
+* ~~The POW element is the [puzzle](https://en.wikipedia.org/wiki/Proof_of_work#List_of_proof-of-work_functions) result of user sha256(username, password). It's a simple way to protect against DoS attacks.~~
+* The POW element is a PBKDF2 of username and password, it's a simple way to protect against DoS attacks.
 * Users can also choose to store the pseudo/password form fields on a third-party service.
 * **Public-Leafs (A/B)** are derivated images of **Secret-Leafs (A/B)**, These values can be used for specific **online** features, such as storing a Horcrux in a public blockchain.
 * **Public-Leaf0** is the result of sha256(leaf1, leaf2). This publicKey (leaf0) will be used as address to store a Horcrux.
