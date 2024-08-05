@@ -11,7 +11,7 @@ But the main feature provides a solid solution to protect your **Digital Identit
 ### Account ERC-4337
 - [x] select startup SDK (Thirdweb,StackUp,Biconomy,Pimlico)
 - [x] `account.create` // ERC-4337 instance, plus recovery code, plus horcruxes
-- [x] `account.recovery`
+- [x] `account.recovery` // Horcruxes + Guardians
 - [x] `account.localEncrypt`
 - [ ] `account.TX(Time-Locked Transactions)` // Pimlico
 - [ ] `account.TX(Reputation System)` // StackUp
