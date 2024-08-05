@@ -8,6 +8,30 @@ The purpose of this project is to provide a simple and intuitive API for our VIT
 But the main feature provides a solid solution to protect you **Digital Identity**.
 
 ## APIs (checked for v0.01)
+### Account ERC-4337
+- [x] select startup SDK (Thirdweb,StackUp,Biconomy,Pimlico)
+- [x] `account.create`
+- [x] `account.recovery`
+- [ ] `account.localEncrypt`
+- [ ] `account.TX(Time-Locked Transactions)` // Pimlico
+- [ ] `account.TX(Reputation System)` // StackUp
+- [ ] `account.TX(Custom Validation Logic)` // StackUp
+
+### Tx
+- [x] `evm.transaction`: Interact with the ETH network to sign/send/read/list transactions (**TODO**).
+- [ ] `btc.transaction`: Interact with the BTC network to sign/send/read/list transactions (**TODO**).
+- [x] `transaction`: high level api for transactions that include  black/white-addresses.
+- [x] `paymaster`: paymasters allow users to sponsor transactions or accept  **xCHF** (ERC20 tokens) for gas payment (**TODO**).
+ 
+### Core
+- [x] `core.identity`: Manage and secure an identity associated with the device (**DOING**)
+- [x] `core.AES`: Simple AES encryption wrapper available natively on the browser.
+- [x] `core.POW`: Simple Proof-of-Work API.
+- [x] `core.SSS`: Shamir's Secret Sharing Wrapper.
+- [x] `core.XOR`: Shuffle operations to avoid clear content.
+- [x] `core.entropy`: API related to Mnemonics and seed.
+- [x] `core.derivation`: API related to key derivation.
+
 ### config.option
 * [ ] `aavePoolProviderAddress`
 * [ ] `aavePoolProviderABI`
@@ -25,21 +49,6 @@ But the main feature provides a solid solution to protect you **Digital Identity
 ### Tools
 - [x] `tools.config`: Secure configuration for the project.
 - [x] `tools`: Utilities (Secure Session Storage , Converters, ...).
-
-### Core
-- [x] `core.identity`: Manage and secure an identity associated with the device (**DOING**)
-- [x] `core.AES`: Simple AES encryption wrapper available natively on the browser.
-- [x] `core.POW`: Simple Proof-of-Work API.
-- [x] `core.SSS`: Shamir's Secret Sharing Wrapper.
-- [x] `core.XOR`: Shuffle operations to avoid clear content.
-- [x] `core.entropy`: API related to Mnemonics and seed.
-- [x] `core.derivation`: API related to key derivation.
-
-### Tx
-- [x] `evm.transaction`: Interact with the ETH network to sign/send/read/list transactions (**TODO**).
-- [ ] `btc.transaction`: Interact with the BTC network to sign/send/read/list transactions (**TODO**).
-- [x] `transaction`: high level api for transactions that include  black/white-addresses.
-- [x] `paymaster`: paymasters allow users to sponsor transactions or accept  **xCHF** (ERC20 tokens) for gas payment (**TODO**).
 
 ### DeFi
 - [ ] `defi.aave`: Interact with the Aave protocol to lend USDC.
@@ -91,3 +100,6 @@ We propose the usage of Shamir Shared Secret (SSS) to protect your Mnemonic with
 * Use printed paper.
 * And use our Horcrux SmartContract. 👇
 [![](https://mermaid.ink/img/pako:eNqdV-mO2zYQfhVBQQBv61V1SzaQBboXFsii-bFGESAOCkoa2ax1OBS1u84iL5VH6JN1dNkSZcluacAQNd9cH4dD6k320wDkuZxxwuGWkhUj8eWzvkyWiYRjnTKf5a-_JdLl5ZX0UM0UnwGiJ4qiXEhzactSDj6HQMrWhAFi01B6WpOYssrINvci6n-E3YiRjKeMrEDaIKpxXsZ0FP8mCaNSKMaXX76WbgqD8AXNfZ1LzyTK4QiGwbecMpjXXhtx_bqG_I25tQKM84xLHkgQb_mQ0sF3C9B6WWDuFg-flcXn2nIt-CDlNOG6ZU_KkC8O2g28UC3CryQ_CqqqRxpAwinfTbYky15SFlx02H4GRsNdyZ6AzzNgCYnhBL67GC3x2GLQ4K8mnNI6zrFGOvLG_ZAc5y1OsZQ-lkv69PD7JKfBr_ts__kpfbg6lJrIe62452-OC0aCRliRfyXF9BXLeF_0NcnyVI6BxYQGuFHeipdLma8hhqU8x8cAQpJHfClPW6I_CaPEiyArMG-VoaXsEX-zYmmeBJXqy5pyqBUL-ZbRmLDdTRqlrEK8u7u5u7m_b2Ey8NMkEFAhjqBtiQPjtAtaZ9HEVaeSpqrvp9LMVnTHtNSZqxqz9xf9IK6RVWCCvm6iAbvQdwf19wEetWDvDRiKpc9MTXNs0-kYaGI_qu-eDqBOYAGvvM2RZmiGqh4LVESqOHTtSEQCkK28yUyx1HpoyOrgrB1gRBNo-zPK0fHXDagrxUpMrjer8QI5AHq14ZW8arV4Zjjq7XVPrNdigqPjnTCWvqxx84xmEKYJv8cjINpViOUSs2Lg5f4auBRnxXwqYRsJSEKmUrFbIkH9iX6vd5hmb1_b9BEPomthK70Dt_i1YAmebCM0leIy1SEi_Ah7PbARJhtE20yPsLo_PNJkM77olEcwvOoQrODxvMyJj22tHVS5da2ZYuu2Zru6bhpTCaeOY1uGbWi6W-wnR5mp2sxWHdc0OvupMjfMZCkXtoYXYZQi5rFb9yuGfbpVt3SVkGiYgEq-GN0aVWmkrxjtaBPd4442uf_NVGn2BBNRmm5PQBK8UPUi6xdWCesmigVqkUDAnF4a-kw4TZO-T9u2jyMFt2bx6_SgbzkkPvyRx17HonjiYbPq28O-SiaaqhdnFf7pljWVVMWcdYoy4k_HdE840A9EmZ3DgJNs08_fMszQ80VYN3mXzNQgEDAF5490teYjoTW4MyC3hG1GlrCBfcp5hhe7M5A3eE3aFBeU7rlnaLYhLjgszqOmBe4S5IW-E4Yt5IrR9ukRFTwJzSBIkyOmRpFihALOZ5T3swhDF4cI61YjdBY3DchOaGRdRNkERpYA8ABlAkWWpeMQQWKv66H8CK-_BWroihPSKFrstqAONcIGoA0dcQ1AP_RHQzVP3yIbPeOgp-kHvcHLX6NntvQc-3x_1kHv8j-4s1s3zPOdOa0gXXfQW6GGn2rFh0S-DfA76i6geBzK85BEGUxlkvP0aZf48pyzHBpQ_TVeo378C6WSmNU)](https://mermaid-js.github.io/mermaid-live-editor/edit/#pako:eNqdV-mO2zYQfhVBQQBv61V1SzaQBboXFsii-bFGESAOCkoa2ax1OBS1u84iL5VH6JN1dNkSZcluacAQNd9cH4dD6k320wDkuZxxwuGWkhUj8eWzvkyWiYRjnTKf5a-_JdLl5ZX0UM0UnwGiJ4qiXEhzactSDj6HQMrWhAFi01B6WpOYssrINvci6n-E3YiRjKeMrEDaIKpxXsZ0FP8mCaNSKMaXX76WbgqD8AXNfZ1LzyTK4QiGwbecMpjXXhtx_bqG_I25tQKM84xLHkgQb_mQ0sF3C9B6WWDuFg-flcXn2nIt-CDlNOG6ZU_KkC8O2g28UC3CryQ_CqqqRxpAwinfTbYky15SFlx02H4GRsNdyZ6AzzNgCYnhBL67GC3x2GLQ4K8mnNI6zrFGOvLG_ZAc5y1OsZQ-lkv69PD7JKfBr_ts__kpfbg6lJrIe62452-OC0aCRliRfyXF9BXLeF_0NcnyVI6BxYQGuFHeipdLma8hhqU8x8cAQpJHfClPW6I_CaPEiyArMG-VoaXsEX-zYmmeBJXqy5pyqBUL-ZbRmLDdTRqlrEK8u7u5u7m_b2Ey8NMkEFAhjqBtiQPjtAtaZ9HEVaeSpqrvp9LMVnTHtNSZqxqz9xf9IK6RVWCCvm6iAbvQdwf19wEetWDvDRiKpc9MTXNs0-kYaGI_qu-eDqBOYAGvvM2RZmiGqh4LVESqOHTtSEQCkK28yUyx1HpoyOrgrB1gRBNo-zPK0fHXDagrxUpMrjer8QI5AHq14ZW8arV4Zjjq7XVPrNdigqPjnTCWvqxx84xmEKYJv8cjINpViOUSs2Lg5f4auBRnxXwqYRsJSEKmUrFbIkH9iX6vd5hmb1_b9BEPomthK70Dt_i1YAmebCM0leIy1SEi_Ah7PbARJhtE20yPsLo_PNJkM77olEcwvOoQrODxvMyJj22tHVS5da2ZYuu2Zru6bhpTCaeOY1uGbWi6W-wnR5mp2sxWHdc0OvupMjfMZCkXtoYXYZQi5rFb9yuGfbpVt3SVkGiYgEq-GN0aVWmkrxjtaBPd4442uf_NVGn2BBNRmm5PQBK8UPUi6xdWCesmigVqkUDAnF4a-kw4TZO-T9u2jyMFt2bx6_SgbzkkPvyRx17HonjiYbPq28O-SiaaqhdnFf7pljWVVMWcdYoy4k_HdE840A9EmZ3DgJNs08_fMszQ80VYN3mXzNQgEDAF5490teYjoTW4MyC3hG1GlrCBfcp5hhe7M5A3eE3aFBeU7rlnaLYhLjgszqOmBe4S5IW-E4Yt5IrR9ukRFTwJzSBIkyOmRpFihALOZ5T3swhDF4cI61YjdBY3DchOaGRdRNkERpYA8ABlAkWWpeMQQWKv66H8CK-_BWroihPSKFrstqAONcIGoA0dcQ1AP_RHQzVP3yIbPeOgp-kHvcHLX6NntvQc-3x_1kHv8j-4s1s3zPOdOa0gXXfQW6GGn2rFh0S-DfA76i6geBzK85BEGUxlkvP0aZf48pyzHBpQ_TVeo378C6WSmNU)
+
+## Refs
+- https://chatgpt.com/share/b07564f7-7c48-43a0-9419-c505f283ffde
