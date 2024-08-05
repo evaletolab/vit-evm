@@ -10,9 +10,9 @@ But the main feature provides a solid solution to protect you **Digital Identity
 ## APIs (checked for v0.01)
 ### Account ERC-4337
 - [x] select startup SDK (Thirdweb,StackUp,Biconomy,Pimlico)
-- [x] `account.create`
+- [x] `account.create` // ERC-4337 instance, plus recovery code, plus horcruxes
 - [x] `account.recovery`
-- [ ] `account.localEncrypt`
+- [x] `account.localEncrypt`
 - [ ] `account.TX(Time-Locked Transactions)` // Pimlico
 - [ ] `account.TX(Reputation System)` // StackUp
 - [ ] `account.TX(Custom Validation Logic)` // StackUp
