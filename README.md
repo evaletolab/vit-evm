@@ -15,13 +15,13 @@ But the main feature provides a solid solution to protect you **Digital Identity
 - [x] `account.localEncrypt`
 - [ ] `account.TX(Time-Locked Transactions)` // Pimlico
 - [ ] `account.TX(Reputation System)` // StackUp
-- [ ] `account.TX(Custom Validation Logic)` // StackUp
+- [ ] `account.TX(Custom Validation Logic)` // StackUp (whitelist add)
+- [ ] `account.paymaster`: paymasters allow users to sponsor transactions or accept  **xCHF** (ERC20 tokens) for gas payment.
 
 ### Tx
-- [x] `evm.transaction`: Interact with the ETH network to sign/send/read/list transactions (**TODO**).
+- [ ] `evm.transaction`: Interact with the ETH network to sign/send/read/list transactions (**TODO**).
 - [ ] `btc.transaction`: Interact with the BTC network to sign/send/read/list transactions (**TODO**).
-- [x] `transaction`: high level api for transactions that include  black/white-addresses.
-- [x] `paymaster`: paymasters allow users to sponsor transactions or accept  **xCHF** (ERC20 tokens) for gas payment (**TODO**).
+- [ ] `transaction`: high level api for transactions that include  black/white-addresses.
  
 ### Core
 - [x] `core.identity`: Manage and secure an identity associated with the device (**DOING**)
@@ -41,7 +41,7 @@ But the main feature provides a solid solution to protect you **Digital Identity
 * [ ] `uniswapRouterAddress` 
 * [ ] `USDC_CONTRACT_ADDRESS`
 * [ ] `RPL_CONTRACT_ADDRESS`
-* [x] `XCHF_CONTRACT_ADDRESS`
+* [x] `XCHF_CONTRACT_ADDRESS` 
 * [x] `salt`
 * [x] `allowedTokens`
 * [x] `networks`
@@ -56,7 +56,7 @@ But the main feature provides a solid solution to protect you **Digital Identity
 - [ ] `defi.uniswap`: Interact with Uniswap to swap XCHF <=> USDC.
 
 ### Others
-- [ ] Use [scam-database/blacklist](https://github.com/scamsniffer/scam-database/tree/main/blacklist) (**TODO**)
+- [ ] Use [scam-database/blacklist](https://github.com/scamsniffer/scam-database/tree/main/blacklist) for TX.validation
 
 
 ## Digital Identity
