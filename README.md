@@ -5,7 +5,7 @@ Our primary objective is straightforward: acquiring all the world.
 ## kng-web3 😸 (AKA. King Kong II for Web3)
 The purpose of this project is to provide a simple and intuitive API for our VIT Wallet. This API facilitates spending, swapping, and lending, and is specifically designed for certain tokens such as XCHF, USDC, (BTC), and ETH (on the Optimism network).
 
-But the main feature provides a solid solution to protect your **Digital Identity** with multiple strategies.
+The main feature provides also a solid solution to protect your **Digital Identity** with multiple strategies.
 
 ## APIs (checked for v0.01)
 ### Account ERC-4337
@@ -13,15 +13,15 @@ But the main feature provides a solid solution to protect your **Digital Identit
 - [x] `account.create` // ERC-4337 instance, plus recovery code, plus horcruxes
 - [x] `account.recovery` // Horcruxes + Guardians
 - [x] `account.localEncrypt`
-- [ ] `account.TX(Time-Locked Transactions)` // Pimlico
-- [ ] `account.TX(Reputation System)` // StackUp
-- [ ] `account.TX(Custom Validation Logic)` // StackUp (whitelist add)
-- [ ] `account.paymaster`: paymasters allow users to sponsor transactions or accept  **xCHF** (ERC20 tokens) for gas payment.
+- [~] `account.TX(Time-Locked Transactions)` 
+- [ ] `account.TX(Reputation System)` 
+- [~] `account.TX(Custom Validation Logic)` 
+- [~] `account.paymaster`: paymasters allow users to sponsor transactions or accept  **xCHF** (ERC20 tokens) for gas payment.
 
 ### Tx
-- [ ] `evm.transaction`: Interact with the ETH network to sign/send/read/list transactions (**TODO**).
-- [ ] `btc.transaction`: Interact with the BTC network to sign/send/read/list transactions (**TODO**).
-- [ ] `transaction`: high level api for transactions that include  black/white-addresses.
+- [~] `evm.transaction`: Interact with the ETH network to sign/send/read/list transactions (**TODO**).
+- [~] `evm.paymaster`: Interact with 4337 Account Abstraction (**TODO**).
+- [~] `transaction`: high level api for transactions that include  black/white-addresses.
  
 ### Core
 - [x] `core.identity`: Manage and secure an identity associated with the device (**DOING**)
