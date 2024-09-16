@@ -1,5 +1,7 @@
 # ViT Isn't Twint
 
+* [chatgpt/vit/share/66e83-***-438276d5b527](https://chatgpt.com/share/66e835d0-d7fc-8010-8e45-438276d5b527)
+
 🚀 **ViT Isn't Twint** is a decentralized payment processing system built on Ethereum, offering secure, upgradable, and flexible smart contracts for handling transactions, authorizations, captures, cancellations, and refunds using whitelisted ERC-20 tokens.
 
 ## Objective
