@@ -8,9 +8,13 @@ The purpose of this project is to provide a simple and intuitive API for our VIT
 The main feature provides also a solid solution to protect your **Digital Identity** with multiple strategies.
 
 ## APIs (checked for v0.01)
+* [ERC-4337 - discussions](https://chatgpt.com/c/8a462eda-72a2-406f-be7a-31f2fb5aac85)
+* [ERC-4337 custom guardian](https://chatgpt.com/c/672b9681-9748-8010-babb-a9f3c6137c41)
+
 ### Account ERC-4337
 - [x] select startup SDK (Thirdweb,StackUp,Biconomy,Pimlico)
 - [x] `account.create` // ERC-4337 instance, plus recovery code, plus horcruxes
+  - One-Time Use Codes, Two-Factor, Whitelist, Timespend, DeadDonation
 - [x] `account.recovery` // Horcruxes + Guardians
 - [x] `account.localEncrypt`
 - [~] `account.TX(Time-Locked Transactions)` 
@@ -58,6 +62,25 @@ The main feature provides also a solid solution to protect your **Digital Identi
 ### Others
 - [ ] Use [scam-database/blacklist](https://github.com/scamsniffer/scam-database/tree/main/blacklist) for TX.validation
 
+## 4337 security
+###  Biconomy Security Solutions
+
+* **Paymasters**: Biconomy allows the use of Paymasters to sponsor transactions. Developers can implement custom logic in the Paymaster contract to validate transactions.
+* **Gas Tank**: Biconomy’s Gas Tank mechanism ensures that users can pay transaction fees using ERC-20 tokens, adding an extra layer of security by abstracting gas payments.
+* **Rate Limiting**: Implementing rate limiting can prevent abuse by limiting the number of transactions a user can perform in a given period.
+* **Monitoring and Alerts**: Biconomy provides tools for monitoring transactions and setting up alerts for suspicious activities, enabling quick responses to potential security threats.
+
+### StackUp Security Solutions (userop.js)
+* **Custom Validation Logic**: StackUp’s Userop.js allows developers to define custom validation logic within their smart contracts to ensure transactions meet specific security criteria.
+* **EntryPoint Contract**: The EntryPoint contract in StackUp verifies and executes UserOperations. Developers can customize the verification process to include additional security checks.
+* **Simulation**: Before actual execution, transactions can be simulated to verify their validity. This helps in identifying and preventing potentially malicious transactions.
+* **Reputation System**: StackUp supports implementing a reputation system to prioritize transactions from trusted sources while scrutinizing or rejecting those from untrusted sources.
+
+### Pimlico Security Solutions
+* **Two-Factor** Authentication (2FA): Pimlico allows integrating 2FA within smart contract wallets. This requires users to provide an additional authentication factor before a transaction is approved.
+* **Multi-Signature Wallets**: Pimlico supports multi-signature wallets, where multiple approvals are required to validate a transaction. This adds a layer of security by distributing control across multiple parties.
+* **Time-Locked** Transactions: Implementing time-locked transactions ensures that a certain period must pass before a transaction is executed, providing a buffer to detect and prevent fraudulent activities.
+* **Recovery Mechanisms**: Secure recovery mechanisms, such as social recovery or backup keys, ensure that users can regain access to their accounts and secure their transactions even if their primary keys are compromised.
 
 ## Digital Identity
 Digital identity is a new reality, it appears complex or wird because we have no practice on that subject. The goal of VIT is to provide a few solutions to protect your identiy without the needs of a trusted thirdparties.

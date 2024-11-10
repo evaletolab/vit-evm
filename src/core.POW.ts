@@ -1,22 +1,32 @@
-import { BigNumber, ethers } from 'ethers';
+import { PBKDF2 } from './core.pbkdf2';
+const salt = 'kng2-fixed-salt';
 
 
-export function requiresWork(string: string, probability: BigNumber) {
-  const maxUint256 = BigNumber.from('0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff');
-  // Use the probability as a threshold in the interval [0, 2^256)
-  const target = maxUint256.mul(probability).div(100); 
-
+/**
+ * Generates a proof of work for a given string and difficulty.
+ * 
+ * @param {string} string - The input string to generate work for.
+ * @param {bigint} [difficulty] - The difficulty level for the proof of work. Defaults to 0x7ff if not provided.
+ * @returns {Promise<[string, string, number]>} - A promise that resolves to a tuple containing the work in hex format, the index in hex format, and the average difficulty as a number.
+ */
+export async function  requiresWork(string: string, difficulty?: bigint): Promise<[string, string,number]> {
+  difficulty = difficulty || BigInt(0x7ff); // default difficulty
+  let avg_difficulty = difficulty;
+  const threshold = difficulty / 2n;
   for (let index = 0;; index++) {
-    const work = BigNumber.from(ethers.utils.keccak256(ethers.utils.defaultAbiCoder.encode(['uint', 'uint'], [string, index])));
-
-    if (work.lte(target)) {
-      return [work.toHexString(), '0x' + index.toString(16)];
+    const workBytes = await PBKDF2(string + index, salt);
+    const work = BigInt('0x' + Buffer.from(workBytes).toString('hex'));
+    avg_difficulty = (avg_difficulty/2n) + (work % difficulty)/ 2n;
+    if ((avg_difficulty) < (threshold)) {
+    //console.log('work', work.toString(16), 'target', avg_difficulty.toString(10),avg_difficulty.toString(16));
+    return ['0x' + work.toString(16), '0x' + index.toString(16), Number(avg_difficulty)];
     }
   }
 }
 
 
-export function proofOfWork(string: string, hash: string, nonce: string) {
-  const pow = ethers.utils.keccak256(ethers.utils.defaultAbiCoder.encode(['uint','uint'],[string,nonce]));
-  return (BigNumber.from(hash).eq(pow));
+export async function proofOfWork(string: string, hash: string, nonce: string) {
+  const workBytes = await PBKDF2(string + BigInt(nonce).toString(10), salt);
+  const pow = BigInt('0x' + Buffer.from(workBytes).toString('hex'));
+  return (BigInt(hash) == (pow));
 }

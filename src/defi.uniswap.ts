@@ -1,5 +1,5 @@
-import { ethers } from "ethers";
-import config from './tools.config';
+import { ethers, parseUnits } from "ethers";
+import {config} from './tools.config';
 
 export interface SwapInput {
   amountIn: number;
@@ -20,7 +20,7 @@ export const swap = async (input:SwapInput, outAddress:string, signer: ethers.Si
 
 
     // Montant de USDC à échanger
-    const amountIn = ethers.utils.parseUnits(input.amountIn.toString(), 'ether'); // USDC amount to swap (in wei)
+    const amountIn = parseUnits(input.amountIn.toString(), 'ether'); // USDC amount to swap (in wei)
 
     // Créer une instance du contrat Uniswap v2 Router
     const uniswapRouter = new ethers.Contract(uniswapRouterAddress, uniswapRouterAbi, signer);

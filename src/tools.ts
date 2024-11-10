@@ -1,4 +1,4 @@
-import { ethers } from "ethers";
+import { keccak256, toBeHex, toUtf8Bytes } from "ethers";
 import SessionKeystore from 'session-keystore'
 
 /**
@@ -7,8 +7,9 @@ import SessionKeystore from 'session-keystore'
  * @param string - The string to convert.
  * @returns The HEX256 representation of the string.
  */
-export function strHEX256(string: string) {
-  return ethers.utils.id(string);
+export function strToHex(message: string) {
+  let messageBytes = toUtf8Bytes(message);
+  return keccak256(messageBytes);
 }
 
 /**
@@ -17,8 +18,9 @@ export function strHEX256(string: string) {
  * @param number - The number to convert.
  * @returns The HEX256 representation of the string.
  */
-export function pinToHEX256(value: number) {
-  return ethers.utils.sha256(ethers.utils.hexlify(value));
+export function numberToKecc256(value: number) {
+  let valueHex = toBeHex(value);
+  return keccak256(valueHex);
 }
 
 //

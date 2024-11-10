@@ -11,7 +11,7 @@ contract Horcrux {
     bytes28 sss;
   }
 
-  mapping (uint256 => uint256) public index;
+  mapping (bytes32 => uint256) public onetime;
 
 
   // (to be validated)
@@ -24,19 +24,19 @@ contract Horcrux {
   //
   // Source is the destination place of the Horcrux
   // Horcrux is the encrypted shamir secret part
-  function create(uint256 source, uint horcrux ) external isWallet {
-    require((index[source]) == 0 ,"Horcrux: this destination is not available"); // cost 47 gas
-    index[(source)] = uint256(horcrux);
-    // this is a silent action
-    //emit HorcruxVault(block.number,horcrux);
+  function create(bytes32 secret, uint horcrux ) external {
+    require((onetime[secret]) == 0 ,"Horcrux: this destination is not available"); // cost 47 gas
+    onetime[(secret)] = uint256(horcrux);
   }
 
   //
   // The Seed and the Nonce are elements that becomes the destination place of the Horcrux
-  function redeem(uint256 seed, uint256 nonce) external view isWallet returns(uint) {
-    bytes32 hash = (keccak256(abi.encodePacked(seed,nonce)));
-    uint256 source =uint256(keccak256(abi.encodePacked(hash)));
-    return (index[source]);
+  function recovery(bytes32 seed, bytes32 salt) external view returns(bool) {
+    bytes32 hash = (keccak256(abi.encodePacked(seed,salt)));
+    bytes32 secret =bytes32(keccak256(abi.encodePacked(hash)));
+    bool ok = bool(onetime[secret]);
+    delete onetime[secret];
+    return ok;
   }
 
   //
