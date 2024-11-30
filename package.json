@@ -4,7 +4,7 @@
   "description": "VIT Isn't Twint",
   "private": false,
   "author": "C3PO",
-  "license": "GPL",
+  "license": "LGPL-3.0",
   "type": "module",
   "scripts": {
     "clean": "npm run clean --workspaces --if-present",
