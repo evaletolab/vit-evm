@@ -22,7 +22,7 @@ The purpose of this project is to provide a simple and intuitive API for our VIT
 - [~] `account.TX(Custom Validation Logic)` 
 - [~] `account.paymaster`: paymasters allow users to sponsor transactions or accept  **xCHF** (ERC20 tokens) for gas payment.
 
-### Core
+### Identity
 The main feature provides also a solid solution to protect your **Digital Identity** with multiple strategies.
 
 - [ ] `identity.create`: Create an identity associated with the device (**DOING**)
