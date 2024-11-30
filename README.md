@@ -1,5 +1,6 @@
 # VIT Isn't TWINT
 «🚀 ViT; is a decentralized payment processing system built on Ethereum (L2), offering secure, upgradable, and flexible smart contracts for handling transfert, authorizations, captures, cancellations, and refunds using whitelisted ERC-20 tokens [xCHF, USDC, wETH, wBTC]» Its a private initiative to create an opensource competitor of TWINT:<br/>
+
 ✅ Twint transactions are too expensives for business 1.8% + 20cts, with ViT we propose 0.3% + 1cts.<br/>
 ✅ To digitaly send 1 fr to a friend, you need Twint, then you need a bank account, no bank account is needed for ViT<br/>
 ✅ The underlying infrastructure of ViT is opensource and permissionless, that mean you can extend ViT services without asking for permission. 
