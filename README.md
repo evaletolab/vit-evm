@@ -25,7 +25,7 @@ The purpose of this project is to provide a simple and intuitive API for our VIT
 * Tools
 * DeFi
 
-## VIT-protocol 
+## VIT-evm-protocol 
 * todo
 
 ## VIT-UX
