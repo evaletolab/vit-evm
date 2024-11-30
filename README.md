@@ -37,6 +37,3 @@ We propose the usage of Shamir Shared Secret (SSS) to protect your Mnemonic with
 
 * Use printed paper.
 * And use our Horcrux SmartContract. 👇
-
-## Refs
-- https://chatgpt.com/share/b07564f7-7c48-43a0-9419-c505f283ffde
