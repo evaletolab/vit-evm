@@ -1,0 +1,16 @@
+<div class="pin-code">
+  <h4>Pin / unlock</h4>
+  <h2 class="pin-code-title">ViT</h2>
+  <section class="pin">
+
+
+    <code-input [isCodeHidden]="true"
+                [codeLength]="6"
+                (codeChanged)="onPinChange($event)"
+                (codeCompleted)="onPinCompleted($event)">
+    </code-input>    
+  </section>
+  <section class="bottom">
+    <sl-button variant="neutral" (click)="onRestore()">No more PIN?</sl-button>
+  </section>
+</div>

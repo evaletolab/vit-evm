@@ -1,0 +1,41 @@
+<div class="card">
+  <ng-container *ngIf="userOpHash">
+    <p>
+      Your account setup is in progress. This operation gas is sponsored by {{ gasSponsor?.name }}
+      <a [href]="gasSponsor?.url" target="_blank" rel="noopener noreferrer">
+        <img [src]="gasSponsor?.icons[0]" alt="logo" style="width: 25px; height: 25px; vertical-align: middle;" />
+      </a>
+      <br /><br />
+      Track your operation on
+      <a [href]="'https://eth-' + chainName.toLowerCase() + '.blockscout.com/op/' + userOpHash" target="_blank">
+        the block explorer
+      </a>
+    </p>
+  </ng-container>
+
+  <ng-container *ngIf="txHash">
+    <p>
+      You collected an NFT, secured with your Safe Account & authenticated by your Device Passkeys.
+      <br /><br />
+      View more on
+      <a [href]="'https://eth-' + chainName + '.blockscout.com/tx/' + txHash" target="_blank">
+        the block explorer
+      </a>
+      <br />
+    </p>
+  </ng-container>
+
+  <ng-container *ngIf="loadingTx && !userOpHash">
+    <p>"Preparing transaction..."</p>
+  </ng-container>
+
+  <ng-container *ngIf="accountAddress">
+    <button (click)="handleMintNFT()" [disabled]="!!userOpHash">Mint NFT</button>
+  </ng-container>
+
+  <ng-container *ngIf="error">
+    <div class="card">
+      <p>Error: {{ error }}</p>
+    </div>
+  </ng-container>
+</div>

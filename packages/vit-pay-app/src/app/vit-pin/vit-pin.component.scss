@@ -1,0 +1,17 @@
+.pin-code {
+  background-color: var(--vit-color-primary);
+  background-image: var(--vit-gradient-primary);
+  .pin-code-title{
+
+  }
+
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1rem;
+}
+
+.pin-input {
+  width: 100px;
+  text-align: center;
+}

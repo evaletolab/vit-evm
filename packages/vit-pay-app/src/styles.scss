@@ -1,0 +1,97 @@
+/* You can add global styles to this file, and also import other style files */
+:root{
+    /** From FIGMA to COLORS ***/    
+    --vit-color-text: rgba(0, 0, 0, 0.2);
+    --vit-color-background: #fdfdfd;
+    --vit-color-neutral: #a4a4a4;
+    --vit-color-primary: #ffa27a;
+    --vit-color-secondary: #f7c768;
+    --vit-color-success: #28cd41;
+    --vit-color-danger: #ff453a;
+    --vit-color-warning: #ff9500;
+
+    --vit-gradient-primary: linear-gradient(62deg, var(--vit-color-primary) 25%, var(--vit-color-secondary) 100%);
+    
+
+    --sl-color-neutral-1000 : var(--vit-color-text);
+    --sl-color-neutral-0 : var(--vit-color-background);
+    --sl-color-neutral-500 : var(--vit-color-neutral);
+
+    --sl-color-primary-500 : var(--vit-color-primary);
+    --sl-color-success-500 : var(--vit-color-success);
+    --sl-color-danger-500 : var(--vit-color-danger);
+    --sl-color-warning-500 : var(--vit-color-warning);
+
+
+    /** compute color variants 
+     * A difference of 40 between lightness values ensures a minimum 3:1 contrast ratio.
+     * A difference of 50 between lightness values ensures a minimum 4.5:1 contrast ratio.
+     * A difference of 60 between lightness values ensures a minimum 7:1 contrast ratio.
+     **/
+
+    --sl-color-primary-50 : color-mix(in srgb, white 95%, var(--sl-color-primary-500) 5%);
+    --sl-color-primary-100 : color-mix(in srgb, white 88%, var(--sl-color-primary-500) 12%);
+    --sl-color-primary-200 : color-mix(in srgb, white 70%, var(--sl-color-primary-500) 30%);
+    --sl-color-primary-300 : color-mix(in srgb, white 55%, var(--sl-color-primary-500) 45%);
+    --sl-color-primary-400 : color-mix(in srgb, white 40%, var(--sl-color-primary-500) 60%);
+    --sl-color-primary-600 : color-mix(in srgb, var(--sl-color-primary-500) 90%, black 10%);
+    --sl-color-primary-700 : color-mix(in srgb, var(--sl-color-primary-500) 80%, black 20%);
+    --sl-color-primary-800 : color-mix(in srgb, var(--sl-color-primary-500) 65%, black 35%);
+    --sl-color-primary-900 : color-mix(in srgb, var(--sl-color-primary-500) 50%, black 50%);
+    --sl-color-primary-950 : color-mix(in srgb, var(--sl-color-primary-500) 30%, black 70%);
+
+
+    --sl-color-success-50 : color-mix(in srgb, white 95%, var(--sl-color-success-500) 5%);
+    --sl-color-success-100 : color-mix(in srgb, white 88%, var(--sl-color-success-500) 12%); 
+    --sl-color-success-200 : color-mix(in srgb, white 70%, var(--sl-color-success-500) 30%);
+    --sl-color-success-300 : color-mix(in srgb, white 55%, var(--sl-color-success-500) 45%); 
+    --sl-color-success-400 : color-mix(in srgb, white 40%, var(--sl-color-success-500) 60%); 
+    --sl-color-success-600 : color-mix(in srgb, var(--sl-color-success-500) 90%, black 10%);
+    --sl-color-success-700 : color-mix(in srgb, var(--sl-color-success-500) 80%, black 20%);
+    --sl-color-success-800 : color-mix(in srgb, var(--sl-color-success-500) 65%, black 35%); 
+    --sl-color-success-900 : color-mix(in srgb, var(--sl-color-success-500) 50%, black 50%);
+    --sl-color-success-950 : color-mix(in srgb, var(--sl-color-success-500) 30%, black 70%); 
+    
+    --sl-color-warning-50 : color-mix(in srgb, white 95%, var(--sl-color-warning-500) 5%);
+    --sl-color-warning-100 : color-mix(in srgb, white 88%, var(--sl-color-warning-500) 12%);
+    --sl-color-warning-200 : color-mix(in srgb, white 70%, var(--sl-color-warning-500) 30%);
+    --sl-color-warning-300 : color-mix(in srgb, white 55%, var(--sl-color-warning-500) 45%); 
+    --sl-color-warning-400 : color-mix(in srgb, white 40%, var(--sl-color-warning-500) 60%); 
+    --sl-color-warning-600 : color-mix(in srgb, var(--sl-color-warning-500) 90%, black 10%);
+    --sl-color-warning-700 : color-mix(in srgb, var(--sl-color-warning-500) 80%, black 20%);
+    --sl-color-warning-800 : color-mix(in srgb, var(--sl-color-warning-500) 65%, black 35%); 
+    --sl-color-warning-900 : color-mix(in srgb, var(--sl-color-warning-500) 50%, black 50%);
+    --sl-color-warning-950 : color-mix(in srgb, var(--sl-color-warning-500) 30%, black 70%); 
+    
+    --sl-color-danger-50 : color-mix(in srgb, white 95%, var(--sl-color-danger-500) 5%);
+    --sl-color-danger-100 : color-mix(in srgb, white 88%, var(--sl-color-danger-500) 12%);
+    --sl-color-danger-200 : color-mix(in srgb, white 70%, var(--sl-color-danger-500) 30%);
+    --sl-color-danger-300 : color-mix(in srgb, white 55%, var(--sl-color-danger-500) 45%); 
+    --sl-color-danger-400 : color-mix(in srgb, white 40%, var(--sl-color-danger-500) 60%); 
+    --sl-color-danger-600 : color-mix(in srgb, var(--sl-color-danger-500) 90%, black 10%);
+    --sl-color-danger-700 : color-mix(in srgb, var(--sl-color-danger-500) 80%, black 20%);
+    --sl-color-danger-800 : color-mix(in srgb, var(--sl-color-danger-500) 65%, black 35%); 
+    --sl-color-danger-900 : color-mix(in srgb, var(--sl-color-danger-500) 50%, black 50%);
+    --sl-color-danger-950 : color-mix(in srgb, var(--sl-color-danger-500) 30%, black 70%); 
+    
+    --sl-color-neutral-50 : color-mix(in srgb, white 95%, var(--sl-color-neutral-500) 5%);
+    --sl-color-neutral-100 : color-mix(in srgb, white 88%, var(--sl-color-neutral-500) 12%);
+    --sl-color-neutral-200 : color-mix(in srgb, white 70%, var(--sl-color-neutral-500) 30%);
+    --sl-color-neutral-300 : color-mix(in srgb, white 55%, var(--sl-color-neutral-500) 45%); 
+    --sl-color-neutral-400 : color-mix(in srgb, white 40%, var(--sl-color-neutral-500) 60%); 
+    --sl-color-neutral-600 : color-mix(in srgb, var(--sl-color-neutral-500) 90%, black 10%);
+    --sl-color-neutral-700 : color-mix(in srgb, var(--sl-color-neutral-500) 80%, black 20%);
+    --sl-color-neutral-800 : color-mix(in srgb, var(--sl-color-neutral-500) 65%, black 35%); 
+    --sl-color-neutral-900 : color-mix(in srgb, var(--sl-color-neutral-500) 50%, black 50%);
+    --sl-color-neutral-950 : color-mix(in srgb, var(--sl-color-neutral-500) 30%, black 70%); 
+}
+
+
+body{
+  margin: 0;
+  font-family: "Jersey 25", sans-serif;
+
+}
+[hidden] {
+  display: none !important;
+}

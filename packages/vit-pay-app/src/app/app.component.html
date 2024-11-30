@@ -1,0 +1,31 @@
+
+<main class="main">
+
+  <div class="header">
+    <div>···- ·· −.</div>
+    <h1>ViT</h1>
+
+  </div>
+  <section class="center">
+    <div class="scan">
+      <span class="material-symbols-outlined">qr_code_scanner</span>
+      <div class="label">payer</div>
+    </div>
+    <div class="show">
+      <span class="material-symbols-outlined">receipt_long</span>
+      <div class="label">recevoir</div>
+    </div>
+
+    <div class="tools colspan-2">
+      <span hidden class="material-symbols-outlined">tune</span>
+      <button [routerLink]="['/account']" routerLinkActive="router-link-active"  class="label">créer</button>
+    </div>
+
+  </section>
+  <section class="bottom">
+    <p>Un porte-monnaie digital aussi simple et privé que celui que vous portez.</p>
+  </section>
+</main>
+
+
+<router-outlet />
