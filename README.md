@@ -7,6 +7,8 @@
 
 Made with ❤️ for secure and transparent blockchain payments!
 
+![GO2wJhSWQAA4UWQ](https://github.com/user-attachments/assets/7c17a070-3d37-4da3-bbdb-51c0fa485d34)
+
 # The Infrastructure
 The ViT software is divided into three parts:
 The **(1)** APIs [vit-core](./packages/vit-core/), **(2)** the Ethereum contracts [erc-4337](./packages/vit-erc4337-contracts/), and **(3)** the UX [vit-pay-app](./packages/vit-pay-app/).
