@@ -10,7 +10,7 @@
 🛡️ No bank account or KYC needed.  <br/>
 🛠️ Open-source and permissionless, designed for extensions and evolving tokenomics (as anti-phishing protection and transaction insurance).<br/>
 
-Made with ❤️ for secure, transparent blockchain payments!
+Made with ❤️ for secure, transparent **xCHF** payments!
 
 ## Project Structure
 
