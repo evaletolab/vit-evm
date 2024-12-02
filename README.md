@@ -5,7 +5,7 @@
 **ViT is a digital wallet that's as simple and private as the one in your pocket.**
 
 🔑 Built on Ethereum (Layer 2) using advanced smart contracts (ERC-4337).  <br/>
-⚡ Fast, secure, and flexible for payments, (refunds, and authorizations for E-commerce).  <br/>
+⚡ Fast, secure, and flexible for payments with **xCHF**, (refunds, and authorizations for E-commerce).  <br/>
 💸 Lower fees: 0.3% + 1ct (vs TWINT's 1.8% + 20ct).  <br/>
 🛡️ No bank account or KYC needed.  <br/>
 🛠️ Open-source and permissionless, designed for extensions and evolving tokenomics (as anti-phishing protection and transaction insurance).<br/>
