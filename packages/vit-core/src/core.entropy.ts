@@ -1,45 +1,6 @@
 import { toUtf8Bytes, wordlists, Mnemonic, hexlify, randomBytes  } from "ethers";
 
 
-//
-// Converts a list of base 1024 indices in big endian order to an integer value.
-//
-function intFromIndices(indices:number[], RADIX_BITS:number = 10): BigInt {
-  let value = BigInt(0);
-  const radix = BigInt(Math.pow(2, RADIX_BITS));
-  indices.forEach((index) => {
-    value = value * radix + BigInt(index);
-  });
-
-  return value;
-}
-
-
-export function phraseToHex(phrase: string, defaultLang:string = 'en') {
-
-    // Décomposer la phrase en mots individuels
-    const words = phrase.split(' ');
-
-    // Obtenir la liste des mots BIP39
-    const wordlist = wordlists[defaultLang];
-    if(!wordlist){
-      throw new Error(`La langue '${defaultLang}' n'est pas supportée.`);
-    }
-
-    // Récupérer l'indice de chaque mot
-    const indices = words.map(word => {
-      const index = wordlist.getWordIndex(word);
-      if (index === -1) {
-        throw new Error(`Le mot '${word}' n'est pas dans la liste BIP39.`);
-      }
-      return index;
-    });
-
-    const strEntropy = intFromIndices(indices, 10).toString(16);
-
-  return strEntropy;
-}
-
 export function retrieveEntropy(mnemonic: string, defaultLang:string = 'en') {
   const strEntropy = Mnemonic.phraseToEntropy(mnemonic, wordlists[defaultLang]);
   return toUtf8Bytes(strEntropy);
@@ -50,7 +11,7 @@ export function createMnemonic(entropy: Uint8Array, size: number = 16, defaultLa
   // https://docs.ethers.io/v5/api/utils/hdnode/#Mnemonic
   // https://github.com/ethers-io/ethers.js/issues/34
   const sizedEntropy = entropy.slice(0, size);
-  const mnemonic = Mnemonic.entropyToPhrase(hexlify(sizedEntropy), wordlists[defaultLang])
+  const mnemonic = Mnemonic.entropyToPhrase((sizedEntropy), wordlists[defaultLang])
   return mnemonic;
 }
 
@@ -58,21 +19,24 @@ export function isValidMnemonic(mnemonic: string, defaultLang:string = 'en') {
   return Mnemonic.isValidMnemonic(mnemonic, wordlists[defaultLang]);
 }
 
-export function isValidPrivateKey(pKey: string) {
-  const hex32 = (typeof (pKey) === "string" && pKey.match(/^(0x)?[0-9a-f]{64}$/i));
-  return hex32;
-}
-
-// DEPRECATED
-// export async function mnemonicToSeed(mnemonic: string) {
-//   return Mnemonic.fromPhrase(mnemonic);
-// }
 
 
+/**
+ * Generates an array of random groupes of 4 digits strings of a specified length.
+ *
+ * @param count - The number of random digit strings to generate.
+ * @param seed - An optional Uint8Array to seed the random number generator.
+ *               If provided, its length must match the count parameter.
+ * @returns An array of random digit strings, each of the specified length.
+ * @throws {Error} If the length of the seed does not match the count parameter.
+ * 
+ * @example  1234-5678-0000-9999
+ * 
+ */
 export function randomDigits(count:number, seed?:Uint8Array) {
   const digits = 4;
   const codes = [];
-  const min = Math.pow(10, digits - 1);  // 1000 pour 4 chiffres
+  const min = 0; 
   const max = Math.pow(10, digits) - 1;  // 9999 pour 4 chiffres
   const buffer32 = seed ? uint8to32(seed): Uint32Array.from(uint8to32(randomBytes(count*4)));
     
@@ -92,6 +56,12 @@ export function randomDigits(count:number, seed?:Uint8Array) {
 }
 
 
+/**
+ * Converter used by randomDigits 
+ *
+ * @param uint8Array - The Uint8Array to convert.
+ * @returns The converted Uint32Array.
+ */
 function uint8to32(uint8Array: Uint8Array): Uint32Array {
   // Ajouter du padding si nécessaire pour que la longueur soit un multiple de 4
   const paddingLength = (4 - (uint8Array.length % 4)) % 4;

@@ -1,6 +1,6 @@
 import { keccak256, AbiCoder } from "ethers";
-import { requiresWork } from "./core.POW";
-import { strToHex } from "./tools";
+import { POWforce, requiresWork } from "./core.POW";
+import { textToHex } from "./tools";
 
 
 /**
@@ -15,9 +15,9 @@ import { strToHex } from "./tools";
  * - `private`: The private representation of the unique identifier (mixing SHA with POW).
  * - `public`: The public unique identifier SHA(private).
  */
-export async function identity(username: string) {
-  const id = strToHex(username);
-  const work = await requiresWork(id);
+export async function identity(username: string, force:POWforce = POWforce.LOW) {
+  const id = textToHex(username);
+  const work = await requiresWork(id,force);
   const priv = keccak256(AbiCoder.defaultAbiCoder().encode(['uint256','uint256'],[id,work[0]]));
   const pub = keccak256(AbiCoder.defaultAbiCoder().encode(['uint256'],[priv]));
   return { priv,pub};
@@ -35,7 +35,7 @@ export async function identity(username: string) {
  */
 export async function auth(username: string, password: string) {
   const user = await identity(username);
-  const pass = await identity(password);
+  const pass = await identity(password, POWforce.MEDIUM);
   const priv = keccak256(AbiCoder.defaultAbiCoder().encode(['uint256','uint256'],[user.priv,pass.priv]));
   const pub = keccak256(AbiCoder.defaultAbiCoder().encode(['uint256'],[priv]));
   return {priv,pub};

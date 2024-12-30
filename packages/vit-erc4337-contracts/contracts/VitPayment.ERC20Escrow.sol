@@ -6,7 +6,7 @@ import "@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol";
 import "@openzeppelin/contracts-upgradeable/utils/ReentrancyGuardUpgradeable.sol";
 import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 
-contract ERC20Escrow is OwnableUpgradeable, ReentrancyGuardUpgradeable {
+contract VitPaymentERC20Escrow is OwnableUpgradeable, ReentrancyGuardUpgradeable {
     using SafeERC20 for IERC20;
 
     // Structure to store deposit information
@@ -71,12 +71,12 @@ contract ERC20Escrow is OwnableUpgradeable, ReentrancyGuardUpgradeable {
      * @param releaseTime The timestamp after which funds can be withdrawn.
      */
     function setReleaseTime(bytes32 orderId, address payee, uint256 releaseTime) external onlyOwner {
-        Deposit storage deposit = deposits[orderId];
-        require(deposit.amount > 0, "No deposit found");
-        require(deposit.payee == address(0), "Payee already set");
+        Deposit storage escrowDeposit = deposits[orderId];
+        require(escrowDeposit.amount > 0, "No deposit found");
+        require(escrowDeposit.payee == address(0), "Payee already set");
 
-        deposit.payee = payee;
-        deposit.releaseTime = releaseTime;
+        escrowDeposit.payee = payee;
+        escrowDeposit.releaseTime = releaseTime;
 
         // Register the orderId for the payee
         payeeOrders[payee].push(orderId);
@@ -87,25 +87,25 @@ contract ERC20Escrow is OwnableUpgradeable, ReentrancyGuardUpgradeable {
      * @param orderId The unique identifier of the order.
      */
     function withdraw(bytes32 orderId) external nonReentrant {
-        Deposit storage deposit = deposits[orderId];
-        require(deposit.amount > 0, "No funds to withdraw");
-        require(msg.sender == deposit.payee, "Only payee can withdraw");
-        require(block.timestamp >= deposit.releaseTime, "Funds are still in holding period");
-        require(deposit.withdrawnAmount < deposit.amount, "All funds already withdrawn");
+        Deposit storage escrowDeposit = deposits[orderId];
+        require(escrowDeposit.amount > 0, "No funds to withdraw");
+        require(msg.sender == escrowDeposit.payee, "Only payee can withdraw");
+        require(block.timestamp >= escrowDeposit.releaseTime, "Funds are still in holding period");
+        require(escrowDeposit.withdrawnAmount < escrowDeposit.amount, "All funds already withdrawn");
 
-        uint256 amountToWithdraw = deposit.amount - deposit.withdrawnAmount;
+        uint256 amountToWithdraw = escrowDeposit.amount - escrowDeposit.withdrawnAmount;
 
         // Update state before external call
-        deposit.withdrawnAmount = deposit.amount; // All funds withdrawn
+        escrowDeposit.withdrawnAmount = escrowDeposit.amount; // All funds withdrawn
 
-        emit Withdrawn(orderId, deposit.payee, amountToWithdraw, deposit.tokenAddress);
+        emit Withdrawn(orderId, escrowDeposit.payee, amountToWithdraw, escrowDeposit.tokenAddress);
 
         // Transfer tokens to the payee
-        IERC20 token = IERC20(deposit.tokenAddress);
-        token.safeTransfer(deposit.payee, amountToWithdraw);
+        IERC20 token = IERC20(escrowDeposit.tokenAddress);
+        token.safeTransfer(escrowDeposit.payee, amountToWithdraw);
 
         // Remove orderId from payeeOrders
-        _removeOrderIdFromPayee(deposit.payee, orderId);
+        _removeOrderIdFromPayee(escrowDeposit.payee, orderId);
     }
 
     /**

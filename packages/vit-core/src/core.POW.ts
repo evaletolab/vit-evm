@@ -1,6 +1,13 @@
+import { ethers, randomBytes, toBeHex } from 'ethers';
 import { PBKDF2 } from './core.pbkdf2';
-const salt = 'kng2-fixed-salt';
+const salt = ethers.toUtf8Bytes('kng2-fixed-salt-0E0E');
 
+
+export enum POWforce {
+  LOW = 1,
+  MEDIUM = 6,
+  HIGH = 8
+}
 
 /**
  * Generates a proof of work for a given string and difficulty.
@@ -9,24 +16,28 @@ const salt = 'kng2-fixed-salt';
  * @param {bigint} [difficulty] - The difficulty level for the proof of work. Defaults to 0x7ff if not provided.
  * @returns {Promise<[string, string, number]>} - A promise that resolves to a tuple containing the work in hex format, the index in hex format, and the average difficulty as a number.
  */
-export async function  requiresWork(string: string, difficulty?: bigint): Promise<[string, string,number]> {
-  difficulty = difficulty || BigInt(0x7ff); // default difficulty
-  let avg_difficulty = difficulty;
-  const threshold = difficulty / 2n;
-  for (let index = 0;; index++) {
-    const workBytes = await PBKDF2(string + index, salt);
-    const work = BigInt('0x' + Buffer.from(workBytes).toString('hex'));
-    avg_difficulty = (avg_difficulty/2n) + (work % difficulty)/ 2n;
-    if ((avg_difficulty) < (threshold)) {
-    //console.log('work', work.toString(16), 'target', avg_difficulty.toString(10),avg_difficulty.toString(16));
-    return ['0x' + work.toString(16), '0x' + index.toString(16), Number(avg_difficulty)];
-    }
-  }
+export async function requiresWork(
+  input: string, force:POWforce = POWforce.MEDIUM
+): Promise<[string, string]> {
+  // Ajustez ce facteur selon la performance voulue (10 => ~100ms, 20 => ~200ms, etc.)
+  const difficulty = 150_000 * force;
+
+  
+  // Génère un nonce aléatoire (8 octets).
+  const nonce = ethers.hexlify(randomBytes(8));
+  const compound = ethers.toUtf8Bytes(input + nonce);
+
+  // Calcule la "preuve de travail"
+  const workBytes = await PBKDF2(compound, salt, difficulty);
+  const hash = ethers.hexlify(workBytes);
+
+  return [hash, nonce];
 }
 
-
-export async function proofOfWork(string: string, hash: string, nonce: string) {
-  const workBytes = await PBKDF2(string + BigInt(nonce).toString(10), salt);
-  const pow = BigInt('0x' + Buffer.from(workBytes).toString('hex'));
-  return (BigInt(hash) == (pow));
+export async function proofOfWork(input: string, hash: string, nonce: string, force:POWforce = POWforce.MEDIUM) {
+  const difficulty = 150_000 * force;
+  const compound = ethers.toUtf8Bytes(input + nonce);
+  const workBytes = await PBKDF2(compound, salt,difficulty);
+  const pow = ethers.hexlify(workBytes);
+  return ((hash) == (pow));
 }

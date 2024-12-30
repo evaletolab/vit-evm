@@ -3,6 +3,18 @@
 * Copyright (c)2020, by Olivier Evalet <olivier@karibou.ch>
 * Licensed under GPL license (see LICENSE)
 */
+import SessionKeystore from 'session-keystore'
+
+
+
+//
+// Secure cryptographic Memory Storage (K|V) for browsers or Node.js
+// https://github.com/47ng/session-keystore
+export function memorySession(name:string) {
+  const store = new SessionKeystore({ name })
+  return store;
+}
+
 
 /**
  * Enum representing various configuration options.

@@ -1,4 +1,3 @@
-import { hexlify, Mnemonic } from "ethers";
 
 // replace SSS with https://github.com/jwerle/shamirs-secret-sharing
 import { Buffer, combine, split } from 'shamirs-secret-sharing'

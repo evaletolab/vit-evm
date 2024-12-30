@@ -6,9 +6,9 @@ import "@openzeppelin/contracts-upgradeable/proxy/utils/UUPSUpgradeable.sol";
 import "@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol";
 import "@openzeppelin/contracts-upgradeable/utils/ReentrancyGuardUpgradeable.sol";
 import "@openzeppelin/contracts-upgradeable/utils/PausableUpgradeable.sol";
-import "./Payment.ERC20Escrow.sol";
+import "./VitPayment.ERC20Escrow.sol";
 
-contract Payment is UUPSUpgradeable, OwnableUpgradeable, AccessControlUpgradeable, ReentrancyGuardUpgradeable, PausableUpgradeable {
+contract VitPayment is UUPSUpgradeable, OwnableUpgradeable, AccessControlUpgradeable, ReentrancyGuardUpgradeable, PausableUpgradeable {
 
     struct Authorization {
         uint256 amount;
@@ -29,7 +29,7 @@ contract Payment is UUPSUpgradeable, OwnableUpgradeable, AccessControlUpgradeabl
     uint256 public authExpiration;      // Délai d'expiration de l'autorisation (ex: 7 jours)
     uint256 public holdingPeriod;       // Période de rétention des fonds après capture
 
-    ERC20Escrow public escrowContract;
+    VitPaymentERC20Escrow public escrowContract;
 
     event Authorized(bytes32 indexed orderId, bytes32 indexed cartId, uint256 amount, address tokenAddress, uint256 expiresAt);
     event Captured(bytes32 indexed orderId, uint256 amount, address tokenAddress);
@@ -49,7 +49,7 @@ contract Payment is UUPSUpgradeable, OwnableUpgradeable, AccessControlUpgradeabl
 
         grantRole(PAYMENT_EXECUTOR_ROLE, _paymentExecutor);
 
-        escrowContract = ERC20Escrow(_escrowAddress);
+        escrowContract = VitPaymentERC20Escrow(_escrowAddress);
 
         _setRoleAdmin(PAYMENT_EXECUTOR_ROLE, DEFAULT_ADMIN_ROLE);
     }

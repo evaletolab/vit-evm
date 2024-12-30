@@ -3,15 +3,22 @@
 // 
 // https://github.com/ProtonMail/proton-shared/blob/master/lib/authentication/cryptoHelper.ts
 
+import { getBytes, sha256, toUtf8Bytes } from "ethers";
+
 
 /**
  * Imports the secret key for AES encryption and decryption.
+ * @remarks 
+ * The private key is not revealable.
  * 
- * @param rawKey - The raw key as a Uint8Array.
+ * @param rawKey - The raw key as a string.
  * @returns A promise that resolves to the imported secret key.
  */
-function importSecretKey(rawKey: Uint8Array) {
-  return window.crypto.subtle.importKey("raw", rawKey, "AES-GCM", true, [
+export async function createSecretKey(rawKey: string): Promise<CryptoKey> {
+  let messageBytes = toUtf8Bytes(rawKey);
+  const secret = getBytes(sha256(messageBytes)).slice(0, 16);
+
+  return window.crypto.subtle.importKey("raw", secret, "AES-GCM", false, [
     "encrypt",
     "decrypt",
   ]);
@@ -25,9 +32,9 @@ function importSecretKey(rawKey: Uint8Array) {
  * @param salt - The salt value as a Uint8Array.
  * @returns A promise that resolves to the encrypted ciphertext as a BufferSource.
  */
-export async function aes_browser_encrypt(
-  key: Uint8Array,
+export async function aes_encrypt(
   message: string,
+  secret: CryptoKey,
   salt: Uint8Array
 ) {
   const encoder = new TextEncoder();
@@ -37,14 +44,13 @@ export async function aes_browser_encrypt(
     name: "AES-GCM",
     iv: iv,
   };
-  const secret = await importSecretKey(key);
 
   const ciphertext = await window.crypto.subtle.encrypt(
     codec,
     secret,
     encodedMessage
   );
-  return ciphertext;
+  return new Uint8Array(ciphertext);
 }
 
 /**
@@ -55,16 +61,15 @@ export async function aes_browser_encrypt(
  * @param salt - The salt value as a Uint8Array.
  * @returns A promise that resolves to the decrypted message as a string.
  */
-export async function aes_browser_decrypt(
-  key: Uint8Array,
+export async function aes_decrypt(
   ciphertext: BufferSource,
+  secret: CryptoKey,
   salt: Uint8Array
 ) {
   const codec = {
     name: "AES-GCM",
     iv: salt,
   };
-  const secret = await importSecretKey(key);
 
   const decrypted = await window.crypto.subtle.decrypt(
     codec,
