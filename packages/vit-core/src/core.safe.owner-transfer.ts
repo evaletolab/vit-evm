@@ -1,3 +1,17 @@
+/**
+ * Module: core.safe.owner-transfer
+ *
+ * Role
+ * - Safe owner management helpers: add/remove owners and adjust threshold.
+ *
+ * Workflow
+ * - For recovery flows, a module may validate a recovery code and then call these helpers to update owners.
+ * - addOwnerViaSafe / removeOwnerViaSafe create, sign and execute Safe transactions for owner changes.
+ *
+ * Relations
+ * - core.safe.modules: recovery validator module triggers owner changes
+ * - core.safe.account: must operate on a deployed Safe
+ */
 import Safe from '@safe-global/protocol-kit';
 import { ModuleCall } from './core.types';
 

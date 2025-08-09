@@ -1,3 +1,20 @@
+/**
+ * Module: core.safe.modules
+ *
+ * Role
+ * - Build low-level module calls and provide Safe v6 helpers to enable/disable modules.
+ *
+ * Workflow
+ * - For ERC-7579 modules, first deploy/install your module contract.
+ * - Use enableModuleViaSafe/disableModuleViaSafe to toggle module access on the Safe.
+ * - Batch calls can be built with batchModuleCalls and executed using core.safe.execute or Safe SDK directly.
+ *
+ * Relations
+ * - core.safe.account for Safe creation
+ * - core.safe.guard for enabling transaction guards
+ * - core.safe.webauthn for biometric validator module installation/linking
+ * - core.safe.owner-transfer for ownership flows that may be initiated by modules
+ */
 import Safe from '@safe-global/protocol-kit';
 import { ModuleCall } from './core.types';
 

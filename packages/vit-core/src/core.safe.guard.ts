@@ -1,3 +1,18 @@
+/**
+ * Module: core.safe.guard
+ *
+ * Role
+ * - Configure and toggle Safe transaction guards (policy enforcement for outgoing txs).
+ *
+ * Workflow
+ * - Encode any guard-specific rules with configurePaymentGuard (placeholder ABI encoding).
+ * - Enable a guard via enableGuardViaSafe; disable via disableGuardViaSafe.
+ *
+ * Relations
+ * - core.safe.modules: guards can be complementary to modules for validation
+ * - core.safe.payment: guards enforce payment rules (limits, whitelists)
+ * - core.safe.account: requires a deployed Safe to attach a guard
+ */
 import Safe from '@safe-global/protocol-kit';
 import { ModuleCall } from './core.types';
 

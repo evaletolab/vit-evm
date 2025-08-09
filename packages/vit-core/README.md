@@ -41,6 +41,14 @@ The main feature provides also a solid solution to protect your **Digital Identi
 - [x] `core.XOR`: Shuffle operations to avoid clear content.
 - [x] `core.entropy`: API related to Mnemonics and seed.
 - [x] `core.derivation`: API related to key derivation.
+ - [x] `core.passkey`: WebAuthn wrapper to register/authenticate passkeys (browser)
+ - [x] `core.safe.account`: Safe v6 account initialization + deterministic deployment
+ - [x] `core.safe.modules`: Enable/disable modules on a Safe
+ - [x] `core.safe.guard`: Enable/disable a Safe transaction guard
+ - [x] `core.safe.owner-transfer`: Add/remove owners and adjust threshold
+ - [x] `core.safe.payment`: ETH and ERC-20 transfers via Safe
+ - [x] `core.safe.execute`: Generic execution helpers (single/batch)
+ - [x] `core.safe.webauthn`: Bridge between passkeys and ERC-7579 WebAuthn validator module
 
 ### config.option
 * [ ] `aavePoolProviderAddress`
@@ -106,3 +114,39 @@ To increase the security of your identity, we break the Mnemonic phrase (**the s
 * One is stored on our Vault SmartContract, a digital and secure place.
 
 
+## Safe v6 + Modules Workflow (MVP)
+
+The MVP runs entirely on top of Safe v6 with ERC-7579-compatible modules. The following sequence describes the end-to-end flow to create an account, authenticate, pay, protect and restore.
+
+1) Create a Safe Account (deterministic optional)
+- Use `core.safe.account.createSafeAccount({ provider, signerPrivateKey, owners, threshold, saltNonce? })` to predict and deploy.
+- Retrieve owners and threshold with `core.safe.account.getSafeInfo`.
+
+2) Install and Enable Modules / Guards
+- Enable your validator/executor modules with `core.safe.modules.enableModuleViaSafe`.
+- Enable a guard to enforce spending rules with `core.safe.guard.enableGuardViaSafe`.
+
+3) Link WebAuthn (Biometric Authentication)
+- Collect passkey credential/signature using `core.passkey` (browser).
+- Use `core.safe.webauthn.linkPasskeyToSafe` to link the passkey to your WebAuthn validator module.
+- For gated execution, wrap calls with `core.safe.webauthn.executeWithPasskey`.
+
+4) Payments (ETH / ERC-20)
+- For ETH: `core.safe.payment.sendEthViaSafe({ to, amountWei })`.
+- For ERC-20: `core.safe.payment.sendErc20ViaSafe({ token, to, amount })`.
+- Guards (if enabled) will validate these operations.
+
+5) Protection (Policies & Limits)
+- Use guards (e.g., `core.safe.guard`) to enforce daily limits, whitelists, or other policies.
+- Additional ERC-7579 modules can hook into pre/post-execution for extra validation.
+
+6) Ownership Transfer / Recovery
+- Recovery modules can validate recovery codes and call `core.safe.owner-transfer.addOwnerViaSafe` or `removeOwnerViaSafe` to rotate keys.
+- Adjust threshold according to your recovery policy.
+
+7) Execution Utilities
+- When you need generic execution (single/batch), use `core.safe.execute.executeViaSafe`.
+
+Notes
+- Provider is an RPC URL string; signer is a private key string (or passkey signer when available).
+- Replace placeholder ABIs/selectors in `core.safe.webauthn` and guard/module configuration with your contract ABIs.

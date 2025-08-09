@@ -1,3 +1,18 @@
+/**
+ * Module: core.safe.payment
+ *
+ * Role
+ * - Basic payment helpers executed via Safe v6: ETH and ERC-20 transfers.
+ *
+ * Workflow
+ * - Build transactions with Safe.createTransaction, sign and execute them through Safe SDK.
+ * - For ERC-20, encode transfer(to, amount) using buildErc20TransferData.
+ *
+ * Relations
+ * - core.safe.guard: guards can enforce spending policies on these payments
+ * - core.safe.modules: payment-related modules can be enabled/disabled
+ * - core.safe.account: requires deployed Safe and signer
+ */
 import Safe from '@safe-global/protocol-kit';
 import { ethers } from 'ethers';
 
