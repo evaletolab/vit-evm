@@ -1,9 +1,9 @@
-import { expect } from 'chai'
+import { describe, it, expect, beforeEach } from 'vitest'
 import { POWforce, proofOfWork, requiresWork } from '../dist/core.POW';
 
-describe('POW (based on PBKDF2)', function() {
+describe('POW (based on PBKDF2)', () => {
   const msg = 'new message as pow seed 2';
-  this.timeout(10000);
+  // vitest timeout handled per test via options if needed
   it('fast POW from lg[buffer] (difficulty = LOW ~150ms)', async function() {
     const msg = '--import data:text/javascript,import { register } from "node:module"; import { pathToFileURL } from "node:url"; register("ts-node/esm", pathToFileURL("./"));';
     const work = await requiresWork(msg, POWforce.LOW);

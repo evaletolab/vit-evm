@@ -6,7 +6,7 @@
   "type": "module",
   "scripts": {
     "build": "tsc",
-    "test": "mocha "
+    "test": "vitest run"
   },
   "files": [
     "dist"
@@ -22,9 +22,13 @@
     "mocha": "^10.8.2",
     "ts-mocha": "^10.0.0",
     "ts-node": "^10.9.2",
-    "typescript": "^5.6.3"
+    "typescript": "^5.6.3",
+    "vitest": "^2.1.9"
   },
   "dependencies": {
+    "@safe-global/protocol-kit": "^6.1.0",
+    "@safe-global/safe-deployments": "^1.37.40",
+    "@safe-global/safe-ethers-lib": "^1.9.4",
     "ethers": "^6.13.4",
     "secrets.js-34r7h": "^2.0.2",
     "session-keystore": "^1.0.3",
