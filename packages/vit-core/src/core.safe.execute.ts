@@ -12,7 +12,6 @@
  * - core.safe.account provides the Safe address lifecycle
  */
 import Safe from '@safe-global/protocol-kit';
-import { ModuleCall } from './core.types';
 
 export interface ExecuteParams {
   safeAddress: string;

@@ -5,6 +5,12 @@
 
 import { getBytes, sha256, toUtf8Bytes } from "ethers";
 
+function getCrypto(): any {
+  const c = (globalThis as any).crypto ?? (typeof window !== 'undefined' ? (window as any).crypto : undefined);
+  if (!c) throw new Error('crypto not available');
+  return c;
+}
+
 
 /**
  * Imports the secret key for AES encryption and decryption.
@@ -18,7 +24,7 @@ export async function createSecretKey(rawKey: string): Promise<CryptoKey> {
   let messageBytes = toUtf8Bytes(rawKey);
   const secret = getBytes(sha256(messageBytes)).slice(0, 16);
 
-  return window.crypto.subtle.importKey("raw", secret, "AES-GCM", false, [
+  return getCrypto().subtle.importKey("raw", secret, "AES-GCM", false, [
     "encrypt",
     "decrypt",
   ]);
@@ -45,7 +51,7 @@ export async function aes_encrypt(
     iv: iv,
   };
 
-  const ciphertext = await window.crypto.subtle.encrypt(
+  const ciphertext = await getCrypto().subtle.encrypt(
     codec,
     secret,
     encodedMessage
@@ -71,7 +77,7 @@ export async function aes_decrypt(
     iv: salt,
   };
 
-  const decrypted = await window.crypto.subtle.decrypt(
+  const decrypted = await getCrypto().subtle.decrypt(
     codec,
     secret,
     ciphertext
