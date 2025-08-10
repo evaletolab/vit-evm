@@ -1,9 +1,9 @@
 // SPDX-License-Identifier: LGPL-3.0
 pragma solidity ^0.8.24;
 
-/// @title RecoveryValidator (ERC-7579 Validator placeholder)
+/// @title VitSafeRecoveryValidator (ERC-7579 Validator placeholder)
 /// @notice Minimal compilable stub to be replaced with full implementation
-contract RecoveryValidator {
+contract VitSafeRecoveryValidator {
     event RecoveryUsed(address indexed safe, address indexed newOwner);
 
     function linkRecovery(bytes32 /*salt*/ ) external {}
