@@ -1,13 +1,15 @@
 {
-  "name": "vit-contracts",
+  "name": "vit-safe-modules",
   "version": "0.0.1",
-  "description": "",
+  "description": "ERC-7579 modules for ViT (Recovery, WebAuthn, Payment Guard)",
   "main": "index.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "clean": "rm -rf artifacts cache",
+    "build": "hardhat compile",
+    "test": "hardhat test"
   },
-  "author": "",
-  "license": "ISC",
+  "author": "ViT",
+  "license": "LGPL-3.0",
   "devDependencies": {
     "@nomicfoundation/hardhat-toolbox": "^5.0.0",
     "@openzeppelin/contracts": "^5.0.2",
