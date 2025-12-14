@@ -13,7 +13,6 @@
  * - core.safe.account: must operate on a deployed Safe
  */
 import Safe from '@safe-global/protocol-kit';
-import { ModuleCall } from './core.types';
 
 export interface TransferOwnerParams {
   provider: string; // RPC URL

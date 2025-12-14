@@ -27,3 +27,4 @@ export * from './core.safe.owner-transfer';
 export * from './core.safe.account';
 export * from './core.safe.execute';
 export * from './core.safe.payment';
+export * from './core.safe.adapter';
