@@ -51,3 +51,27 @@ export const swap = async (input:SwapInput, outAddress:string, signer: ethers.Si
     throw error;
   }
 };
+
+// Build calldata for 4337 userOp swap (router call)
+export interface SwapExactTokensParams {
+  router: string;
+  amountIn: bigint;
+  amountOutMin: bigint;
+  path: string[];
+  to: string;
+  deadline: bigint;
+}
+
+export function encodeSwapExactTokensForTokens(p: SwapExactTokensParams): { to: string; data: string } {
+  const iface = new ethers.Interface([
+    'function swapExactTokensForTokens(uint256,uint256,address[],address,uint256) returns (uint256[])',
+  ]);
+  const data = iface.encodeFunctionData('swapExactTokensForTokens', [
+    p.amountIn,
+    p.amountOutMin,
+    p.path,
+    p.to,
+    p.deadline,
+  ]);
+  return { to: p.router, data };
+}

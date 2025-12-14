@@ -2,7 +2,11 @@
  * Module: core.safe.webauthn
  *
  * Role
- * - Bridge between WebAuthn passkeys and an ERC-7579 WebAuthn validator module.
+ * - Phase 2 / R&D helper: Bridge between WebAuthn passkeys and a custom on-chain validator module.
+ *
+ * MVP note
+ * - The MVP uses Safe’s native passkey signer (`Safe.createPasskeySigner()`) with Relay Kit (`Safe4337Pack`),
+ *   not a custom ERC-7579 WebAuthn validator module.
  *
  * Workflow
  * - Install the module with installWebAuthnModule when necessary (ABI placeholder).
@@ -44,9 +48,9 @@ export function installWebAuthnModule(config: WebAuthnModuleConfig): ModuleCall 
 export function linkPasskeyToSafe(params: LinkPasskeyParams): ModuleCall {
   const { config, credentialId, publicKeyUncompressed } = params;
   // Placeholder ABI; replace with real function signature of the validator module
-  // e.g., function linkPasskey(bytes credentialId, bytes uncompressedPubKey)
-  const iface = new ethers.Interface(['function linkPasskey(bytes,bytes)']);
-  const data = iface.encodeFunctionData('linkPasskey', [
+  // e.g., function linkCredential(bytes credentialId, bytes uncompressedPubKey)
+  const iface = new ethers.Interface(['function linkCredential(bytes,bytes)']);
+  const data = iface.encodeFunctionData('linkCredential', [
     base64UrlToBytes(credentialId),
     ethers.getBytes(publicKeyUncompressed),
   ]);
@@ -56,21 +60,23 @@ export function linkPasskeyToSafe(params: LinkPasskeyParams): ModuleCall {
 export function executeWithPasskey(params: ExecuteWithPasskeyParams): ModuleCall {
   const { config, signature, target, data: callData, value } = params;
   // Placeholder ABI; replace with real function signature of the validator-enabled executor
-  // e.g., function executeWithWebAuthn(address to,uint256 value,bytes data,(bytes,bytes,bytes,bytes,bytes) sig)
+  // e.g., function executeWithPasskey(address to,uint256 value,bytes data,bytes sig)
   const iface = new ethers.Interface([
-    'function executeWithWebAuthn(address,uint256,bytes,(bytes,bytes,bytes,bytes,bytes))',
+    'function executeWithPasskey(address,uint256,bytes,bytes)',
   ]);
-  const encoded = iface.encodeFunctionData('executeWithWebAuthn', [
+  // naive packing of signature parts into a single bytes blob (placeholder)
+  const sigBlob = ethers.concat([
+    base64UrlToBytes(signature.credentialId),
+    base64UrlToBytes(signature.clientDataJSON),
+    base64UrlToBytes(signature.authenticatorData),
+    base64UrlToBytes(signature.signature),
+    signature.userHandle ? base64UrlToBytes(signature.userHandle) : new Uint8Array(),
+  ]);
+  const encoded = iface.encodeFunctionData('executeWithPasskey', [
     target,
     value ?? 0n,
     callData,
-    [
-      base64UrlToBytes(signature.credentialId),
-      base64UrlToBytes(signature.clientDataJSON),
-      base64UrlToBytes(signature.authenticatorData),
-      base64UrlToBytes(signature.signature),
-      signature.userHandle ? base64UrlToBytes(signature.userHandle) : new Uint8Array(),
-    ],
+    sigBlob,
   ]);
   return { to: config.moduleAddress, data: encoded, value: 0n };
 }
