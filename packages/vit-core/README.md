@@ -43,7 +43,7 @@ The purpose of this project is to provide a simple and intuitive API for our VIT
 - [~] `account.TX(Time-Locked Transactions)` 
 - [ ] `account.TX(Reputation System)` 
 - [~] `account.TX(Custom Validation Logic)` 
-- [~] `account.paymaster`: paymasters allow users to sponsor transactions or accept  **xCHF** (ERC20 tokens) for gas payment.
+- [~] `account.paymaster`: paymasters allow users to sponsor transactions or accept  **ZCHF** (ERC20 tokens) for gas payment.
 
 ### Identity
 The main feature provides also a solid solution to protect your **Digital Identity** with multiple strategies.
@@ -68,6 +68,7 @@ The main feature provides also a solid solution to protect your **Digital Identi
  - [x] `core.safe.4337`: **MVP "true path"** — Safe4337Pack wrapper for gasless AA flow (ZCHF/Optimism)
  - [x] `core.safe.preflight`: **Anti-scam hook** — screen transactions before signing (OK/WARN/BLOCK)
  - [x] `core.safe.paymaster`: **PaymasterProvider interface** — Pimlico (+ Stackup stub) for gas sponsorship
+ - [x] `core.safe.adapter`: ERC-7579 adapter helpers for module registration
  - [x] `core.safe.account`: Safe v6 account initialization + deterministic deployment
  - [x] `core.safe.modules`: Enable/disable modules on a Safe
  - [x] `core.safe.guard`: Enable/disable a Safe transaction guard
@@ -95,12 +96,12 @@ The main feature provides also a solid solution to protect your **Digital Identi
 - [x] `tools`: Utilities (Secure Session Storage , Converters, ...).
 
 ### DeFi
-- [ ] `defi.aave`: Interact with the Aave protocol to lend USDC.
+- [~] `defi.aave`: Interact with the Aave protocol to lend USDC (**Phase 2**).
 - [ ] `defi.rocketpool`: Interact with the Rocket Pool to stake ETH.
-- [ ] `defi.uniswap`: Interact with Uniswap to swap XCHF <=> USDC.
+- [x] `defi.uniswap`: Swap encoding for Uniswap V2 (`swap`, `encodeSwapExactTokensForTokens`).
 
 ### Others
-- [ ] Use [scam-database/blacklist](https://github.com/scamsniffer/scam-database/tree/main/blacklist) for TX.validation
+- [x] Use [scam-database/blacklist](https://github.com/scamsniffer/scam-database/tree/main/blacklist) for TX.validation → implemented via `core.safe.preflight`
 
 
 ## 4337 security
@@ -350,14 +351,15 @@ For direct Safe execution without bundler/paymaster:
 
 | File | Purpose | Key Exports |
 |------|---------|-------------|
-| `core.safe.4337.ts` | MVP AA flow | `initSafe4337Pack`, `createSafeWithPasskey`, `sendZchfVia4337`, `swapToZchfVia4337`, `buildZchfTransfer`, `buildSwapToZchf`, `parseZchf`, `formatZchf`, `ZCHF_OPTIMISM` |
-| `core.safe.preflight.ts` | Anti-scam | `preflightRiskCheck`, `analyzeTransactionLocally`, `parseErc20Approve`, `parseSetApprovalForAll`, `RISKY_SELECTORS` |
-| `core.safe.paymaster.ts` | Paymaster abstraction | `PaymasterProvider`, `PimlicoProvider`, `StackupProvider`, `createPaymasterProvider`, `sponsorUserOp` |
+| `core.safe.4337.ts` | MVP AA flow | `initSafe4337Pack`, `createSafeWithPasskey`, `executeVia4337`, `sendZchfVia4337`, `swapToZchfVia4337`, `buildZchfTransfer`, `buildSwapToZchf`, `buildErc20Transfer`, `buildErc20Approve`, `parseZchf`, `formatZchf`, `ZCHF_OPTIMISM`, `ZCHF_DECIMALS` |
+| `core.safe.preflight.ts` | Anti-scam | `preflightRiskCheck`, `analyzeTransactionLocally`, `callBackendRiskScreening`, `parseErc20Approve`, `parseSetApprovalForAll`, `isBlocked`, `isAllowed`, `RISKY_SELECTORS` |
+| `core.safe.paymaster.ts` | Paymaster abstraction | `PaymasterProvider`, `PimlicoProvider`, `StackupProvider`, `createPaymasterProvider`, `sponsorUserOp`, `configurePaymaster` |
+| `core.safe.adapter.ts` | ERC-7579 adapter | `adapterRegisterModule`, `adapterSetPermission` |
 | `core.safe.account.ts` | Safe lifecycle | `createSafeAccount`, `getSafeInfo` |
 | `core.safe.execute.ts` | Execution | `executeViaSafe` |
 | `core.safe.payment.ts` | Payments | `sendEthViaSafe`, `sendErc20ViaSafe`, `buildErc20TransferData` |
-| `core.safe.modules.ts` | Module management | `enableModuleViaSafe`, `disableModuleViaSafe`, `batchModuleCalls` |
-| `core.safe.guard.ts` | Guard management | `enableGuardViaSafe`, `disableGuardViaSafe` |
+| `core.safe.modules.ts` | Module management | `enableModuleViaSafe`, `disableModuleViaSafe`, `installModule`, `uninstallModule`, `batchModuleCalls` |
+| `core.safe.guard.ts` | Guard management | `enableGuardViaSafe`, `disableGuardViaSafe`, `configurePaymentGuard` |
 | `core.safe.owner-transfer.ts` | Ownership | `addOwnerViaSafe`, `removeOwnerViaSafe` |
 | `core.passkey.ts` | WebAuthn | `registerPasskey`, `authenticatePasskey` |
 | `core.safe.webauthn.ts` | Phase 2 bridge | `installWebAuthnModule`, `linkPasskeyToSafe`, `executeWithPasskey` |
