@@ -3,7 +3,30 @@ VIT is a private initiative to create an open-source competitor to TWINT.
 Our primary objective is straightforward: acquiring all the world.
 
 ## Vit-core 
-The purpose of this project is to provide a simple and intuitive API for our VIT Wallet. This API facilitates spending, swapping, and lending, and is specifically designed for certain tokens such as XCHF, USDC, (BTC), and ETH (on the Optimism network).
+The purpose of this project is to provide a simple and intuitive API for our VIT Wallet. This API facilitates spending, swapping, and lending, and is specifically designed for certain tokens such as ZCHF, USDC, (BTC), and ETH (on the Optimism network).
+
+### 📚 Documentation Structure
+
+```
+┌─────────────────────────────────────────────────────────────────┐
+│ 🚀 MVP Gasless Flow (Safe4337Pack + ZCHF)                       │
+│   • Step 1: Create Safe with passkey                            │
+│   • Step 2: Preflight anti-scam check                           │
+│   • Step 3: Execute gasless ZCHF payment                        │
+│   • Swap to ZCHF example                                        │
+├─────────────────────────────────────────────────────────────────┤
+│ 🛡️ Anti-Scam Preflight (PRIORITY 2.5)                           │
+│   • Patterns détectés (blocklist, approve, setApprovalForAll)   │
+│   • Usage avec config                                           │
+├─────────────────────────────────────────────────────────────────┤
+│ 💰 PaymasterProvider Interface                                   │
+│   • Providers (Pimlico ✅, Stackup stub)                        │
+│   • Usage sponsorisé et token paymaster                         │
+│   • Migration facile                                            │
+├─────────────────────────────────────────────────────────────────┤
+│ 📖 Module Reference (tableau)                                    │
+└─────────────────────────────────────────────────────────────────┘
+```
 
 ## APIs (checked for v0.01)
 * [ERC-4337 - discussions](https://chatgpt.com/c/8a462eda-72a2-406f-be7a-31f2fb5aac85)
@@ -42,13 +65,16 @@ The main feature provides also a solid solution to protect your **Digital Identi
 - [x] `core.entropy`: API related to Mnemonics and seed.
 - [x] `core.derivation`: API related to key derivation.
  - [x] `core.passkey`: WebAuthn wrapper to register/authenticate passkeys (browser)
+ - [x] `core.safe.4337`: **MVP "true path"** — Safe4337Pack wrapper for gasless AA flow (ZCHF/Optimism)
+ - [x] `core.safe.preflight`: **Anti-scam hook** — screen transactions before signing (OK/WARN/BLOCK)
+ - [x] `core.safe.paymaster`: **PaymasterProvider interface** — Pimlico (+ Stackup stub) for gas sponsorship
  - [x] `core.safe.account`: Safe v6 account initialization + deterministic deployment
  - [x] `core.safe.modules`: Enable/disable modules on a Safe
  - [x] `core.safe.guard`: Enable/disable a Safe transaction guard
  - [x] `core.safe.owner-transfer`: Add/remove owners and adjust threshold
  - [x] `core.safe.payment`: ETH and ERC-20 transfers via Safe
  - [x] `core.safe.execute`: Generic execution helpers (single/batch)
- - [x] `core.safe.webauthn`: Bridge between passkeys and ERC-7579 WebAuthn validator module
+ - [x] `core.safe.webauthn`: Bridge between passkeys and ERC-7579 WebAuthn validator module (Phase 2)
 
 ### config.option
 * [ ] `aavePoolProviderAddress`
@@ -118,6 +144,177 @@ To increase the security of your identity, we break the Mnemonic phrase (**the s
 
 The MVP runs entirely on top of Safe v6 with ERC-7579-compatible modules. The following sequence describes the end-to-end flow to create an account, authenticate, pay, protect and restore.
 
+---
+
+## 🚀 MVP Gasless Flow (Safe4337Pack + ZCHF)
+
+**File:** `core.safe.4337.ts`
+
+This is the **recommended path for MVP**: gasless AA transactions on Optimism using ZCHF.
+
+### Workflow
+
+```
+┌─────────────┐    ┌─────────────┐    ┌─────────────┐    ┌─────────────┐
+│  Passkey    │───▶│  Create     │───▶│  Preflight  │───▶│  Execute    │
+│  Register   │    │  Safe4337   │    │  Anti-scam  │    │  via 4337   │
+└─────────────┘    └─────────────┘    └─────────────┘    └─────────────┘
+```
+
+### Step 1: Create Safe with passkey
+
+```typescript
+import { createSafeWithPasskey, Safe4337Config } from 'vit-core';
+
+const config: Safe4337Config = {
+  rpcUrl: 'https://optimism.rpc.url',
+  bundlerUrl: 'https://bundler.pimlico.io/...',
+  paymasterUrl: 'https://api.pimlico.io/...',
+  chainId: 10,
+};
+
+const result = await createSafeWithPasskey({
+  config,
+  passkeyOwner: '0x...', // from passkey registration
+  recoveryEOA: '0x...',
+  threshold: 1,
+}, signerPrivateKey);
+
+console.log('Safe deployed:', result.safeAddress);
+```
+
+### Step 2: Preflight anti-scam check
+
+```typescript
+import { preflightRiskCheck, buildZchfTransfer } from 'vit-core';
+
+const tx = buildZchfTransfer({ to: recipient, amount: parseZchf('50') });
+const preflight = await preflightRiskCheck([tx], { blocklist: myBlocklist });
+
+if (preflight.verdict === 'BLOCK') {
+  throw new Error(preflight.summary);
+}
+if (preflight.verdict === 'WARN') {
+  // Show warning UI, require extra confirmation
+}
+```
+
+### Step 3: Execute gasless ZCHF payment
+
+```typescript
+import { initSafe4337Pack, sendZchfVia4337, parseZchf } from 'vit-core';
+
+const pack = await initSafe4337Pack(config, safeAddress, signer);
+const result = await sendZchfVia4337(pack, {
+  to: '0xrecipient...',
+  amount: parseZchf('100'), // 100 ZCHF
+});
+
+console.log('UserOp hash:', result.userOpHash);
+```
+
+### Swap to ZCHF
+
+```typescript
+import { initSafe4337Pack, swapToZchfVia4337 } from 'vit-core';
+
+const pack = await initSafe4337Pack(config, safeAddress, signer);
+const result = await swapToZchfVia4337(pack, {
+  router: UNISWAP_V2_ROUTER,
+  tokenIn: USDC_ADDRESS,
+  amountIn: 1000000n, // 1 USDC
+  amountOutMin: parseZchf('0.9'), // slippage
+  recipient: safeAddress,
+  deadline: BigInt(Date.now() / 1000 + 1800),
+});
+```
+
+---
+
+## 🛡️ Anti-Scam Preflight (PRIORITY 2.5)
+
+**File:** `core.safe.preflight.ts`
+
+Hook called **before any signature** to detect phishing/drainers.
+
+### What it screens
+
+| Pattern | Detection |
+|---------|-----------|
+| Recipient on blocklist | `BLOCK` |
+| Spender in `approve()` on blocklist | `BLOCK` |
+| Operator in `setApprovalForAll()` | `WARN` (high-risk by default) |
+| Unlimited approval amount | `WARN` |
+
+### Usage
+
+```typescript
+import { preflightRiskCheck, PreflightConfig } from 'vit-core';
+
+const config: PreflightConfig = {
+  blocklist: new Set(['0xknown_scammer...']),
+  backendEndpoint: 'https://api.myapp.com/risk-check', // optional
+};
+
+const result = await preflightRiskCheck(transactions, config);
+// result.verdict: 'OK' | 'WARN' | 'BLOCK'
+// result.flags: detailed risk info
+// result.summary: UI-friendly message
+```
+
+---
+
+## 💰 PaymasterProvider Interface
+
+**File:** `core.safe.paymaster.ts`
+
+Abstraction layer for gas sponsorship. Swap providers without refactoring.
+
+### Providers
+
+| Provider | Sponsored | Token Paymaster | Status |
+|----------|-----------|-----------------|--------|
+| `PimlicoProvider` | ✅ | ✅ | Production |
+| `StackupProvider` | ✅ | ❌ | Stub (migration-ready) |
+
+### Usage
+
+```typescript
+import { createPaymasterProvider, PaymasterProviderConfig } from 'vit-core';
+
+const config: PaymasterProviderConfig = {
+  endpoint: 'https://api.pimlico.io/v2/10/rpc',
+  apiKey: process.env.PIMLICO_API_KEY,
+  chainId: 10,
+};
+
+const provider = createPaymasterProvider('pimlico', config);
+
+// Sponsored mode (user pays nothing)
+const sponsorData = await provider.sponsorUserOp(userOp);
+
+// Token paymaster (user pays in ERC-20)
+if (provider.supportsTokenPaymaster()) {
+  const tokenData = await provider.getTokenPaymasterData({
+    userOp,
+    token: ZCHF_OPTIMISM,
+  });
+}
+```
+
+### Migrate to Stackup later
+
+```typescript
+// Just change the vendor string
+const provider = createPaymasterProvider('stackup', config);
+```
+
+---
+
+## Legacy Protocol Kit Workflow (non-4337)
+
+For direct Safe execution without bundler/paymaster:
+
 1) Create a Safe Account (deterministic optional)
 - Use `core.safe.account.createSafeAccount({ provider, signerPrivateKey, owners, threshold, saltNonce? })` to predict and deploy.
 - Retrieve owners and threshold with `core.safe.account.getSafeInfo`.
@@ -126,7 +323,7 @@ The MVP runs entirely on top of Safe v6 with ERC-7579-compatible modules. The fo
 - Enable your validator/executor modules with `core.safe.modules.enableModuleViaSafe`.
 - Enable a guard to enforce spending rules with `core.safe.guard.enableGuardViaSafe`.
 
-3) Link WebAuthn (Biometric Authentication)
+3) Link WebAuthn (Phase 2 — Biometric Authentication via Module)
 - Collect passkey credential/signature using `core.passkey` (browser).
 - Use `core.safe.webauthn.linkPasskeyToSafe` to link the passkey to your WebAuthn validator module.
 - For gated execution, wrap calls with `core.safe.webauthn.executeWithPasskey`.
@@ -147,6 +344,27 @@ The MVP runs entirely on top of Safe v6 with ERC-7579-compatible modules. The fo
 7) Execution Utilities
 - When you need generic execution (single/batch), use `core.safe.execute.executeViaSafe`.
 
-Notes
+---
+
+## Module Reference
+
+| File | Purpose | Key Exports |
+|------|---------|-------------|
+| `core.safe.4337.ts` | MVP AA flow | `initSafe4337Pack`, `createSafeWithPasskey`, `sendZchfVia4337`, `swapToZchfVia4337`, `buildZchfTransfer`, `buildSwapToZchf`, `parseZchf`, `formatZchf`, `ZCHF_OPTIMISM` |
+| `core.safe.preflight.ts` | Anti-scam | `preflightRiskCheck`, `analyzeTransactionLocally`, `parseErc20Approve`, `parseSetApprovalForAll`, `RISKY_SELECTORS` |
+| `core.safe.paymaster.ts` | Paymaster abstraction | `PaymasterProvider`, `PimlicoProvider`, `StackupProvider`, `createPaymasterProvider`, `sponsorUserOp` |
+| `core.safe.account.ts` | Safe lifecycle | `createSafeAccount`, `getSafeInfo` |
+| `core.safe.execute.ts` | Execution | `executeViaSafe` |
+| `core.safe.payment.ts` | Payments | `sendEthViaSafe`, `sendErc20ViaSafe`, `buildErc20TransferData` |
+| `core.safe.modules.ts` | Module management | `enableModuleViaSafe`, `disableModuleViaSafe`, `batchModuleCalls` |
+| `core.safe.guard.ts` | Guard management | `enableGuardViaSafe`, `disableGuardViaSafe` |
+| `core.safe.owner-transfer.ts` | Ownership | `addOwnerViaSafe`, `removeOwnerViaSafe` |
+| `core.passkey.ts` | WebAuthn | `registerPasskey`, `authenticatePasskey` |
+| `core.safe.webauthn.ts` | Phase 2 bridge | `installWebAuthnModule`, `linkPasskeyToSafe`, `executeWithPasskey` |
+
+---
+
+## Notes
 - Provider is an RPC URL string; signer is a private key string (or passkey signer when available).
 - Replace placeholder ABIs/selectors in `core.safe.webauthn` and guard/module configuration with your contract ABIs.
+- ZCHF on Optimism: `0xD4dD9e2F021BB459D5A5f6c24C12fE09c5D45553` (18 decimals)
