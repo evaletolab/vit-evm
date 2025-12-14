@@ -19,6 +19,8 @@ export * from './defi.uniswap';
 
 // SAFE + WebAuthn (ERC-7579)
 export * from './core.passkey';
+export * from './core.safe.4337';
+export * from './core.safe.preflight';
 export * from './core.safe.webauthn';
 export * from './core.safe.modules';
 export * from './core.safe.guard';
