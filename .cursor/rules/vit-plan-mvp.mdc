@@ -107,6 +107,24 @@ alwaysApply: true
 - BLOCK: prevent signing by default (allow override only in “expert mode”).
 - WARN: show warning + friction (extra confirmation).
 
+##### Security Providers (integrations)
+**Recommended integration**: use a single **backend risk-screening endpoint** that aggregates multiple sources and returns one **OK/WARN/BLOCK** verdict, with caching + timeouts, plus a **local signed snapshot** fallback.
+
+**Address / drainer / approval risk**
+- **Chainabuse (TRM Labs)**: community-reported malicious/scam addresses (API/terms apply).
+- **ScamSniffer**: drainer & approval-pattern detection (lookup + heuristics around approvals/permissions).
+
+**Phishing domains / indicators**
+- **CryptoScamDB**: scam domains + associated indicators (useful for QR/URL surfaces).
+- **OpenPhish**: phishing domain feed (useful if ViT ever scans payment links / QR URLs).
+
+**Labels / tags (optional signals)**
+- **Etherscan Address Tags**: “Scam/Phishing” style labels (often best consumed as periodic export into a local snapshot).
+
+**Notes**
+- Prefer **fail-safe** behavior: if screening is unavailable, default to **WARN** (not OK) for risky call patterns (approvals / setApprovalForAll / permit).
+- Keep provider keys server-side (never ship them to the client).
+
 ### 3. 🔐 Biometric Authentication (WebAuthn) - **PRIORITY 3**
 **Fingerprint and Face ID authentication using Safe native passkey signer**
 
