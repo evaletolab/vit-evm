@@ -27,8 +27,8 @@
   },
   "dependencies": {
     "@safe-global/protocol-kit": "^6.1.0",
+    "@safe-global/relay-kit": "^4.0.0",
     "@safe-global/safe-deployments": "^1.37.40",
-    "@safe-global/safe-ethers-lib": "^1.9.4",
     "ethers": "^6.13.4",
     "secrets.js-34r7h": "^2.0.2",
     "session-keystore": "^1.0.3",
