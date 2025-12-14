@@ -1,0 +1,506 @@
+# ViT MVP Biometric Authentication Guide (WebAuthn + Safe Integration)
+
+**Comprehensive guide for implementing fingerprint and Face ID authentication in ViT using WebAuthn API with Safe Smart Accounts and ERC-7579 modules.**
+
+## 📋 Related Documentation
+
+- **[ViT MVP Plan](vit-plan-mvp.mdc)**: Core Safe + ERC-7579 architecture and MVP implementation
+- **[ViT Future Plan](vit-plan-futur.mdc)**: Advanced features and long-term vision
+- **[ViT Instructions](vit-instructions.mdc)**: Development guidelines and coding standards
+
+## 🎯 MVP Biometric Authentication Objective
+
+**Integrate seamless biometric authentication (fingerprint, Face ID) into ViT wallet using WebAuthn API, eliminating the need for traditional recovery codes while maintaining 100% on-chain operation with Safe Smart Accounts.**
+
+## 🏗️ WebAuthn + Safe Architecture
+
+### **Core Integration Components**
+- **WebAuthn API**: Browser-native biometric authentication
+- **Safe Smart Account**: Battle-tested account abstraction
+- **ERC-7579 Modules**: Custom biometric validation modules
+- **Passkeys**: Cross-device, cross-platform credential sync
+
+### **Security Benefits**
+✅ **Phishing Resistant**: Credentials are domain-specific  
+✅ **No Passwords**: Eliminates password-related attacks  
+✅ **Device-Bound Security**: Private keys never leave the device  
+✅ **Multi-Factor in One Step**: Biometric + device possession  
+✅ **Cross-Platform Sync**: iCloud Keychain, Google Password Manager
+
+## 🔧 Technical Implementation
+
+### **1. WebAuthn API Integration**
+
+#### **Registration Flow (Creating Passkeys)**
+```typescript
+// Generate new WebAuthn credential
+const credential = await navigator.credentials.create({
+  publicKey: {
+    challenge: crypto.getRandomValues(new Uint8Array(32)),
+    rp: { 
+      name: "ViT Wallet",
+      id: window.location.hostname 
+    },
+    user: {
+      id: userIdBuffer,
+      name: userEmail,
+      displayName: userDisplayName
+    },
+    pubKeyCredParams: [{ type: "public-key", alg: -7 }], // ES256
+    authenticatorSelection: {
+      authenticatorAttachment: "platform", // Device biometrics
+      userVerification: "required",
+      residentKey: "required"
+    },
+    timeout: 60000,
+    attestation: "none"
+  }
+});
+
+// Extract public key for Safe module
+const publicKey = await extractPasskeyData(credential);
+```
+
+#### **Authentication Flow (Using Passkeys)**
+```typescript
+// Authenticate with existing passkey
+const authentication = await navigator.credentials.get({
+  publicKey: {
+    challenge: challengeBuffer,
+    allowCredentials: [{
+      id: credentialIdBuffer,
+      type: "public-key"
+    }],
+    userVerification: "required",
+    timeout: 60000
+  }
+});
+```
+
+### **2. Safe Smart Account Integration**
+
+#### **Initialize Safe with Passkey**
+```typescript
+import { Safe4337Pack } from '@safe-global/relay-kit';
+import { PasskeyArgType } from '@safe-global/protocol-kit';
+
+// Initialize Safe with passkey as signer
+const safe4337Pack = await Safe4337Pack.init({
+  provider: RPC_URL,
+  signer: passkeyCredential, // WebAuthn passkey
+  bundlerUrl: BUNDLER_URL,
+  paymasterOptions: {
+    isSponsored: true,
+    paymasterUrl: PAYMASTER_URL
+  },
+  options: {
+    owners: [], // Passkey will be the owner
+    threshold: 1
+  }
+});
+```
+
+#### **Sign Transactions with Passkey**
+```typescript
+// Create transaction
+const safeOperation = await safe4337Pack.createTransaction({
+  transactions: [mintNFTTransaction]
+});
+
+// Sign with passkey (triggers biometric prompt)
+const signedSafeOperation = await safe4337Pack.signSafeOperation(safeOperation);
+
+// Execute transaction
+const userOperationHash = await safe4337Pack.executeTransaction({
+  executable: signedSafeOperation
+});
+```
+
+### **3. ERC-7579 Biometric Validation Module**
+
+#### **Custom WebAuthn Validator Module**
+```solidity
+// WebAuthnValidator.sol - ERC-7579 Validator Module
+contract WebAuthnValidator is IValidator {
+    using P256 for bytes32;
+    
+    struct WebAuthnCredential {
+        uint256 x;
+        uint256 y;
+        bytes32 keyHash;
+        bool isActive;
+    }
+    
+    mapping(address => mapping(bytes32 => WebAuthnCredential)) public credentials;
+    
+    function validateUserOp(
+        UserOperation calldata userOp,
+        bytes32 userOpHash
+    ) external view override returns (ValidationData) {
+        // Extract WebAuthn signature data
+        (bytes32 messageHash, uint256 r, uint256 s, bytes memory authenticatorData, bytes memory clientData) = 
+            abi.decode(userOp.signature, (bytes32, uint256, uint256, bytes, bytes));
+        
+        // Verify WebAuthn signature using P256 precompile
+        bool isValid = userOpHash.verifySignature(
+            authenticatorData,
+            clientData,
+            credentials[userOp.sender][keyHash].x,
+            credentials[userOp.sender][keyHash].y,
+            r,
+            s
+        );
+        
+        return isValid ? VALIDATION_SUCCESS : VALIDATION_FAILED;
+    }
+    
+    function installValidator(
+        address account,
+        uint256 x,
+        uint256 y
+    ) external {
+        bytes32 keyHash = keccak256(abi.encodePacked(x, y));
+        credentials[account][keyHash] = WebAuthnCredential({
+            x: x,
+            y: y,
+            keyHash: keyHash,
+            isActive: true
+        });
+    }
+}
+```
+
+## 📱 Frontend Implementation (Angular)
+
+### **WebAuthn Service**
+```typescript
+@Injectable({
+  providedIn: 'root'
+})
+export class WebAuthnService {
+  
+  private generateRandomBuffer(length: number): Uint8Array {
+    const buffer = new Uint8Array(length);
+    window.crypto.getRandomValues(buffer);
+    return buffer;
+  }
+
+  async registerPasskey(): Promise<PasskeyCredential> {
+    const challenge = this.generateRandomBuffer(32);
+    
+    const publicKey: PublicKeyCredentialCreationOptions = {
+      challenge,
+      rp: { name: "ViT Wallet" },
+      user: {
+        id: this.generateRandomBuffer(16),
+        name: "user@example.com",
+        displayName: "ViT User"
+      },
+      pubKeyCredParams: [{ type: "public-key", alg: -7 }],
+      authenticatorSelection: {
+        authenticatorAttachment: "platform",
+        userVerification: "required",
+        residentKey: "required"
+      },
+      timeout: 60000,
+      attestation: "none"
+    };
+
+    try {
+      const credential = await navigator.credentials.create({ publicKey }) as PublicKeyCredential;
+      return this.extractPasskeyData(credential);
+    } catch (error) {
+      throw new Error(`Passkey registration failed: ${error.message}`);
+    }
+  }
+
+  async authenticatePasskey(credentialId: ArrayBuffer): Promise<AuthenticationCredential> {
+    const challenge = this.generateRandomBuffer(32);
+    
+    const publicKey: PublicKeyCredentialRequestOptions = {
+      challenge,
+      allowCredentials: [{
+        id: credentialId,
+        type: "public-key"
+      }],
+      userVerification: "required",
+      timeout: 60000
+    };
+
+    try {
+      const credential = await navigator.credentials.get({ publicKey }) as PublicKeyCredential;
+      return this.extractAuthenticationData(credential);
+    } catch (error) {
+      throw new Error(`Passkey authentication failed: ${error.message}`);
+    }
+  }
+
+  private extractPasskeyData(credential: PublicKeyCredential): PasskeyCredential {
+    const response = credential.response as AuthenticatorAttestationResponse;
+    const publicKey = this.parsePublicKey(response.attestationObject);
+    
+    return {
+      credentialId: credential.rawId,
+      publicKey: {
+        x: publicKey.x,
+        y: publicKey.y
+      },
+      attestationObject: response.attestationObject,
+      clientDataJSON: response.clientDataJSON
+    };
+  }
+}
+```
+
+### **Safe Integration Component**
+```typescript
+@Component({
+  selector: 'app-biometric-wallet',
+  template: `
+    <div class="wallet-container">
+      <h2>ViT Biometric Wallet</h2>
+      
+      <!-- Registration -->
+      <button 
+        (click)="registerBiometric()" 
+        [disabled]="isLoading"
+        class="biometric-btn">
+        <mat-icon>fingerprint</mat-icon>
+        Register Biometric
+      </button>
+      
+      <!-- Authentication -->
+      <button 
+        (click)="authenticateBiometric()" 
+        [disabled]="isLoading || !hasCredential"
+        class="biometric-btn">
+        <mat-icon>face</mat-icon>
+        Authenticate with Biometric
+      </button>
+      
+      <!-- Safe Account Details -->
+      <div *ngIf="safeAddress" class="safe-details">
+        <h3>Safe Account: {{ safeAddress | slice:0:6 }}...{{ safeAddress | slice:-4 }}</h3>
+        <p>Status: {{ isSafeDeployed ? 'Deployed' : 'Pending Deployment' }}</p>
+      </div>
+      
+      <!-- Transaction Actions -->
+      <div *ngIf="isAuthenticated" class="actions">
+        <button (click)="sendTransaction()" class="action-btn">
+          Send Transaction
+        </button>
+        <button (click)="mintNFT()" class="action-btn">
+          Mint NFT
+        </button>
+      </div>
+    </div>
+  `
+})
+export class BiometricWalletComponent {
+  isLoading = false;
+  hasCredential = false;
+  isAuthenticated = false;
+  safeAddress?: string;
+  isSafeDeployed = false;
+  
+  private passkeyCredential?: PasskeyCredential;
+  private safe4337Pack?: Safe4337Pack;
+
+  constructor(
+    private webAuthnService: WebAuthnService,
+    private safeService: SafeService
+  ) {}
+
+  async registerBiometric() {
+    this.isLoading = true;
+    
+    try {
+      // Register new passkey
+      this.passkeyCredential = await this.webAuthnService.registerPasskey();
+      
+      // Initialize Safe with passkey
+      this.safe4337Pack = await this.safeService.initializeSafeWithPasskey(
+        this.passkeyCredential
+      );
+      
+      this.safeAddress = await this.safe4337Pack.protocolKit.getAddress();
+      this.isSafeDeployed = await this.safe4337Pack.protocolKit.isSafeDeployed();
+      this.hasCredential = true;
+      
+      // Store credential locally (production: use secure backend)
+      this.storeCredential(this.passkeyCredential);
+      
+    } catch (error) {
+      console.error('Biometric registration failed:', error);
+    } finally {
+      this.isLoading = false;
+    }
+  }
+
+  async authenticateBiometric() {
+    if (!this.passkeyCredential) return;
+    
+    this.isLoading = true;
+    
+    try {
+      // Authenticate with passkey
+      const authResult = await this.webAuthnService.authenticatePasskey(
+        this.passkeyCredential.credentialId
+      );
+      
+      // Verify authentication with Safe
+      this.isAuthenticated = await this.safeService.verifyAuthentication(
+        authResult,
+        this.passkeyCredential.publicKey
+      );
+      
+    } catch (error) {
+      console.error('Biometric authentication failed:', error);
+    } finally {
+      this.isLoading = false;
+    }
+  }
+
+  async sendTransaction() {
+    if (!this.safe4337Pack || !this.isAuthenticated) return;
+    
+    const transaction = {
+      to: '0x...',
+      value: '1000000000000000000', // 1 ETH
+      data: '0x'
+    };
+    
+    try {
+      const safeOperation = await this.safe4337Pack.createTransaction({
+        transactions: [transaction]
+      });
+      
+      const signedOperation = await this.safe4337Pack.signSafeOperation(safeOperation);
+      const userOpHash = await this.safe4337Pack.executeTransaction({
+        executable: signedOperation
+      });
+      
+      console.log('Transaction sent:', userOpHash);
+    } catch (error) {
+      console.error('Transaction failed:', error);
+    }
+  }
+}
+```
+
+## 🔐 Security Considerations
+
+### **Device and Platform Security**
+- **Secure Enclave**: Private keys stored in device secure hardware
+- **Biometric Verification**: Fingerprint, Face ID, or device PIN required
+- **No Network Exposure**: Private keys never transmitted
+- **Domain Binding**: Credentials tied to specific origin (phishing protection)
+
+### **Multi-Signature Setup (Recommended)**
+```typescript
+// Initialize Safe with multiple signers for production
+const safe4337Pack = await Safe4337Pack.init({
+  provider: RPC_URL,
+  signer: passkeyCredential,
+  options: {
+    owners: [
+      passkeyPublicKey,     // Primary: Biometric authentication
+      recoveryEOAAddress,   // Backup: Traditional recovery method
+      guardianAddress       // Guardian: Social recovery option
+    ],
+    threshold: 2 // Require 2 of 3 signatures
+  }
+});
+```
+
+### **Recovery Mechanisms**
+1. **Multi-Device Sync**: iCloud Keychain, Google Password Manager
+2. **Backup Signer**: EOA address as fallback
+3. **Social Recovery**: Guardian-based recovery module
+4. **Hardware Keys**: Yubikey as additional security layer
+
+## 🌐 Cross-Platform Support
+
+### **Device Compatibility**
+- **iOS/iPadOS 16+**: Face ID, Touch ID
+- **Android 9+**: Fingerprint, Face unlock
+- **macOS 13+**: Touch ID on MacBook Pro/Air
+- **Windows 10/11**: Windows Hello (fingerprint, face)
+- **Linux**: Chrome/Firefox with USB security keys
+
+### **Browser Support**
+- **Chrome/Chromium**: Full WebAuthn support
+- **Safari**: Native WebAuthn with device biometrics
+- **Firefox**: WebAuthn with platform authenticators
+- **Edge**: Windows Hello integration
+
+### **Password Manager Integration**
+- **Apple**: iCloud Keychain sync across Apple devices
+- **Google**: Password Manager sync across Google accounts
+- **Third-party**: Bitwarden, 1Password, ProtonPass support
+
+## 📋 MVP Implementation Tasks
+
+### **🔗 vit-safe-modules (ERC-7579 Modules)**
+- [ ] `feat(modules): implement WebAuthn Validator ERC-7579 module`
+- [ ] `feat(modules): add P256 signature verification using precompile`
+- [ ] `feat(modules): implement passkey registration and management`
+- [ ] `feat(modules): add biometric authentication challenge generation`
+- [ ] `security(modules): implement replay attack protection`
+- [ ] `test(modules): comprehensive WebAuthn module testing`
+
+### **📦 vit-core (Core API Library)**
+- [ ] `feat(webauthn): integrate WebAuthn API wrapper`
+- [ ] `feat(webauthn): add passkey credential management`
+- [ ] `feat(safe): integrate WebAuthn with Safe SDK`
+- [ ] `feat(webauthn): implement cross-platform passkey sync`
+- [ ] `feat(webauthn): add biometric signature validation`
+
+### **🎨 vit-pay-app (Frontend Angular)**
+- [ ] `feat(biometric): create WebAuthn service for passkey management`
+- [ ] `feat(biometric): implement biometric registration flow`
+- [ ] `feat(biometric): add biometric authentication interface`
+- [ ] `feat(biometric): integrate with Safe wallet creation`
+- [ ] `feat(biometric): add fallback authentication methods`
+- [ ] `feat(ui): design biometric authentication UI components`
+
+## 🚀 Advanced Features (Future)
+
+### **Enhanced Biometric Options**
+- Voice recognition authentication
+- Behavioral biometrics (typing patterns)
+- Multi-modal biometric fusion
+- Continuous authentication
+
+### **Enterprise Features**
+- Admin-managed passkey policies
+- Corporate device enrollment
+- Audit logging and compliance
+- Advanced threat detection
+
+### **Cross-Chain Support**
+- Multi-chain passkey synchronization
+- Chain-specific biometric policies
+- Cross-chain transaction signing
+- Unified biometric identity
+
+## 📖 Reference Documentation
+
+### **WebAuthn Standards**
+- **[W3C WebAuthn Specification](https://www.w3.org/TR/webauthn-2/)**: Official WebAuthn standard
+- **[MDN WebAuthn Guide](https://developer.mozilla.org/en-US/docs/Web/API/Web_Authentication_API)**: Comprehensive API documentation
+- **[FIDO Alliance](https://fidoalliance.org/)**: Standards and certification
+
+### **Safe Integration**
+- **[Safe Passkeys Tutorial](https://docs.safe.global/advanced/passkeys/tutorials/react)**: Official Safe + passkeys guide
+- **[Safe SDK Documentation](https://docs.safe.global/sdk)**: Complete Safe SDK reference
+- **[ERC-7579 Specification](https://eips.ethereum.org/EIPS/eip-7579)**: Account abstraction modules standard
+
+### **Implementation Examples**
+- **[Angular WebAuthn Example](https://dev.to/this-is-angular/integrate-fingerprint-and-face-id-authentication-in-your-angular-app-using-webauthn-a-step-by-step-guide-3o2b)**: Step-by-step Angular integration
+- **[Safe Passkeys Demo](https://github.com/5afe/safe-passkeys-tutorial)**: Complete Safe + passkeys implementation
+- **[WebAuthn.wtf](https://webauthn.wtf/)**: Interactive WebAuthn learning resource
+
+---
+
+**This document provides comprehensive guidance for implementing biometric authentication in the ViT MVP using WebAuthn API with Safe Smart Accounts, ensuring a secure, user-friendly, and 100% on-chain authentication experience.**

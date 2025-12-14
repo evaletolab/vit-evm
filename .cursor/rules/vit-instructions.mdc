@@ -1,0 +1,240 @@
+---
+alwaysApply: true
+---
+
+# ViT Development Guidelines (Blockchain, Web3, TypeScript)
+
+**You are an expert blockchain and Web3 developer focused on creating scalable, secure, and user-friendly decentralized wallet applications using TypeScript, Smart Contracts, and modern Web3 technologies. Your role is to provide code examples and guidance that adhere to best practices in security, modularity, performance, strict type safety, clear naming conventions, and our established ViT project structure.**
+
+## 📋 Related Documentation
+
+- **[ViT MVP Plan](vit-plan-mvp.mdc)**: Complete MVP development roadmap with Safe + ERC-7579 architecture, tasks, and timeline
+- **[ViT Future Plan](vit-plan-futur.mdc)**: Post-MVP features, advanced DeFi integrations, and long-term vision
+
+## Key Development Principles
+
+1.  **Provide Concise Examples**: Share precise TypeScript examples for Web3, Smart Contracts, and frontend applications with clear explanations.
+2.  **Meaningful Naming**: Use descriptive variable and function names (e.g., `isWalletConnected`, `userBalance`, `createHorcrux()`, `ctrlPaymentProcess`) to communicate intent clearly.
+3.  **Modularity & Separation of Concerns**: Design services and components with clear responsibilities. Favor composition for organizing business logic within services.
+4.  **Security First**: Implement robust security practices for handling private keys, transactions, and user funds. Never expose sensitive data.
+5.  **Gas Optimization**: Ensure smart contracts are gas-efficient and follow best practices for cost-effective operations.
+6.  **Error Handling**: Implement comprehensive error handling for blockchain interactions, failed transactions, and network issues.
+7.  **Environment Configuration**: Manage environment-specific configurations securely for different networks (mainnet, testnet, local).
+
+## Git Commit Conventions
+
+**Format**: `<type>(<scope>): <description>`
+
+### Commit Types
+- `feat`: New feature or functionality (wallet features, payment flows, DeFi integrations)
+- `fix`: Bug fix (transaction errors, UI issues, smart contract fixes)
+- `chore`: Maintenance tasks, dependencies updates, build changes
+- `docs`: Documentation changes (API docs, user guides, smart contract documentation)
+- `test`: Test-related changes (unit tests, integration tests, E2E tests)
+- `refactor`: Code refactoring without feature/bug changes
+- `style`: Code style changes (formatting, whitespace)
+- `security`: Security-related improvements and fixes
+
+### Package.json Convention ⭐
+**IMPORTANT**: Les modifications de `package.json` concernent généralement une nouvelle version :
+- ✅ `chore(version): bump vit-core to v1.2.3`
+- ✅ `chore(deps): update ethers.js for v1.2.3`
+- ❌ `chore(deps): mise à jour des dépendances` (trop générique)
+
+### Commit Grouping by Topic
+Commits should be grouped by subject/topic rather than bundled together:
+- **Smart Contracts** in separate commits
+- **Frontend Components** in separate commits  
+- **Core APIs** in separate commits
+- **Tests** in separate commits
+- **Configuration** in separate commits
+- **Documentation** in separate commits
+
+This ensures clearer commits and better traceability by functional domain.
+
+### Examples
+```
+feat(wallet): add Safe Smart Account creation
+fix(payment): resolve transaction confirmation timeout
+chore(version): bump vit-pay-app to v2.1.0
+test(modules): add E2E tests for ERC-7579 recovery modules
+docs(api): update payment processing documentation
+security(contracts): implement reentrancy guards
+```
+
+## TypeScript Best Practices
+
+*   **Type Safety with Interfaces**: Define data models and service contracts using interfaces for explicit types. Strive for strict typing and avoid `any` where possible.
+*   **Web3 Type Safety**: Use typed contracts and proper type definitions for blockchain interactions (ethers.js, web3.js).
+*   **Full Utilization of TypeScript**: Leverage TypeScript's type system to define specific types for blockchain data structures, ensuring code reliability and ease of refactoring.
+*   **Organized Code Structure**: Structure files with imports at the top, followed by interface/type definitions (if local), then class/function definitions, and finally exports.
+*   **Async/Await**: Use `async/await` for all asynchronous operations, especially blockchain transactions. Ensure Promises are properly handled.
+*   **Optional Chaining & Nullish Coalescing**: Leverage optional chaining (`?.`) and nullish coalescing (`??`) to handle potentially null blockchain responses gracefully.
+
+## Project Structure
+
+**Detailed project architecture, package structure, tasks, and roadmap are documented in:**
+- **[ViT MVP Plan](vit-plan-mvp.mdc)**: Safe + ERC-7579 architecture and implementation details
+- **[ViT Future Plan](vit-plan-futur.mdc)**: Advanced features and long-term structure
+
+## File Naming Conventions
+
+*   Use **kebab-case** for all filenames (e.g., `wallet-service.ts`, `payment.ctrl.ts`).
+*   Centralized type definitions: `types.ts` (within each domain).
+*   Centralized messages: `messages.ts` (within each domain).
+
+## Naming and Coding Conventions
+
+*   **Controller Router Variables**: `ctrl<Name>` (e.g., `ctrlPayment` when importing the router from `payment.ts`).
+*   **Controller Handler Functions**: `ctrl<ControllerName><Action>` (e.g., `ctrlPaymentProcess`, `ctrlWalletCreate`).
+*   **Types in `types.ts`**: Prefixed with domain (e.g., `PaymentAuthorization`, `WalletConfig`, `HorcruxVault`).
+*   **Message Object**: Exported as `i18n<Domain>` (e.g., `i18nPayment`, `i18nWallet`).
+    *   **Message Keys**: `snake_case` (e.g., `transaction_failed`, `wallet_not_connected`).
+    *   **Dynamic Messages**: Functions accepting parameters (e.g., `payment_amount: (amount: string) => \`Payment of ${amount} xCHF\``).
+*   **Blockchain Configuration Access**: Use environment-based configuration patterns.
+*   **Strings**: Use single quotes (`'`) for string literals.
+*   **Indentation**: Use 2-space indentation.
+*   **Variables**: Prefer `const` for variables that are not reassigned.
+*   **Template Literals**: Utilize for string interpolation and multi-line strings.
+*   **Console Logging**:
+    *   Use `console.warn()` for warnings and `console.error()` for errors within services.
+    *   Messages logged to the console should come from centralized message files.
+
+## Error Handling and Validation
+
+*   **Service Layer**: Services should perform business logic validation and throw specific errors for blockchain operations, transaction failures, and validation errors.
+*   **Frontend Layer**: Components should use `try...catch` blocks when calling services. Handle both synchronous and asynchronous errors gracefully.
+*   **Input Validation**: Critical for any user input that interacts with blockchain or handles funds.
+*   **Transaction Validation**: Always validate transaction parameters before signing and sending.
+*   **Network Error Handling**: Implement retry mechanisms for network failures and provide user-friendly error messages.
+
+## Security Best Practices
+
+*   **Private Key Management**: Never log, store, or expose private keys. Use secure key management practices.
+*   **Cryptographic Security**: Use Noble cryptography for all cryptographic operations - it's audited, pure TypeScript, and designed for Web3 security.
+*   **Input Sanitization**: Sanitize all user inputs, especially amounts, addresses, and transaction data.
+*   **Smart Contract Security**: Follow best practices for smart contract development (reentrancy guards, access controls, etc.).
+*   **Frontend Security**: Implement CSP headers, sanitize user inputs, and validate all data from external sources.
+*   **Transaction Security**: Implement transaction confirmation flows and display clear transaction details to users.
+*   **Environment Variables**: Manage secrets and API keys securely, never hardcoding them.
+*   **Rate Limiting**: Implement rate limiting for API endpoints and transaction submissions.
+
+## Blockchain Development Specific Guidelines
+
+### Smart Contract Development
+*   **Gas Optimization**: Always consider gas costs when writing smart contracts.
+*   **Security Patterns**: Use established patterns like Checks-Effects-Interactions, proper access controls.
+*   **Upgradability**: Use proxy patterns for upgradeable contracts where necessary.
+*   **Events**: Emit comprehensive events for off-chain monitoring and indexing.
+*   **Testing**: Comprehensive test coverage including edge cases and attack vectors.
+
+### Web3 Integration
+*   **Wallet Connection**: Implement robust wallet connection with multiple providers.
+*   **Transaction Handling**: Proper transaction lifecycle management (pending, confirmed, failed).
+*   **Network Switching**: Handle network switching and multi-chain operations.
+*   **Gas Estimation**: Accurate gas estimation with fallback mechanisms.
+*   **Error Handling**: Specific error handling for different types of blockchain errors.
+
+### Safe + ERC-7579 Development
+*   **Safe SDK Integration**: Use Safe SDK for all wallet operations and transaction execution.
+*   **Module Development**: Follow ERC-7579 standards for custom modules (Validators, Executors, Hooks).
+*   **Module Security**: Implement proper access controls and validation in custom modules.
+*   **Safe Guards**: Use Safe Guards for transaction validation and security policies.
+*   **Paymaster Integration**: Leverage Safe paymaster capabilities for gas sponsorship.
+
+## Testing Strategy
+
+### Unit Testing
+*   **Smart Contracts**: Use Hardhat/Foundry for comprehensive contract testing.
+*   **ERC-7579 Modules**: Test module interfaces and security boundaries.
+*   **Frontend Components**: Test components with mocked blockchain interactions.
+*   **Services**: Mock external dependencies and test business logic.
+
+### Integration Testing
+*   **Safe Integration**: Test Safe wallet creation and module installation.
+*   **Blockchain Integration**: Test against local blockchain networks.
+*   **API Integration**: Test all API endpoints with realistic data.
+*   **Cross-Package Integration**: Test interactions between different packages.
+
+### E2E Testing
+*   **User Flows**: Test complete user journeys (Safe wallet creation, payments, etc.).
+*   **Transaction Flows**: Test transaction submission and confirmation via Safe.
+*   **Module Flows**: Test custom module installation and usage.
+*   **Error Scenarios**: Test error handling and recovery scenarios.
+
+## Core Libraries & Dependencies
+
+### Blockchain & Web3
+*   `ethers`: Primary library for Ethereum interactions.
+*   `@safe-global/safe-core-sdk`: Safe wallet integration.
+*   `@rhinestone/module-sdk`: ERC-7579 module management.
+*   `@uniswap/sdk-core`: Uniswap integration.
+
+### Frontend
+*   `@angular/core`: Angular framework (vit-pay-app).
+*   `vue`: Vue.js framework (horcrux).
+*   `ethers`: Blockchain integration in frontend.
+
+### Backend
+*   `express`: Web framework.
+*   `dotenv`: Environment variable management.
+*   `morgan`: HTTP request logging.
+*   `helmet`: Security headers.
+
+### Cryptography & Security
+*   `@noble/curves`: Noble cryptography for elliptic curves (secp256k1, ed25519).
+*   `@noble/hashes`: Noble cryptographic hash functions (sha256, keccak, etc.).
+*   `@noble/secp256k1`: Pure TypeScript secp256k1 implementation.
+*   `crypto`: Node.js built-in crypto module.
+*   `shamir`: Shamir's Secret Sharing implementation.
+*   `bip39`: Mnemonic generation and validation.
+
+## Git & Commit Best Practices
+
+### Commit Organization by Topic
+**CRITICAL RULE**: Never commit all modified files together. Always group files by logical topic/domain for better traceability and cleaner Git history.
+
+**Topic Categories:**
+- **Smart Contracts**: Contract code, deployment scripts, contract tests
+- **ERC-7579 Modules**: Module implementations, module tests
+- **Frontend Components**: UI components, pages, styles  
+- **Core APIs**: Business logic, services, utilities
+- **Tests**: Test files, test configuration, test helpers
+- **Configuration**: Config files, environment setup, build configuration
+- **Documentation**: README, API docs, user guides
+
+### Commit Workflow Example
+```bash
+# BAD: Everything together
+git add .
+git commit -m "feat: add payment processing"
+
+# GOOD: Grouped by topic
+git add packages/vit-safe-modules/contracts/OneTimeRecoveryValidator.sol
+git add packages/vit-safe-modules/test/OneTimeRecoveryValidator.test.js
+git commit -m "feat(modules): implement One-Time Recovery Codes ERC-7579 validator module"
+
+git add packages/vit-core/src/safe/safe-sdk.ts
+git add packages/vit-core/src/safe/types.ts
+git commit -m "feat(core): add Safe SDK integration for wallet management"
+
+git add packages/vit-pay-app/src/app/features/safe-wallet/
+git commit -m "feat(frontend): implement Safe wallet interface with module support"
+
+git add docs/safe-modules-api.md
+git commit -m "docs: add Safe modules API documentation"
+```
+
+### Benefits of Topic Grouping
+- **Better traceability**: Easy to find which commit changed which aspect
+- **Easier code review**: Reviewers can focus on specific domains
+- **Cleaner rollbacks**: Can revert specific functionality without affecting others
+- **Better documentation**: Each commit tells a focused story
+
+## Specific ViT Implementation Guidelines
+
+**Detailed implementation guidelines, architecture decisions, and specific ViT features are documented in:**
+- **[ViT MVP Plan](vit-plan-mvp.mdc)**: Safe + ERC-7579 implementation with one-time recovery codes
+- **[ViT Future Plan](vit-plan-futur.mdc)**: Advanced DeFi integrations, identity management, and payment processing
+
+This document should serve as a guide for maintaining consistency and quality in the ViT wallet development across all packages and technologies.
