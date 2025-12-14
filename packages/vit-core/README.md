@@ -28,80 +28,63 @@ The purpose of this project is to provide a simple and intuitive API for our VIT
 └─────────────────────────────────────────────────────────────────┘
 ```
 
-## APIs (checked for v0.01)
-* [ERC-4337 - discussions](https://chatgpt.com/c/8a462eda-72a2-406f-be7a-31f2fb5aac85)
-* [ERC-4337 - custom guardian](https://chatgpt.com/c/672b9681-9748-8010-babb-a9f3c6137c41)
-* [ERC-4337 - escrow transaction](https://chatgpt.com/share/6735bdcc-acc4-8010-a635-66a7bdf2f65a)
-* [ERC-4337 - permissionless.js](https://chatgpt.com/c/6735bf4f-667c-8010-b7e6-13034443dfd0)
+## APIs (MVP v1.0)
 
-### Account ERC-4337
-- [x] select startup SDK (Thirdweb,StackUp,Biconomy,Pimlico, ...)
-- [x] `account.create` // ERC-4337 instance, plus recovery code
-  - One-Time Use Codes, Two-Factor, Whitelist, Timespend, DeadDonation
-- [x] `account.recovery` with Guardians
-- [x] `account.localEncrypt`
-- [~] `account.TX(Time-Locked Transactions)` 
-- [ ] `account.TX(Reputation System)` 
-- [~] `account.TX(Custom Validation Logic)` 
-- [~] `account.paymaster`: paymasters allow users to sponsor transactions or accept  **ZCHF** (ERC20 tokens) for gas payment.
+### Safe + ERC-4337 (Account Abstraction)
+Architecture: **Safe v6 + Relay Kit v4 (`Safe4337Pack`) + Pimlico paymaster**
 
-### Identity
-The main feature provides also a solid solution to protect your **Digital Identity** with multiple strategies.
+- [x] `core.safe.4337`: **MVP "true path"** — gasless AA flow (ZCHF/Optimism)
+- [x] `core.safe.account`: Safe v6 deterministic creation + management
+- [x] `core.safe.execute`: Generic execution (single/batch)
+- [x] `core.safe.payment`: ETH and ERC-20 transfers via Safe
+- [x] `core.safe.paymaster`: **PaymasterProvider interface** — Pimlico (+ Stackup stub)
+- [x] `core.safe.preflight`: **Anti-scam hook** — screen before signing (OK/WARN/BLOCK)
+- [x] `core.safe.modules`: Enable/disable ERC-7579 modules
+- [x] `core.safe.guard`: Enable/disable transaction guards
+- [x] `core.safe.adapter`: ERC-7579 adapter helpers
+- [x] `core.safe.owner-transfer`: Add/remove owners, threshold changes
+- [x] `core.safe.webauthn`: WebAuthn module bridge (**Phase 2**)
 
-- [ ] `identity.create`: Create an identity associated with the device (**DOING**)
-- [ ] `identity.horcrux`: Secure identity
-- [ ] `identity.recovery`: Restore identity with N Horcruxes of M
+### Authentication (WebAuthn / Passkeys)
+- [x] `core.passkey`: WebAuthn wrapper (`registerPasskey`, `authenticatePasskey`)
 
-### Tx
-- [~] `evm.transaction`: Interact with the ETH network to sign/send/read/list transactions (**TODO**).
-- [~] `evm.paymaster`: Interact with 4337 Account Abstraction (**TODO**).
-- [~] `transaction`: high level api for transactions that include  black/white-addresses.
- 
-### Core
-- [x] `core.AES`: Simple AES encryption wrapper available natively on the browser.
-- [x] `core.POW`: Simple Proof-of-Work API.
-- [x] `core.SSS`: Shamir's Secret Sharing Wrapper.
-- [x] `core.XOR`: Shuffle operations to avoid clear content.
-- [x] `core.entropy`: API related to Mnemonics and seed.
-- [x] `core.derivation`: API related to key derivation.
- - [x] `core.passkey`: WebAuthn wrapper to register/authenticate passkeys (browser)
- - [x] `core.safe.4337`: **MVP "true path"** — Safe4337Pack wrapper for gasless AA flow (ZCHF/Optimism)
- - [x] `core.safe.preflight`: **Anti-scam hook** — screen transactions before signing (OK/WARN/BLOCK)
- - [x] `core.safe.paymaster`: **PaymasterProvider interface** — Pimlico (+ Stackup stub) for gas sponsorship
- - [x] `core.safe.adapter`: ERC-7579 adapter helpers for module registration
- - [x] `core.safe.account`: Safe v6 account initialization + deterministic deployment
- - [x] `core.safe.modules`: Enable/disable modules on a Safe
- - [x] `core.safe.guard`: Enable/disable a Safe transaction guard
- - [x] `core.safe.owner-transfer`: Add/remove owners and adjust threshold
- - [x] `core.safe.payment`: ETH and ERC-20 transfers via Safe
- - [x] `core.safe.execute`: Generic execution helpers (single/batch)
- - [x] `core.safe.webauthn`: Bridge between passkeys and ERC-7579 WebAuthn validator module (Phase 2)
-
-### config.option
-* [ ] `aavePoolProviderAddress`
-* [ ] `aavePoolProviderABI`
-* [ ] `aaveContractAddress`
-* [ ] `aaveTokenAddress`
-* [ ] `rocketPoolContractAddress`
-* [ ] `uniswapRouterAddress` 
-* [ ] `USDC_CONTRACT_ADDRESS`
-* [ ] `RPL_CONTRACT_ADDRESS`
-* [x] `XCHF_CONTRACT_ADDRESS` 
-* [x] `salt`
-* [x] `allowedTokens`
-* [x] `networks`
-
-### Tools
-- [x] `tools.config`: Secure configuration for the project.
-- [x] `tools`: Utilities (Secure Session Storage , Converters, ...).
+### Identity & Cryptography
+- [x] `core.AES`: AES encryption (browser-native)
+- [x] `core.POW`: Proof-of-Work API
+- [x] `core.SSS`: Shamir's Secret Sharing
+- [x] `core.XOR`: Shuffle operations
+- [x] `core.entropy`: Mnemonics and seed generation
+- [x] `core.derivation`: Key derivation
+- [ ] `identity.create`: Device-bound identity (**Phase 2**)
+- [ ] `identity.horcrux`: Secure identity with SSS (**Phase 2**)
+- [ ] `identity.recovery`: Restore identity with N of M Horcruxes (**Phase 2**)
 
 ### DeFi
-- [~] `defi.aave`: Interact with the Aave protocol to lend USDC (**Phase 2**).
-- [ ] `defi.rocketpool`: Interact with the Rocket Pool to stake ETH.
-- [x] `defi.uniswap`: Swap encoding for Uniswap V2 (`swap`, `encodeSwapExactTokensForTokens`).
+- [x] `defi.uniswap`: Swap encoding for Uniswap V2 (`swap`, `encodeSwapExactTokensForTokens`)
+- [~] `defi.aave`: Aave lending/borrowing (**Phase 2**)
+- [ ] `defi.rocketpool`: Rocket Pool staking (**Phase 2**)
+- [ ] `defi.frankencoin`: Frankencoin FPS/Savings Vault (**Phase 2**)
 
-### Others
-- [x] Use [scam-database/blacklist](https://github.com/scamsniffer/scam-database/tree/main/blacklist) for TX.validation → implemented via `core.safe.preflight`
+### Tools & Config
+- [x] `tools.config`: Secure configuration
+- [x] `tools`: Utilities (Session Storage, Converters)
+
+### Configuration Options
+| Option | Status | Notes |
+|--------|--------|-------|
+| `ZCHF_CONTRACT_ADDRESS` | ✅ | `0xD4dD9e2F021BB459D5A5f6c24C12fE09c5D45553` (Optimism) |
+| `salt` | ✅ | Deterministic deployment |
+| `allowedTokens` | ✅ | Token whitelist |
+| `networks` | ✅ | Chain configs |
+| `uniswapRouterAddress` | ⚠️ | Per-chain config needed |
+| `USDC_CONTRACT_ADDRESS` | ⚠️ | Per-chain config needed |
+| `aave*` | ❌ | Phase 2 |
+| `rocketPool*` | ❌ | Phase 2 |
+
+### Security
+- [x] Pre-flight anti-scam screening via `core.safe.preflight`
+- [x] Blocklist/allowlist support (local + backend aggregator)
+- [x] Risky pattern detection (unlimited approvals, setApprovalForAll)
 
 
 ## 4337 security
@@ -370,3 +353,7 @@ For direct Safe execution without bundler/paymaster:
 - Provider is an RPC URL string; signer is a private key string (or passkey signer when available).
 - Replace placeholder ABIs/selectors in `core.safe.webauthn` and guard/module configuration with your contract ABIs.
 - ZCHF on Optimism: `0xD4dD9e2F021BB459D5A5f6c24C12fE09c5D45553` (18 decimals)
+- [ERC-4337 - discussions](https://chatgpt.com/c/8a462eda-72a2-406f-be7a-31f2fb5aac85)
+- [ERC-4337 - custom guardian](https://chatgpt.com/c/672b9681-9748-8010-babb-a9f3c6137c41)
+- [ERC-4337 - escrow transaction](https://chatgpt.com/share/6735bdcc-acc4-8010-a635-66a7bdf2f65a)
+- [ERC-4337 - permissionless.js](https://chatgpt.com/c/6735bf4f-667c-8010-b7e6-13034443dfd0)
