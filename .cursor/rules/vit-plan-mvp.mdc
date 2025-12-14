@@ -179,14 +179,14 @@ alwaysApply: true
 - [x] `feat(safe): enable/disable guard` — `core.safe.guard`
 - [x] `feat(payment): ETH & ERC20 helpers` — `core.safe.payment`
 - [x] `test(core): Vitest migration + smoke tests`
-- [ ] `feat(aa): implement Safe4337Pack wrapper (v4) for MVP flow` — create → swap → pay (ZCHF)
-- [ ] `feat(payment): add ZCHF helpers (Optimism defaults)` — addresses/config + transfer convenience
-- [ ] `feat(swap): add minimal swap-to-ZCHF flow (Optimism)` — router call + approvals
-- [ ] `feat(security): add pre-flight address/spender screening hook (OK/WARN/BLOCK)` — (Chainabuse/ScamSniffer/CryptoScamDB; supports approvals)
-- [ ] `feat(paymaster): Pimlico ERC-4337 sponsorship (sponsorUserOp) + PaymasterProvider interface` — enable future Stackup migration
+- [x] `feat(aa): implement Safe4337Pack wrapper (v4) for MVP flow` — `core.safe.4337` (create → swap → pay ZCHF)
+- [x] `feat(payment): add ZCHF helpers (Optimism defaults)` — `core.safe.4337` (ZCHF_OPTIMISM, parseZchf, formatZchf)
+- [x] `feat(swap): add minimal swap-to-ZCHF flow (Optimism)` — `core.safe.4337` (buildSwapToZchf)
+- [x] `feat(security): add pre-flight address/spender screening hook (OK/WARN/BLOCK)` — `core.safe.preflight`
+- [x] `feat(paymaster): Pimlico ERC-4337 sponsorship (sponsorUserOp) + PaymasterProvider interface` — `core.safe.paymaster`
 - [ ] `feat(modules): implement Module SDK integration for module management` — listing/install/uninstall/query
 - [ ] `feat(history): add Safe API wrapper for transaction history`
-- [ ] `docs(core): end-to-end examples (predict→deploy→execute)`
+- [x] `docs(core): end-to-end examples (predict→deploy→execute)` — `packages/vit-core/README.md`
 
 ##### Safe SDK (Protocol Kit v6 + Relay Kit v4) - Convention d'intégration
 - **Packages**:
