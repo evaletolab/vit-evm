@@ -1,0 +1,463 @@
+---
+alwaysApply: true
+---
+
+# ViT MVP Development Plan (ViT Isn't TWINT)
+
+**This document defines the comprehensive development plan for the ViT MVP - a decentralized wallet competing with TWINT using Safe Smart Accounts with ERC-7579 modules, biometric authentication (WebAuthn), and ZCHF payments on Optimism.**
+
+## 🏛️ Why Safe + ERC-7579 for MVP
+
+**Leveraging battle-tested infrastructure with self-hostable AA infrastructure:**
+
+✅ **Production Ready**: Safe is the most battle-tested smart account with billions secured  
+✅ **No Proprietary Backend**: Bundler/paymaster can be self-hosted (external initially, self-host later)  
+✅ **Modular Architecture**: ERC-7579 allows modules without touching core logic  
+✅ **Cost Effective**: Reduces development time and security risks  
+✅ **L2 Native**: Safe is deployed on all major L2s (Optimism, Arbitrum, Polygon)  
+✅ **Paymaster Support**: Built-in support for xCHF gas sponsorship via ERC-4337  
+✅ **Developer Ecosystem**: Extensive tooling and SDK support
+
+> **Architecture Decision**: MVP uses **Option B** — Safe Relay Kit (`Safe4337Pack`) with external bundler/paymaster for gasless transactions. Infra can be self-hosted post-MVP.
+
+## 🎯 MVP Objective
+
+**Create a secure, user-friendly digital wallet that rivals TWINT** with significantly lower fees (0.3% + 1ct vs TWINT's 1.8% + 20ct), no KYC requirements, and advanced security through decentralized identity management.
+
+## 📋 Related Documentation
+
+- **[ViT Biometric Authentication Guide](vit-mvp-biometrics.mdc)**: Complete WebAuthn + Safe implementation guide for fingerprint and Face ID authentication
+- **[ViT Business Protocol](vit-business-protocol.mdc)**: Enterprise payment infrastructure, merchant tools, and business solutions
+- **[ViT Future Plan](vit-plan-futur.mdc)**: Post-MVP features, advanced DeFi integrations, and long-term vision
+- **[ViT Instructions](vit-instructions.mdc)**: Development guidelines and coding standards
+
+## 🏗️ MVP Architecture - 3 Core Pillars (Safe + Relay Kit + ERC-7579)
+
+### 1. ⚡ Safe Smart Account + Relay Kit (ERC-4337) - **PRIORITY 1**
+**Modular smart contract wallets using Safe infrastructure with gasless transactions**
+
+**Core Features:**
+- Safe Smart Account with `Safe4337Pack` (Relay Kit v4)
+- Multi-owner recovery: `[passkeyOwner, recoveryEOA]` + optional social recovery module
+- Owner transfer mechanism via Safe ownership change
+- Gas sponsorship via external paymaster (Pimlico, self-hostable later)
+- Bundler for UserOperation submission
+
+**Key Components:**
+- Safe Account factory (existing)
+- Relay Kit `Safe4337Pack` for ERC-4337 flow
+- Safe passkey signer (`Safe.createPasskeySigner()`)
+- External bundler + paymaster (self-hostable post-MVP)
+- Safe 7579 Adapter (for optional ERC-7579 modules)
+
+### 2. 💳 Payment Processing - **PRIORITY 2**
+**Basic P2P payments and simple transaction processing**
+
+**Core Features:**
+- Basic P2P payments in **ZCHF (primary)** on **Optimism**
+- Optional: ETH/USDC support (secondary)
+- Simple payment validation
+- Transaction history tracking
+- Basic Safe transaction execution
+
+**Key Components:**
+- Basic Safe payment execution
+- Transaction validation via Safe guards
+- Simple payment interface
+- Transaction tracking
+
+**Note:** *For advanced payment processing, merchant infrastructure, business accounts, and enterprise features, see [ViT Business Protocol](vit-business-protocol.mdc).*
+
+### 2.5 🛡️ Anti-Scam Pre-Transaction Verification (Off-chain “Pre-flight”) - **PRIORITY 2.5**
+**Prevent obvious scams before signing/executing a Safe transaction or ERC-4337 UserOperation.**
+
+**Goal:**
+- Provide a simple **OK / WARN / BLOCK** verdict before any signature.
+- Protect users from common threats: phishing recipients, drainer spenders, malicious NFT operators, fake airdrops.
+
+**Where to hook in the flow (recommended):**
+- Right before `safe4337Pack.signSafeOperation(...)` / `safe4337Pack.executeTransaction(...)` (or equivalent “confirm” step in UI).
+
+**What to screen (minimum viable):**
+- `to` recipient (native transfers and contract calls)
+- **spender / operator** for risky calls:
+  - ERC20 `approve(spender, amount)`
+  - ERC721/1155 `setApprovalForAll(operator, approved)`
+  - `permit` / Permit2-style flows (spender/operator)
+
+**Data sources (pragmatic MVP):**
+- **Chainabuse (TRM Labs)**: community reports of scam addresses (API/terms apply).
+- **ScamSniffer**: Ethereum-focused detection (incl. drainer/approval patterns) with lookup API.
+- **CryptoScamDB / OpenPhish**: scam domains + associated indicators; usable as an additional signal.
+- **Etherscan Address Tags**: labels like “Scam / Phishing” (often best consumed as periodic export into a local list).
+
+**Integration pattern (best practice):**
+- Prefer a small **backend “risk screening” endpoint** that aggregates multiple sources and returns a single verdict.
+  - Keeps third-party API keys private
+  - Enables caching, timeouts, and consistent scoring
+  - Reduces client-side data leakage to multiple vendors
+- Add a **local signed blocklist snapshot** (daily/weekly update) as a fast fallback.
+
+**Scoring / decision (simple rules):**
+- **BLOCK**: any “malicious/scam/phishing” high-confidence match (or on local blocklist).
+- **WARN**: suspicious/low-confidence match, new report, unknown contract + high-risk approval (e.g. unlimited approval).
+- **OK**: no signals and no high-risk pattern detected.
+
+**UX (MVP):**
+- BLOCK: prevent signing by default (allow override only in “expert mode”).
+- WARN: show warning + friction (extra confirmation).
+
+### 3. 🔐 Biometric Authentication (WebAuthn) - **PRIORITY 3**
+**Fingerprint and Face ID authentication using Safe native passkey signer**
+
+**Core Features:**
+- WebAuthn passkey creation and management
+- Biometric authentication (fingerprint, Face ID, device PIN)
+- Cross-device passkey synchronization (iCloud, Google Password Manager)
+- Integration with Safe Smart Accounts via `Safe.createPasskeySigner()`
+- Backup recovery via secondary EOA owner
+
+**Key Components:**
+- WebAuthn API integration service (`core.passkey.ts`)
+- Safe native passkey signer (Protocol Kit)
+- Biometric authentication UI components
+- Passkey credential management
+- Multi-owner setup: `[passkeyOwner, recoveryEOA]`
+
+> **Decision**: No custom ERC-7579 WebAuthn Validator module. Safe's native passkey signer handles biometric auth, avoiding maintenance burden of custom P-256 verification.
+
+## 📱 MVP Use Cases (Priority Order)
+
+### ✅ **Phase 1: Safe + Relay Kit Implementation**
+1. **Safe Wallet Creation** - Deploy Safe Smart Account via `Safe4337Pack` with passkey signer
+2. **Multi-Owner Recovery Setup** - Configure `[passkeyOwner, recoveryEOA]` with threshold 1 (or 2 for higher security)
+3. **Owner Transfer via Safe** - Transfer Safe ownership using recoveryEOA or social recovery module
+4. **Gas Sponsorship** - gasless transactions via external paymaster (**Pimlico first**, provider swappable later)
+5. **Simple “Swap to ZCHF” (MVP)** - minimal swap flow to acquire ZCHF on Optimism
+6. **Send & Receive Payments (MVP)** - send ZCHF, display receive address/QR, and track incoming transfers
+7. **Status & Notifications (MVP)** - show tx status (pending/confirmed/failed) + in-app notification
+
+### ✅ **Phase 2: Payment Processing**
+8. **Transaction History** - View and track all Safe transactions
+9. **Payment Authorization** - Simple payment approval flow through Safe
+10. **Transaction Validation** - Secure transaction processing via Safe guards
+11. **Pre-flight Anti-Scam Check** - Screen `to` + `spender/operator` before signing/executing transactions
+
+### ✅ **Phase 3: Biometric Authentication (WebAuthn)**
+12. **Passkey Registration** - Create and register WebAuthn passkeys via `Safe.createPasskeySigner()`
+13. **Biometric Login** - Authenticate using fingerprint, Face ID, or device PIN
+14. **Safe Integration** - Use passkey signer for signing UserOperations
+15. **Cross-Device Sync** - Sync passkeys across devices via iCloud Keychain/Google Password Manager
+
+## 🏗️ Package-Specific MVP Tasks
+
+### **📦 vit-core (Core API Library)** 
+
+#### **Safe + ERC-7579 Integration (MVP Priority: HIGH)**
+- [x] `feat(safe): add Safe transaction batching and execution` — `core.safe.execute`
+- [x] `feat(safe): integrate Safe SDK for deterministic creation and management` — `core.safe.account`
+- [x] `feat(safe): add Safe ownership transfer helpers (add/remove owners, threshold)` — `core.safe.owner-transfer`
+- [x] `feat(modules): enable/disable modules` — `core.safe.modules`
+- [x] `feat(safe): enable/disable guard` — `core.safe.guard`
+- [x] `feat(payment): ETH & ERC20 helpers` — `core.safe.payment`
+- [x] `test(core): Vitest migration + smoke tests`
+- [ ] `feat(aa): implement Safe4337Pack wrapper (v4) for MVP flow` — create → swap → pay (ZCHF)
+- [ ] `feat(payment): add ZCHF helpers (Optimism defaults)` — addresses/config + transfer convenience
+- [ ] `feat(swap): add minimal swap-to-ZCHF flow (Optimism)` — router call + approvals
+- [ ] `feat(security): add pre-flight address/spender screening hook (OK/WARN/BLOCK)` — (Chainabuse/ScamSniffer/CryptoScamDB; supports approvals)
+- [ ] `feat(paymaster): Pimlico ERC-4337 sponsorship (sponsorUserOp) + PaymasterProvider interface` — enable future Stackup migration
+- [ ] `feat(modules): implement Module SDK integration for module management` — listing/install/uninstall/query
+- [ ] `feat(history): add Safe API wrapper for transaction history`
+- [ ] `docs(core): end-to-end examples (predict→deploy→execute)`
+
+##### Safe SDK (Protocol Kit v6 + Relay Kit v4) - Convention d'intégration
+- **Packages**:
+  - `@safe-global/protocol-kit@^6` — Safe account management
+  - `@safe-global/relay-kit@^4` — ERC-4337 flow (`Safe4337Pack`)
+  - `@safe-global/api-kit@^3` — Safe Transaction Service (history, optional)
+  - `@safe-global/types-kit` — Types partagés
+  - `@safe-global/safe-deployments` — Addresses des contrats Safe
+- **Passkey Signer (natif)**:
+  ```typescript
+  const passkeySigner = await Safe.createPasskeySigner(passkeyCredential);
+  ```
+- **Initialisation Safe4337Pack**:
+  ```typescript
+  import { Safe4337Pack } from '@safe-global/relay-kit';
+  
+  const safe4337Pack = await Safe4337Pack.init({
+    provider: RPC_URL,
+    signer: passkeySigner,
+    bundlerUrl: BUNDLER_URL,
+    paymasterOptions: {
+      isSponsored: true,
+      paymasterUrl: PAYMASTER_URL
+    },
+    options: {
+      owners: [passkeyPublicKey, recoveryEOA],
+      threshold: 1
+    }
+  });
+  ```
+- **UserOperations (ERC-4337)**:
+  ```typescript
+  const safeOp = await safe4337Pack.createTransaction({ transactions });
+  const signedOp = await safe4337Pack.signSafeOperation(safeOp);
+  const userOpHash = await safe4337Pack.executeTransaction({ executable: signedOp });
+  ```
+- **Migration notes**:
+  - `@safe-global/safe-ethers-lib` est obsolète (intégré dans Protocol Kit v6)
+  - Relay Kit v4: `paymasterUrl` obligatoire, `EthSafeOperation` → `BaseSafeOperation`
+
+##### ERC-7579 Compatibility Notes
+- Use the Safe 7579 Adapter so that Safe accounts can host ERC-7579 modules (Validators / Executors / Hooks / Guards).
+- **MVP requirement**: start with the Safe 7579 Adapter enabled from day 1 (not optional), to avoid account migration later when adding guards/modules.
+- Module lifecycle must follow: deploy module → enable as Safe module → (optionally) register through adapter if required by tutorial/spec → interact via `execTransactionFromModule` or adapter’s entry points.
+- Follow the official 7579 tutorial patterns for function selectors, registration, and permissions.
+
+##### Module Installation (Safe)
+- Use Safe’s “Add a module” flow: create Safe tx to enable the module address; ensure module init calldata (if any) is properly encoded.
+- Document module enable/disable effects (required permissions, any fallback handler/hook changes).
+
+##### Paymaster (ERC-4337-compatible path)
+- Prefer a paymaster flow that’s compatible with ERC-7579-based Safes. If using Safe’s Permissionless/4337 pack, validate adapter compatibility first.
+- Keep gas sponsorship optional; guard against module init/execution side effects under sponsored gas.
+
+###### Notes (MVP implementation status)
+- vit-core provides:
+  - `core.safe.account`: deterministic creation + info
+  - `core.safe.modules`: enable/disable modules
+  - `core.safe.guard`: enable/disable guard
+  - `core.safe.owner-transfer`: add/remove owners, threshold changes
+  - `core.safe.payment`: ETH/ERC20 payments via Safe
+  - `core.safe.execute`: generic execution (single/batch)
+  - `core.safe.webauthn`: bridge passkeys ↔ ERC-7579 validator (ABI placeholders)
+- Replace placeholder ABIs/selectors in WebAuthn/guards with real module contracts during integration.
+
+#### **Payment Processing (MVP Priority: HIGH)**
+- [ ] `feat(payment): implement payment flows using Safe execution`
+- [ ] `feat(payment): add transaction validation via Safe guards`
+- [ ] `feat(payment): create P2P payment system with Safe`
+- [ ] `feat(payment): implement transaction history tracking for Safe`
+
+#### File Naming Convention (vit-core)
+- **ERC-7579/Safe integration**: files must follow `core.safe.<domain>.ts`
+  - Examples: `core.safe.modules.ts`, `core.safe.guard.ts`, `core.safe.paymaster.ts`, `core.safe.owner-transfer.ts`, `core.safe.webauthn.ts`
+
+*For advanced payment processing (escrow, authorization, merchant APIs), see [ViT Business Protocol](vit-business-protocol.mdc).*
+
+#### **Biometric Authentication (MVP Priority: MEDIUM)**
+- [ ] `feat(webauthn): integrate WebAuthn API for passkey management`
+- [ ] `feat(webauthn): implement passkey credential creation and storage`
+- [ ] `feat(webauthn): add biometric signature validation for Safe transactions`
+- [ ] `feat(webauthn): create cross-platform passkey synchronization support`
+- [ ] `feat(safe): integrate WebAuthn passkeys with Safe SDK as primary authentication`
+- **Biometric authentication (WebAuthn)**: use a single entry file `core.passkey.ts`
+
+#### Biometric Passkey ↔ Safe Module Integration (vit-core)
+- **`core.passkey.ts`**: WebAuthn API wrapper for passkey registration and authentication.
+  - Returns strictly typed structures (e.g., `PasskeyCredential`, `WebAuthnSignature`).
+  - Never handles Safe or on-chain concerns.
+- **MVP note**: no custom ERC-7579 WebAuthn validator module. Passkey signing uses Safe’s native passkey signer (`Safe.createPasskeySigner()`), and the 2.5 anti-scam preflight runs before signing/execution.
+
+---
+
+### **🔗 vit-safe-modules (ERC-7579 Modules)**
+
+Note: rename `packages/vit-erc4337-contracts` → `packages/vit-safe-modules` in the repository structure; update build/deploy paths accordingly.
+
+#### **Custom ERC-7579 Modules (MVP Priority: HIGH)**
+- Payment Guard
+  - [ ] Basic spending policies (limits/whitelists)
+  - [ ] Tests >80%
+  - [ ] Deploy + ABI for vit-core
+
+#### **Custom ERC-7579 Modules (Phase 2)** 
+- One-Time Recovery Codes (Validator)
+  - [ ] Contract: recovery code validation + usage tracking
+  - [ ] Owner rotation via Safe (emit events)
+  - [ ] Limits: time-lock, usage caps
+  - [ ] Tests: >80% coverage (unit/integration)
+  - [ ] Deploy scripts + addresses (testnets)
+  - [ ] ABI publication for vit-core
+- Payment Guard
+  - [ ] Basic spending policies (limits/whitelists)
+  - [ ] Tests >80%
+  - [ ] Deploy + ABI for vit-core
+
+#### **Payment Modules (MVP Priority: HIGH)**
+- [ ] Implement basic VitPayment Guard module
+- [ ] Add simple payment validation logic
+- [ ] Provide ABI + examples in vit-core README
+
+*For advanced payment modules (complex authorization, escrow, business accounts), see [ViT Business Protocol](vit-business-protocol.mdc).*
+
+#### **WebAuthn Biometric Modules (MVP Priority: MEDIUM)**
+- [ ] Implement ERC-7579 WebAuthn Validator (RIP-7212)
+- [ ] Credential registration/management + challenge validation
+- [ ] ABI + integration samples for vit-core
+
+#### **Security & Testing (MVP Priority: HIGH)**
+- [ ] Reentrancy protection, access control
+- [ ] >80% coverage
+- [ ] Gas optimization
+
+#### **Deployment (MVP Priority: MEDIUM)**
+- [ ] Deploy scripts (Hardhat/Foundry)
+- [ ] L2 testnets (Optimism/Arbitrum) config
+- [ ] Document module interfaces and usage
+
+---
+
+### **🎨 vit-pay-app (Frontend Angular)**
+
+#### **Core Infrastructure (MVP Priority: HIGH)**
+- [ ] Setup Angular with Safe SDK integration
+- [ ] Safe connection service (provider + signer mgmt)
+- [ ] Global error handling for Safe interactions
+- [ ] Responsive mobile-first design
+
+#### **Safe Account Management (MVP Priority: HIGH)**
+- [ ] Wallet creation wizard (deterministic option)
+- [ ] Module interfaces (enable/disable, install)
+- [ ] Owner transfer UI (recovery flow)
+- [ ] Balance display
+- [ ] Recovery UI for modules (codes, webauthn)
+
+#### **Payment Interface (MVP Priority: HIGH)**
+- [ ] Basic payment UI (**ZCHF primary**; optional ETH/USDC)
+- [ ] Simple “swap to ZCHF” flow (MVP)
+- [ ] Confirmation flow (review tx details)
+- [ ] Pre-flight anti-scam warnings (OK/WARN/BLOCK) for recipient + approvals (spender/operator)
+- [ ] Receive payment UI (Safe address + QR) + incoming detection
+- [ ] Status + in-app notifications (tx pending/confirmed/failed)
+- [ ] Transaction history view
+- [ ] Guard activation/config UI
+
+*For advanced payment interfaces (merchant dashboard, business accounts, invoicing), see [ViT Business Protocol](vit-business-protocol.mdc).*
+
+#### **Biometric Authentication Interface (MVP Priority: MEDIUM)**
+- [ ] WebAuthn service (passkey register/auth)
+- [ ] Registration flow (fingerprint/Face ID)
+- [ ] Authentication UI
+- [ ] Integration with creation wizard
+- [ ] Passkey management UI
+- [ ] Fallback recovery methods
+
+#### **Testing & Quality (MVP Priority: MEDIUM)**
+- [ ] E2E Safe wallet user flows
+- [ ] Component unit tests (Safe interactions)
+
+---
+
+### **🖥️ vit-backend (Backend API - Optional for MVP)**
+
+#### **Core Infrastructure (MVP Priority: MEDIUM)**
+- [ ] `feat(server): setup Express.js server with TypeScript`
+- [ ] `feat(server): implement basic authentication middleware`
+- [ ] `feat(server): add rate limiting and security headers`
+- [ ] `feat(server): setup basic database connection`
+
+#### **Payment Services (MVP Priority: MEDIUM)**
+- [ ] `feat(payment): create basic payment processing endpoints`
+- [ ] `feat(payment): implement transaction logging`
+- [ ] `feat(payment): add basic payment analytics`
+- [ ] `feat(security): add risk screening endpoint (aggregate Chainabuse/ScamSniffer/CryptoScamDB + cache)`
+
+#### **Account Services (MVP Priority: MEDIUM)**
+- [ ] `feat(account): implement account management APIs`
+- [ ] `feat(account): add recovery code management endpoints`
+- [ ] `feat(account): create transaction history APIs`
+
+---
+
+## 🔧 MVP Technical Requirements
+
+### **Security Requirements**
+- Secure Safe Smart Account with ERC-7579 modules
+- One-time recovery codes security via custom validator module
+- Input validation and sanitization in modules
+- Reentrancy protection in custom modules
+- Safe's proven security architecture
+
+### **Performance Requirements**
+- Gas-optimized ERC-7579 modules
+- Mobile-responsive design
+- Fast Safe wallet creation (<10s)
+- Quick transaction confirmation via Safe
+
+### **Integration Requirements**
+- Safe SDK integration
+- WalletConnect support via Safe
+- Optimism/Arbitrum testnet compatibility (Safe deployed)
+- Basic payment token support (xCHF, USDC, ETH) via Safe
+- Module SDK for ERC-7579 module management
+
+### **Testing Requirements**
+- >70% code coverage for custom modules
+- Basic end-to-end Safe wallet flow testing
+- ERC-7579 module testing
+- Cross-browser compatibility testing
+
+## 📋 MVP Development Phases
+
+### **Phase 1: Safe + ERC-7579 Implementation (Weeks 1-6)**
+- Setup Safe SDK integration
+- Develop One-Time Recovery Codes ERC-7579 module
+- Create Safe wallet creation interface
+- Implement owner transfer via Safe modules
+- Integrate Safe paymaster for xCHF
+
+### **Phase 2: Payment Processing (Weeks 7-10)**
+- Build basic Safe-based payment flows
+- Implement simple payment validation via Safe guards
+- Create basic Safe transaction interface
+- Add basic Safe transaction history tracking
+- Test complete basic payment workflow
+
+*For advanced payment processing phases, see [ViT Business Protocol](vit-business-protocol.mdc).*
+
+### **Phase 3: Biometric Authentication (Weeks 11-13)**
+- Implement WebAuthn API integration
+- Develop WebAuthn Validator ERC-7579 module
+- Create biometric authentication interface
+- Integrate passkeys with Safe wallet creation
+- Test biometric authentication flow with Safe
+
+### **Phase 4: Integration & Testing (Weeks 14-15)**
+- Integrate all Safe-based MVP components
+- Complete ERC-7579 module testing suite
+- Basic security audit of custom modules
+- Deploy modules on L2 testnets
+- Test complete biometric + payment workflow
+
+## 🚀 MVP Success Criteria
+
+### **Technical Metrics**
+- [ ] Safe wallet creation with ERC-7579 modules success rate >95%
+- [ ] One-Time Recovery Codes module working and tested
+- [ ] Safe owner transfer via modules operational
+- [ ] Basic payment transactions via Safe successful
+- [ ] WebAuthn passkey registration and authentication working
+- [ ] Biometric authentication with Safe transactions operational
+- [ ] Custom modules deployed on L2 testnets
+
+### **User Experience Metrics**
+- [ ] Safe wallet creation completion rate >80%
+- [ ] Module-based recovery process success rate >90%
+- [ ] Safe payment interface usability >80%
+- [ ] Biometric authentication success rate >95%
+- [ ] Cross-device passkey sync working (iOS/Android)
+- [ ] Mobile responsiveness working
+
+### **Business Metrics**
+- [ ] MVP demonstration to 10+ potential users
+- [ ] Safe-based payment flow working end-to-end
+- [ ] ERC-7579 recovery mechanism validated
+- [ ] Biometric authentication flow validated by users
+- [ ] Testnet transaction volume >100 transactions
+- [ ] 100% on-chain operation (no external APIs)
+
+---
+
+**This MVP plan leverages Safe Smart Accounts + ERC-7579 modules for a 100% on-chain, secure, and production-ready wallet foundation while focusing on the core one-time recovery codes, payment processing, and biometric authentication functionality needed to validate the ViT wallet concept.**
