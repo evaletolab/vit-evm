@@ -3,7 +3,7 @@
     <p>
       Your account setup is in progress. This operation gas is sponsored by {{ gasSponsor?.name }}
       <a [href]="gasSponsor?.url" target="_blank" rel="noopener noreferrer">
-        <img [src]="gasSponsor?.icons[0]" alt="logo" style="width: 25px; height: 25px; vertical-align: middle;" />
+        <img [src]="gasSponsor?.icons?.[0]" alt="logo" style="width: 25px; height: 25px; vertical-align: middle;" />
       </a>
       <br /><br />
       Track your operation on

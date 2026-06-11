@@ -1,1 +1,38 @@
-<p>page-sent works!</p>
+<section class="sent-page">
+  <header class="topbar">
+    <a class="back" [routerLink]="['/']" aria-label="Retour">
+      <span class="material-symbols-outlined">arrow_back</span>
+    </a>
+    <h1>Recevoir</h1>
+  </header>
+
+  <p *ngIf="error" class="error">{{ error }}</p>
+
+  <div class="qr-card" *ngIf="!loading && !error && address">
+    <div class="qr-placeholder">
+      <canvas #qrCanvas width="220" height="220"></canvas>
+    </div>
+    <p class="address-label">Adresse Safe</p>
+    <code class="address">{{ shortAddr }}</code>
+    <button class="cta" (click)="copy()">
+      <span class="material-symbols-outlined">{{ copied ? 'check' : 'content_copy' }}</span>
+      {{ copied ? 'Copié' : 'Copier' }}
+    </button>
+  </div>
+
+  <div class="amount-card" *ngIf="!loading && !error && address">
+    <label class="amount-input">
+      <span class="label-text">Montant demandé (optionnel)</span>
+      <div class="input-row">
+        <input
+          type="text"
+          inputmode="decimal"
+          placeholder="0.00"
+          [(ngModel)]="amount"
+          (ngModelChange)="onAmountChange()" />
+        <span class="unit">xCHF</span>
+      </div>
+    </label>
+    <span class="vit-chip vit-chip--success">Frais sponsorisés · Sepolia</span>
+  </div>
+</section>

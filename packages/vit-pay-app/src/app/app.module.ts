@@ -1,15 +1,16 @@
 import { CUSTOM_ELEMENTS_SCHEMA, NgModule } from '@angular/core';
 import { BrowserModule } from '@angular/platform-browser';
+import { FormsModule } from '@angular/forms';
 
 import { AppRoutingModule } from './app-routing.module';
 import { AppComponent } from './app.component';
 
-import { CodeInputModule } from 'angular-code-input';
-import { VitPinComponent } from './vit-pin/vit-pin.component';
+import { PageHomeComponent } from './pages/page-home/page-home.component';
 import { PageAccountComponent } from './pages/page-account/page-account.component';
 import { PageSentComponent } from './pages/page-sent/page-sent.component';
 import { PageTransactionsComponent } from './pages/page-transactions/page-transactions.component';
 import { PageBuyComponent } from './pages/page-buy/page-buy.component';
+import { PageWalletComponent } from './pages/page-wallet/page-wallet.component';
 import { VitMintComponent } from './vit-mint/vit-mint.component';
 import { VitPasskeyComponent } from './vit-passkey/vit-passkey.component';
 
@@ -17,22 +18,19 @@ import { VitPasskeyComponent } from './vit-passkey/vit-passkey.component';
 @NgModule({
   declarations: [
     AppComponent,
-    VitPinComponent,
+    PageHomeComponent,
     PageAccountComponent,
     PageSentComponent,
     PageTransactionsComponent,
     PageBuyComponent,
+    PageWalletComponent,
     VitMintComponent,
     VitPasskeyComponent
   ],
   imports: [
     BrowserModule,
+    FormsModule,
     AppRoutingModule,
-    CodeInputModule.forRoot({
-      codeLength: 6,
-      isCharsCode: true,
-      code: 'abcdef'
-    }),    
   ],
   providers: [],
   bootstrap: [AppComponent],

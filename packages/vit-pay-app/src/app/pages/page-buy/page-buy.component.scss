@@ -1,0 +1,203 @@
+:host { display: block; }
+
+.buy-page {
+  min-height: 100vh;
+  background: var(--vit-color-background);
+  color: var(--vit-color-text);
+  padding: 1.25rem;
+  box-sizing: border-box;
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+
+  .topbar {
+    display: flex;
+    align-items: center;
+    gap: 0.85rem;
+
+    .back {
+      width: 2.5rem;
+      height: 2.5rem;
+      border-radius: 50%;
+      background: var(--vit-color-surface);
+      color: var(--vit-color-on-surface);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      text-decoration: none;
+      box-shadow: var(--vit-shadow-card);
+    }
+    h1 { margin: 0; font-size: 1.5rem; }
+  }
+
+  .scanner-card, .video-card, .confirm-card, .done-card {
+    background: var(--vit-color-surface);
+    color: var(--vit-color-on-surface);
+    border-radius: var(--vit-radius-card);
+    padding: 1.5rem 1.25rem;
+    box-shadow: var(--vit-shadow-card);
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+  }
+
+  .scanner-card {
+    background: var(--vit-color-primary);
+    color: #fff;
+    align-items: center;
+
+    .scan-icon { font-size: 5rem; }
+    p { margin: 0; font-size: 1.05rem; text-align: center; }
+    .hint-text { font-size: 0.8rem; opacity: 0.85; }
+  }
+
+  .cta {
+    background: var(--vit-color-secondary);
+    color: var(--vit-color-text);
+    border: none;
+    padding: 0.75rem 1.25rem;
+    border-radius: var(--vit-radius-chip);
+    font: inherit;
+    font-weight: 700;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+    transition: transform 100ms ease, opacity 100ms ease;
+
+    &:active { transform: scale(0.97); }
+    &:disabled { opacity: 0.5; cursor: not-allowed; }
+    .material-symbols-outlined { font-size: 1.25rem; }
+  }
+
+  .secondary {
+    background: transparent;
+    color: inherit;
+    border: 2px solid currentColor;
+    padding: 0.55rem 1rem;
+    border-radius: var(--vit-radius-chip);
+    font: inherit;
+    font-weight: 600;
+    cursor: pointer;
+    opacity: 0.9;
+
+    &:disabled { opacity: 0.4; cursor: not-allowed; }
+  }
+
+  .video-card {
+    padding: 0.5rem;
+    position: relative;
+    overflow: hidden;
+    align-items: stretch;
+
+    video {
+      width: 100%;
+      aspect-ratio: 1 / 1;
+      object-fit: cover;
+      border-radius: var(--vit-radius-card);
+      background: #000;
+    }
+    .scan-overlay {
+      position: absolute;
+      inset: 0.5rem;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      pointer-events: none;
+
+      .scan-frame {
+        width: 65%;
+        aspect-ratio: 1;
+        border: 3px solid var(--vit-color-secondary);
+        border-radius: 1rem;
+        box-shadow: 0 0 0 9999px rgba(0, 0, 0, 0.35);
+        animation: pulse 1.6s ease-in-out infinite;
+      }
+    }
+    .cancel {
+      align-self: center;
+      margin-top: 0.25rem;
+    }
+  }
+
+  @keyframes pulse {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.55; }
+  }
+
+  .confirm-card {
+    h2 { margin: 0; font-size: 1.2rem; color: var(--vit-color-secondary); }
+
+    label {
+      display: flex;
+      flex-direction: column;
+      gap: 0.3rem;
+
+      .label-text {
+        font-size: 0.7rem;
+        text-transform: uppercase;
+        letter-spacing: 0.08em;
+        color: var(--vit-color-on-surface-muted);
+        font-weight: 600;
+      }
+      input {
+        font: inherit;
+        padding: 0.65rem 0.85rem;
+        border: 1px solid rgba(255, 255, 255, 0.12);
+        background: rgba(255, 255, 255, 0.06);
+        color: var(--vit-color-on-surface);
+        border-radius: 0.75rem;
+        font-family: ui-monospace, monospace;
+        font-size: 0.95rem;
+
+        &:focus { outline: none; border-color: var(--vit-color-primary); }
+      }
+    }
+
+    .error-msg {
+      background: var(--vit-color-danger);
+      color: #4a0d0d;
+      padding: 0.6rem 0.85rem;
+      border-radius: 0.65rem;
+      margin: 0;
+      font-weight: 600;
+      font-size: 0.85rem;
+    }
+
+    .actions {
+      display: flex;
+      gap: 0.75rem;
+      justify-content: flex-end;
+    }
+  }
+
+  .done-card {
+    align-items: center;
+    text-align: center;
+    background: linear-gradient(160deg, #2B2B2B 0%, #1c3a1f 100%);
+
+    .check {
+      font-size: 4rem;
+      color: var(--vit-color-success);
+      font-variation-settings: 'FILL' 1;
+    }
+    h2 { margin: 0; font-size: 1.3rem; }
+    code {
+      font-family: ui-monospace, monospace;
+      font-size: 0.75rem;
+      background: rgba(0, 0, 0, 0.3);
+      padding: 0.35rem 0.5rem;
+      border-radius: 0.4rem;
+      word-break: break-all;
+    }
+  }
+
+  .hint {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    font-size: 0.85rem;
+    color: rgba(0, 0, 0, 0.55);
+    margin-top: auto;
+  }
+}

@@ -1,14 +1,25 @@
 /* You can add global styles to this file, and also import other style files */
 :root{
-    /** From FIGMA to COLORS ***/    
-    --vit-color-text: rgba(0, 0, 0, 0.2);
-    --vit-color-background: #fdfdfd;
-    --vit-color-neutral: #a4a4a4;
-    --vit-color-primary: #ffa27a;
-    --vit-color-secondary: #f7c768;
-    --vit-color-success: #28cd41;
-    --vit-color-danger: #ff453a;
-    --vit-color-warning: #ff9500;
+    /** Playful operations palette ***/
+    --vit-color-text: #1D1D1D;
+    --vit-color-background: #C6D1C0;       /* sage green */
+    --vit-color-surface: #2B2B2B;          /* card charcoal */
+    --vit-color-surface-alt: #1D1D1D;      /* deeper charcoal */
+    --vit-color-neutral: #2B2B2B;
+    --vit-color-primary: #F25C54;          /* coral */
+    --vit-color-secondary: #F9E58C;        /* pale yellow */
+    --vit-color-success: #9FE6A0;
+    --vit-color-danger: #FF6B6B;
+    --vit-color-warning: #FFD966;
+    --vit-color-accent-blue: #5A7BEF;
+    --vit-color-accent-orange: #F7941D;
+    --vit-color-accent-pink: #FAD6DC;
+    --vit-color-on-surface: #FFFFFF;
+    --vit-color-on-surface-muted: #CCCCCC;
+
+    --vit-radius-card: 1.25rem;
+    --vit-radius-chip: 999px;
+    --vit-shadow-card: 0 6px 20px rgba(0, 0, 0, 0.12);
 
     --vit-gradient-primary: linear-gradient(62deg, var(--vit-color-primary) 25%, var(--vit-color-secondary) 100%);
     
@@ -89,9 +100,40 @@
 
 body{
   margin: 0;
-  font-family: "Jersey 25", sans-serif;
-
+  font-family: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  font-feature-settings: "cv02", "cv03", "cv04", "cv11";
+  -webkit-font-smoothing: antialiased;
+  background-color: var(--vit-color-background);
+  color: var(--vit-color-text);
 }
+
+h1, h2, h3 {
+  font-weight: 700;
+  letter-spacing: -0.01em;
+}
+
+.vit-card {
+  background-color: var(--vit-color-surface);
+  color: var(--vit-color-on-surface);
+  border-radius: var(--vit-radius-card);
+  padding: 1rem;
+  box-shadow: var(--vit-shadow-card);
+}
+
+.vit-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  padding: 0.25rem 0.65rem;
+  border-radius: var(--vit-radius-chip);
+  font-size: 0.8rem;
+  font-weight: 600;
+  background: var(--vit-color-secondary);
+  color: var(--vit-color-text);
+}
+.vit-chip--success { background: var(--vit-color-success); color: #103616; }
+.vit-chip--warning { background: var(--vit-color-warning); color: #4a3a00; }
+.vit-chip--danger  { background: var(--vit-color-danger);  color: #4a0d0d; }
 [hidden] {
   display: none !important;
 }

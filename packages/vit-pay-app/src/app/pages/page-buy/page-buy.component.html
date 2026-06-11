@@ -1,1 +1,61 @@
-<p>page-buy works!</p>
+<section class="buy-page">
+  <header class="topbar">
+    <a class="back" [routerLink]="['/']" aria-label="Retour">
+      <span class="material-symbols-outlined">arrow_back</span>
+    </a>
+    <h1>Payer</h1>
+  </header>
+
+  <!-- idle : prompt scan or manual -->
+  <div class="scanner-card" *ngIf="step === 'idle'">
+    <span class="material-symbols-outlined scan-icon">qr_code_scanner</span>
+    <p>Scannez un QR pour payer en xCHF</p>
+    <button class="cta" (click)="startScan()">
+      <span class="material-symbols-outlined">photo_camera</span>
+      Activer la caméra
+    </button>
+    <button class="secondary" (click)="manualEntry()">Saisir manuellement</button>
+  </div>
+
+  <!-- scanning : camera live -->
+  <div class="video-card" *ngIf="step === 'scanning'">
+    <video #video playsinline muted></video>
+    <div class="scan-overlay"><div class="scan-frame"></div></div>
+    <button class="cta cancel" (click)="reset()">Annuler</button>
+  </div>
+
+  <!-- confirm : review tx -->
+  <div class="confirm-card" *ngIf="step === 'confirm' || step === 'sending' || step === 'error'">
+    <h2>Confirmer le paiement</h2>
+    <label>
+      <span class="label-text">Destinataire</span>
+      <input type="text" [(ngModel)]="to" placeholder="0x…" [disabled]="step === 'sending'" />
+    </label>
+    <label>
+      <span class="label-text">Montant (xCHF)</span>
+      <input type="text" inputmode="decimal" [(ngModel)]="amount" placeholder="0.00" [disabled]="step === 'sending'" />
+    </label>
+    <p class="error-msg" *ngIf="errorMessage">{{ errorMessage }}</p>
+    <div class="actions">
+      <button class="secondary" (click)="reset()" [disabled]="step === 'sending'">Annuler</button>
+      <button class="cta" (click)="send()" [disabled]="step === 'sending' || !to || !amount">
+        {{ step === 'sending' ? 'Envoi…' : 'Envoyer' }}
+      </button>
+    </div>
+  </div>
+
+  <!-- done -->
+  <div class="done-card" *ngIf="step === 'done'">
+    <span class="material-symbols-outlined check">check_circle</span>
+    <h2>Paiement envoyé</h2>
+    <p *ngIf="lastResult?.transactionHash">
+      Tx : <code>{{ lastResult?.transactionHash }}</code>
+    </p>
+    <button class="cta" (click)="reset()">Nouveau paiement</button>
+  </div>
+
+  <div class="hint">
+    <span class="vit-chip">xCHF · Sepolia</span>
+    <span>Frais sponsorisés</span>
+  </div>
+</section>

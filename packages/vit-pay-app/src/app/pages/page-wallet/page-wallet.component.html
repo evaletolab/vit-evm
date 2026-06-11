@@ -1,0 +1,286 @@
+<section class="wallet-page">
+  <header>
+    <h1>ViT Wallet</h1>
+    <p class="subtitle">Safe Account + passkey + ZCHF sponsorisé</p>
+  </header>
+
+  <p *ngIf="error" class="error" role="alert">{{ error }}</p>
+
+  <!-- F1 : créer un wallet -->
+  <article *ngIf="view === 'no-wallet'" class="card">
+    <h2>Créer mon wallet</h2>
+    <p>
+      Un Safe Account est dérivé d'une passkey de cet appareil (FaceID / TouchID /
+      Windows Hello). Aucune seed phrase n'est créée.
+    </p>
+    <button (click)="createWallet()" [disabled]="busy">
+      {{ busy ? 'Création…' : 'Créer mon wallet' }}
+    </button>
+  </article>
+
+  <article *ngIf="view === 'loading'" class="card">
+    <p>Chargement du wallet…</p>
+  </article>
+
+  <ng-container *ngIf="view === 'ready' && state as s">
+    <div class="card-deck" #deck>
+    <!-- Account summary -->
+    <article #deckCard class="card card--account">
+      <header class="card-head">
+        <div class="card-head__badge"><span class="material-symbols-outlined">account_balance_wallet</span></div>
+        <div>
+          <p class="card-head__eyebrow">Compte</p>
+          <h2>Mon Safe</h2>
+        </div>
+        <span class="vit-chip vit-chip--success">{{ s.deployed ? 'Déployé' : 'Pending' }}</span>
+      </header>
+      <dl>
+        <dt>Adresse</dt>
+        <dd><code>{{ s.accountAddress }}</code></dd>
+        <dt>Réseau</dt>
+        <dd>{{ s.chainId }}</dd>
+        <dt>Déployé</dt>
+        <dd>{{ s.deployed ? 'Oui' : 'Pas encore (sera fait au 1er paiement)' }}</dd>
+        <dt>Owners</dt>
+        <dd>
+          <ul>
+            <li *ngFor="let o of s.owners"><code>{{ shortAddress(o) }}</code></li>
+          </ul>
+        </dd>
+        <dt>Solde ZCHF</dt>
+        <dd>{{ balance }} <button (click)="refreshBalance()" [disabled]="busy">↻</button></dd>
+      </dl>
+    </article>
+
+    <!-- F2 : recevoir des ZCHF de test (MockZCHF) -->
+    <article #deckCard class="card card--receive">
+      <header class="card-head">
+        <div class="card-head__badge card-head__badge--secondary"><span class="material-symbols-outlined">download</span></div>
+        <div>
+          <p class="card-head__eyebrow">Recevoir</p>
+          <h2>ZCHF de test</h2>
+        </div>
+      </header>
+      <p>
+        Mint sur le contrat <code>MockZCHF</code> déployé sur OP Sepolia. Disponible
+        uniquement si <code>zchfTokenAddress</code> pointe sur un mock avec
+        <code>mint()</code> ouvert (pas le ZCHF mainnet).
+      </p>
+      <label>
+        Montant
+        <input
+          type="text"
+          [(ngModel)]="faucetAmount"
+          placeholder="100"
+          [disabled]="busy"
+        />
+      </label>
+      <button (click)="mintTestZchf()" [disabled]="busy">
+        {{ busy ? 'Mint…' : 'Recevoir' }}
+      </button>
+      <div *ngIf="lastFaucet" class="result">
+        <p *ngIf="lastFaucet.success">
+          ✅ Mint inclus : <code>{{ lastFaucet.transactionHash }}</code>
+        </p>
+        <p *ngIf="!lastFaucet.success">❌ {{ lastFaucet.error }}</p>
+        <details *ngIf="lastFaucet.debug" class="debug">
+          <summary>Debug UserOperation</summary>
+          <button (click)="copyDebug(lastFaucet.debug!)">Copier JSON</button>
+          <pre><code>{{ formatDebug(lastFaucet.debug!) }}</code></pre>
+        </details>
+      </div>
+    </article>
+
+    <!-- F3 : envoyer un paiement sponsorisé -->
+    <article #deckCard class="card card--send">
+      <header class="card-head">
+        <div class="card-head__badge card-head__badge--coral"><span class="material-symbols-outlined">send</span></div>
+        <div>
+          <p class="card-head__eyebrow">Paiement</p>
+          <h2>Envoyer ZCHF</h2>
+        </div>
+      </header>
+      <p *ngIf="dailySpending.limit !== undefined" class="daily-limit">
+        Limite journalière : <strong>{{ formatWei(dailySpending.spentToday) }}</strong>
+        / {{ formatWei(dailySpending.limit) }} ZCHF dépensé
+        <span *ngIf="dailySpending.remaining !== undefined">
+          (reste {{ formatWei(dailySpending.remaining) }} ZCHF)
+        </span>
+      </p>
+      <label>
+        Destinataire
+        <input
+          type="text"
+          [(ngModel)]="paymentTo"
+          placeholder="0x…"
+          [disabled]="busy"
+        />
+      </label>
+      <label>
+        Montant
+        <input
+          type="text"
+          [(ngModel)]="paymentAmount"
+          placeholder="0.01"
+          [disabled]="busy"
+        />
+      </label>
+      <button (click)="sendPayment()" [disabled]="busy">
+        {{ busy ? 'Envoi…' : 'Envoyer (sponsorisé)' }}
+      </button>
+      <div *ngIf="lastPayment" class="result">
+        <p *ngIf="lastPayment.preflight" class="warn">
+          ⚠️ {{ lastPayment.preflight.summary }}
+        </p>
+        <p *ngIf="lastPayment.success">
+          ✅ Transaction incluse : <code>{{ lastPayment.transactionHash }}</code>
+        </p>
+        <p *ngIf="!lastPayment.success">❌ {{ lastPayment.error }}</p>
+        <details *ngIf="lastPayment.debug" class="debug">
+          <summary>Debug UserOperation</summary>
+          <button (click)="copyDebug(lastPayment.debug!)">Copier JSON</button>
+          <pre><code>{{ formatDebug(lastPayment.debug!) }}</code></pre>
+        </details>
+      </div>
+    </article>
+
+    <!-- F4 : ajouter un device -->
+    <article #deckCard class="card card--devices">
+      <header class="card-head">
+        <div class="card-head__badge card-head__badge--blue"><span class="material-symbols-outlined">devices</span></div>
+        <div>
+          <p class="card-head__eyebrow">Multi-device</p>
+          <h2>Ajouter un appareil</h2>
+        </div>
+      </header>
+
+      <h3>Option A — passkey locale</h3>
+      <p>
+        Crée une passkey sur <strong>cet appareil</strong> et l'ajoute comme owner.
+        Usage : appareils multiples partageant le même device propriétaire (rare).
+      </p>
+      <button (click)="addDevice()" [disabled]="busy">
+        {{ busy ? 'Ajout…' : 'Ajouter une passkey locale' }}
+      </button>
+
+      <h3>Option B — par address (device distant)</h3>
+      <p>
+        Sur l'appareil cible (qui n'a pas encore de wallet), créer une passkey et
+        copier l'<strong>owner address</strong> dérivée. Coller ici, puis signer
+        depuis cet appareil-ci pour autoriser ce nouvel owner.
+      </p>
+      <label>
+        Owner address du nouvel appareil
+        <input
+          type="text"
+          [(ngModel)]="externalOwnerAddress"
+          placeholder="0x…"
+          [disabled]="busy"
+        />
+      </label>
+      <button (click)="addOwnerByAddress()" [disabled]="busy">
+        {{ busy ? 'Ajout…' : 'Autoriser cette address' }}
+      </button>
+
+      <div *ngIf="addDeviceResult" class="result">
+        <p *ngIf="addDeviceResult.op.success">
+          ✅ Owner ajouté : <code>{{ addDeviceResult.address }}</code>
+        </p>
+        <p *ngIf="!addDeviceResult.op.success">❌ {{ addDeviceResult.op.error }}</p>
+        <details *ngIf="addDeviceResult.op.debug" class="debug">
+          <summary>Debug UserOperation</summary>
+          <button (click)="copyDebug(addDeviceResult.op.debug!)">Copier JSON</button>
+          <pre><code>{{ formatDebug(addDeviceResult.op.debug!) }}</code></pre>
+        </details>
+      </div>
+    </article>
+
+    <!-- F5 / F6 : recovery -->
+    <article #deckCard class="card card--recovery">
+      <header class="card-head">
+        <div class="card-head__badge card-head__badge--pink"><span class="material-symbols-outlined">shield_lock</span></div>
+        <div>
+          <p class="card-head__eyebrow">Sécurité</p>
+          <h2>Recovery</h2>
+        </div>
+        <span class="vit-chip" [class.vit-chip--success]="s.recoveryEnabled" [class.vit-chip--warning]="!s.recoveryEnabled">
+          {{ s.recoveryEnabled ? 'Activé' : 'À configurer' }}
+        </span>
+      </header>
+      <p *ngIf="!s.recoveryEnabled">
+        Recovery non activée. Ajouter au moins un guardian pour permettre la
+        rotation d'owner en cas de perte de la passkey.
+      </p>
+      <p *ngIf="s.recoveryEnabled">✅ SocialRecoveryModule activé.</p>
+
+      <label>
+        Guardians (adresses EOA séparées par virgule ou espace)
+        <textarea [(ngModel)]="guardiansInput" rows="3" [disabled]="busy"></textarea>
+      </label>
+      <label>
+        Threshold
+        <input
+          type="number"
+          min="1"
+          [(ngModel)]="guardianThreshold"
+          [disabled]="busy"
+        />
+      </label>
+      <button (click)="enableRecovery()" [disabled]="busy">
+        {{ busy ? 'Activation…' : 'Activer / mettre à jour' }}
+      </button>
+
+      <div *ngIf="recoveryRequest" class="result">
+        <h3>Demande de recovery en cours</h3>
+        <p>Nouveaux owners : <code>{{ recoveryRequest.newOwners.join(', ') }}</code></p>
+        <p>Nouveau threshold : {{ recoveryRequest.newThreshold }}</p>
+        <p>
+          Approbations : {{ recoveryRequest.approvalsReceived }} /
+          {{ recoveryRequest.approvalsRequired }}
+        </p>
+        <p>
+          Finalisable après bloc :
+          <code>{{ recoveryRequest.executeAfter }}</code>
+        </p>
+        <button (click)="finalizeRecovery()" [disabled]="busy">
+          {{ busy ? 'Finalisation…' : 'Finaliser la recovery' }}
+        </button>
+      </div>
+
+      <div *ngIf="lastRecoveryOp" class="result">
+        <p *ngIf="lastRecoveryOp.success">
+          ✅ Opération recovery : <code>{{ lastRecoveryOp.transactionHash }}</code>
+        </p>
+        <p *ngIf="!lastRecoveryOp.success">❌ {{ lastRecoveryOp.error }}</p>
+        <details *ngIf="lastRecoveryOp.debug" class="debug">
+          <summary>Debug UserOperation</summary>
+          <button (click)="copyDebug(lastRecoveryOp.debug!)">Copier JSON</button>
+          <pre><code>{{ formatDebug(lastRecoveryOp.debug!) }}</code></pre>
+        </details>
+      </div>
+    </article>
+    </div>
+
+    <nav class="tab-bar" aria-label="Sections wallet" role="tablist">
+      <div class="tab-bar__inner">
+        <span
+          class="tab-bar__indicator"
+          [style.left.%]="(100 / cardTabs.length) * activeCardIndex"
+          [style.width.%]="100 / cardTabs.length"
+          aria-hidden="true"></span>
+        <button
+          *ngFor="let tab of cardTabs; let i = index"
+          type="button"
+          role="tab"
+          class="tab"
+          [class.active]="activeCardIndex === i"
+          [attr.aria-selected]="activeCardIndex === i"
+          [attr.aria-label]="tab.title"
+          (click)="goToCard(i)">
+          <span class="material-symbols-outlined tab__icon">{{ tab.icon }}</span>
+          <span class="tab__label">{{ tab.title }}</span>
+        </button>
+      </div>
+    </nav>
+  </ng-container>
+</section>

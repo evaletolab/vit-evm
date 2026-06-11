@@ -1,0 +1,118 @@
+:host { display: block; }
+
+.tx-page {
+  min-height: 100vh;
+  background: var(--vit-color-background);
+  color: var(--vit-color-text);
+  padding: 1.25rem;
+  box-sizing: border-box;
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+
+  .topbar {
+    display: flex;
+    align-items: center;
+    gap: 0.85rem;
+
+    .back {
+      width: 2.5rem;
+      height: 2.5rem;
+      border-radius: 50%;
+      background: var(--vit-color-surface);
+      color: var(--vit-color-on-surface);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      text-decoration: none;
+      box-shadow: var(--vit-shadow-card);
+    }
+    h1 { margin: 0; font-size: 1.5rem; }
+  }
+
+  .filters {
+    display: flex;
+    gap: 0.5rem;
+    overflow-x: auto;
+    padding-bottom: 0.25rem;
+
+    .filter-chip {
+      border: none;
+      background: rgba(255, 255, 255, 0.5);
+      color: var(--vit-color-text);
+      padding: 0.45rem 1rem;
+      border-radius: var(--vit-radius-chip);
+      font: inherit;
+      font-weight: 600;
+      cursor: pointer;
+      white-space: nowrap;
+
+      &.active {
+        background: var(--vit-color-surface);
+        color: var(--vit-color-on-surface);
+      }
+    }
+  }
+
+  .tx-list {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+  }
+
+  .tx-item {
+    display: grid;
+    grid-template-columns: auto 1fr auto;
+    align-items: center;
+    gap: 0.85rem;
+    background: var(--vit-color-surface);
+    color: var(--vit-color-on-surface);
+    border-radius: var(--vit-radius-card);
+    padding: 0.85rem 1rem;
+    box-shadow: var(--vit-shadow-card);
+
+    .icon {
+      width: 2.5rem;
+      height: 2.5rem;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      .material-symbols-outlined { font-size: 1.4rem; }
+
+      &.icon--out { background: var(--vit-color-primary); color: #fff; }
+      &.icon--in  { background: var(--vit-color-success); color: #103616; }
+    }
+
+    .info {
+      display: flex;
+      flex-direction: column;
+      gap: 0.15rem;
+      min-width: 0;
+
+      .title { font-weight: 700; font-size: 1rem; }
+      .meta {
+        font-size: 0.8rem;
+        color: var(--vit-color-on-surface-muted);
+        font-family: ui-monospace, monospace;
+      }
+    }
+
+    .amount {
+      font-weight: 700;
+      font-size: 1.05rem;
+      &.amount--out { color: var(--vit-color-secondary); }
+      &.amount--in  { color: var(--vit-color-success); }
+    }
+  }
+
+  .empty {
+    text-align: center;
+    color: rgba(0, 0, 0, 0.5);
+    font-size: 0.9rem;
+    margin: 0;
+  }
+}

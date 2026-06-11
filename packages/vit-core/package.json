@@ -12,7 +12,11 @@
     "dist"
   ],
   "exports": {
-    ".": "./dist/index.js"
+    ".": "./dist/index.js",
+    "./preflight": {
+      "types": "./dist/core.safe.preflight.d.ts",
+      "default": "./dist/core.safe.preflight.js"
+    }
   },
   "devDependencies": {
     "@types/chai": "^4.3.20",

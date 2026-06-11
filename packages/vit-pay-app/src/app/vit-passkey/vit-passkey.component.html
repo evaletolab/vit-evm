@@ -1,1 +1,34 @@
-<p>vit-passkey works!</p>
+<div class="passkey">
+  <h2>ViT</h2>
+
+  <ng-container [ngSwitch]="status">
+
+    <section *ngSwitchCase="'idle'" class="idle">
+      <p class="subtitle">{{ hasStoredPasskey ? 'Déverrouiller votre compte' : 'Créer votre compte' }}</p>
+      <button
+        type="button"
+        class="primary"
+        (click)="hasStoredPasskey ? onUnlock() : onCreate()">
+        <span class="material-symbols-outlined">fingerprint</span>
+        {{ hasStoredPasskey ? 'Déverrouiller avec Face ID / Touch ID' : 'Activer Face ID / Touch ID' }}
+      </button>
+    </section>
+
+    <section *ngSwitchCase="'loading'" class="loading">
+      <p>Authentification en cours…</p>
+    </section>
+
+    <section *ngSwitchCase="'authenticated'" class="ok">
+      <span class="material-symbols-outlined check">check_circle</span>
+      <p class="address">{{ accountAddress }}</p>
+    </section>
+
+    <section *ngSwitchCase="'error'" class="error">
+      <p>{{ errorMessage }}</p>
+      <button type="button" class="primary" (click)="hasStoredPasskey ? onUnlock() : onCreate()">
+        Réessayer
+      </button>
+    </section>
+
+  </ng-container>
+</div>

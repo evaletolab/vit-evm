@@ -1,1 +1,39 @@
-<p>page-transactions works!</p>
+<section class="tx-page">
+  <header class="topbar">
+    <a class="back" [routerLink]="['/']" aria-label="Retour">
+      <span class="material-symbols-outlined">arrow_back</span>
+    </a>
+    <h1>Transactions</h1>
+  </header>
+
+  <div class="filters">
+    <button class="filter-chip active">Toutes</button>
+    <button class="filter-chip">Envoyées</button>
+    <button class="filter-chip">Reçues</button>
+  </div>
+
+  <ul class="tx-list">
+    <li class="tx-item">
+      <div class="icon icon--out">
+        <span class="material-symbols-outlined">arrow_upward</span>
+      </div>
+      <div class="info">
+        <div class="title">Paiement envoyé</div>
+        <div class="meta">0xfd9c…8770 · Sepolia</div>
+      </div>
+      <div class="amount amount--out">-12.50</div>
+    </li>
+    <li class="tx-item">
+      <div class="icon icon--in">
+        <span class="material-symbols-outlined">arrow_downward</span>
+      </div>
+      <div class="info">
+        <div class="title">Mint test xCHF</div>
+        <div class="meta">Aujourd'hui · 14:22</div>
+      </div>
+      <div class="amount amount--in">+100.00</div>
+    </li>
+  </ul>
+
+  <p class="empty">Plus rien à afficher pour le moment.</p>
+</section>
