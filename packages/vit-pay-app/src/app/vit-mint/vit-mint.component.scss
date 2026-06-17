@@ -1,0 +1,46 @@
+:host { display: block; }
+
+.card {
+  background: var(--vit-color-surface);
+  color: var(--vit-color-on-surface);
+  border-radius: var(--vit-radius-card);
+  padding: 1.25rem;
+  box-shadow: var(--vit-shadow-card);
+  display: flex;
+  flex-direction: column;
+  gap: 0.85rem;
+
+  p {
+    margin: 0;
+    color: var(--vit-color-on-surface);
+    line-height: 1.45;
+  }
+
+  a {
+    color: var(--vit-color-secondary);
+    text-decoration: underline;
+    text-underline-offset: 2px;
+  }
+
+  button {
+    align-self: flex-start;
+    padding: 0.7rem 1.25rem;
+    border-radius: var(--vit-radius-chip);
+    border: none;
+    background: var(--vit-color-primary);
+    color: #fff;
+    cursor: pointer;
+    font: inherit;
+    font-weight: 700;
+    transition: transform 100ms ease;
+
+    &:active { transform: scale(0.97); }
+    &:disabled { opacity: 0.5; cursor: not-allowed; }
+  }
+
+  .card {
+    background: var(--vit-color-danger);
+    color: #4a0d0d;
+    p { color: inherit; font-weight: 600; }
+  }
+}

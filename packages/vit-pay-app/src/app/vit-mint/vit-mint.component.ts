@@ -12,17 +12,14 @@ import {
 import { PasskeyLocalStorageFormat } from '../../lib/passkeys';
 import { signAndSendUserOp } from '../../lib/userOp';
 import { getItem } from '../../lib/storage';
+import { environment } from '../../environments/environment';
 
-const jsonRPCProvider = process.env['NG_APP_JSON_RPC_PROVIDER'];
-const bundlerUrl = process.env['NG_APP_BUNDLER_URL'];
-const paymasterUrl = process.env['NG_APP_PAYMASTER_URL'];
-const chainId = process.env['NG_APP_CHAIN_ID'];
-const chainName = process.env['NG_APP_CHAIN_NAME'];
+const { jsonRpcProvider, bundlerUrl, paymasterUrl, chainId } = environment;
 
 @Component({
   selector: 'vit-mint',
   templateUrl: './vit-mint.component.html',
-  styleUrls: ['./vit-mint.component.css']
+  styleUrls: ['./vit-mint.component.scss']
 })
 export class VitMintComponent implements OnInit {
   @Input() passkey!: PasskeyLocalStorageFormat;
@@ -32,6 +29,7 @@ export class VitMintComponent implements OnInit {
   loadingTx = false;
   error?: string;
   txHash?: string;
+  chainName = environment.chainName;
   gasSponsor?: {
     name: string;
     description: string;
@@ -40,7 +38,7 @@ export class VitMintComponent implements OnInit {
   };
 
   accountAddress: string = getItem('accountAddress') as string;
-  provider = new ethers.JsonRpcProvider(jsonRPCProvider);
+  provider = new ethers.JsonRpcProvider(jsonRpcProvider);
 
   ngOnInit() {
     if (this.accountAddress) {
@@ -74,17 +72,18 @@ export class VitMintComponent implements OnInit {
     try {
       let userOperation = await safeAccount.createUserOperation(
         [mintTransaction],
-        jsonRPCProvider,
+        jsonRpcProvider,
         bundlerUrl,
         {
-          dummySignatures: [WebauthnDummySignerSignaturePair],
+          dummySignerSignaturePairs: [WebauthnDummySignerSignaturePair],
           preVerificationGasPercentageMultiplier: 120,
           verificationGasLimitPercentageMultiplier: 120,
         }
       );
 
       const paymaster = new CandidePaymaster(paymasterUrl);
-      const [userOperationSponsored, sponsorMetadata] = await paymaster.createSponsorPaymasterUserOperation(
+      const { userOperation: userOperationSponsored, sponsorMetadata } = await paymaster.createSponsorPaymasterUserOperation(
+        safeAccount,
         userOperation,
         bundlerUrl
       );
@@ -101,7 +100,9 @@ export class VitMintComponent implements OnInit {
       this.userOpHash = bundlerResponse.userOperationHash;
       const userOperationReceiptResult = await bundlerResponse.included();
 
-      if (userOperationReceiptResult.success) {
+      if (!userOperationReceiptResult) {
+        this.error = 'Useroperation receipt unavailable';
+      } else if (userOperationReceiptResult.success) {
         this.txHash = userOperationReceiptResult.receipt.transactionHash;
         console.log('One NFT was minted. The transaction hash is : ' + this.txHash);
         this.userOpHash = undefined;

@@ -1,0 +1,106 @@
+<section class="contacts-page">
+  <header class="topbar">
+    <a class="back" [routerLink]="['/']" aria-label="Retour">
+      <span class="material-symbols-outlined">arrow_back</span>
+    </a>
+    <h1>Carnet d'adresses</h1>
+    <button *ngIf="view === 'list' && hasWallet" class="add" type="button" (click)="openAdd()" aria-label="Ajouter">
+      <span class="material-symbols-outlined">add</span>
+    </button>
+    <span *ngIf="view !== 'list' || !hasWallet" class="back back--placeholder" aria-hidden="true"></span>
+  </header>
+
+  <p *ngIf="error" class="error">{{ error }}</p>
+  <p *ngIf="!hasWallet" class="hint">Crée un wallet d'abord pour gérer ton carnet.</p>
+
+  <!-- ===== LISTE ===== -->
+  <ng-container *ngIf="view === 'list' && hasWallet">
+    <div class="actions">
+      <button class="cta" type="button" (click)="openAdd()">
+        <span class="material-symbols-outlined">person_add</span>
+        Ajouter manuellement
+      </button>
+      <button
+        class="secondary"
+        type="button"
+        (click)="importFromPhone()"
+        [disabled]="!phonePickerSupported"
+        [title]="phonePickerSupported ? 'Importer depuis le téléphone' : 'Non disponible sur cet appareil (iOS / desktop)'">
+        <span class="material-symbols-outlined">contacts</span>
+        Téléphone
+      </button>
+      <button
+        *ngIf="googlePickerSupported"
+        class="secondary"
+        type="button"
+        (click)="importFromGoogle()"
+        title="Importer les noms depuis Google Contacts">
+        <span class="material-symbols-outlined">cloud</span>
+        Google
+      </button>
+    </div>
+
+    <ul class="contact-list" *ngIf="contacts.length; else empty">
+      <li class="contact" *ngFor="let c of contacts">
+        <span class="contact__avatar">{{ c.name.charAt(0).toUpperCase() }}</span>
+        <div class="contact__info">
+          <div class="contact__name">{{ c.name }}</div>
+          <div class="contact__addr">{{ short(c.address) }}</div>
+          <div class="contact__note" *ngIf="c.note">{{ c.note }}</div>
+        </div>
+        <div class="contact__actions">
+          <button type="button" class="icon-btn" (click)="openEdit(c)" aria-label="Modifier">
+            <span class="material-symbols-outlined">edit</span>
+          </button>
+          <button type="button" class="icon-btn icon-btn--danger" (click)="remove(c)" aria-label="Supprimer">
+            <span class="material-symbols-outlined">delete</span>
+          </button>
+        </div>
+      </li>
+    </ul>
+
+    <ng-template #empty>
+      <div class="empty">
+        <span class="vit-label">Aucun contact</span>
+        <p>Ajoute une address pour accélérer tes paiements.</p>
+      </div>
+    </ng-template>
+  </ng-container>
+
+  <!-- ===== FORMULAIRE ===== -->
+  <form *ngIf="view === 'form' && hasWallet" class="contact-form" (ngSubmit)="save()" autocomplete="off">
+    <div *ngIf="prefillFromPhone.length > 1" class="prefill">
+      <span class="vit-label">Contact importé</span>
+      <button
+        *ngFor="let p of prefillFromPhone"
+        type="button"
+        class="prefill__item"
+        (click)="selectPrefill(p)">
+        <strong>{{ p.name }}</strong>
+        <em *ngIf="p.hint">{{ p.hint }}</em>
+      </button>
+    </div>
+
+    <label>
+      <span class="label-text">Nom</span>
+      <input type="text" [(ngModel)]="formName" name="name" placeholder="Léa Martin" required />
+    </label>
+    <label>
+      <span class="label-text">Address Ethereum</span>
+      <input type="text" [(ngModel)]="formAddress" name="address" placeholder="0x…" required spellcheck="false" />
+    </label>
+    <label>
+      <span class="label-text">Note (optionnel)</span>
+      <input type="text" [(ngModel)]="formNote" name="note" placeholder="Famille, resto…" />
+    </label>
+
+    <p *ngIf="error" class="error">{{ error }}</p>
+
+    <div class="form-actions">
+      <button type="button" class="secondary" (click)="cancel()">Annuler</button>
+      <button type="submit" class="cta">
+        {{ formId ? 'Mettre à jour' : 'Enregistrer' }}
+      </button>
+    </div>
+  </form>
+</section>

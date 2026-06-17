@@ -1,1 +1,25 @@
-<vit-pin />
+<nav class="account-links">
+  <a class="account-tile" [routerLink]="['/contacts']">
+    <span class="account-tile__icon">
+      <span class="material-symbols-outlined">contacts</span>
+    </span>
+    <div class="account-tile__body">
+      <div class="account-tile__title">Carnet d'adresses</div>
+      <div class="account-tile__meta">Whitelist pour paiements plus rapides</div>
+    </div>
+    <span class="material-symbols-outlined account-tile__chev">chevron_right</span>
+  </a>
+
+  <a class="account-tile" [routerLink]="['/links']">
+    <span class="account-tile__icon">
+      <span class="material-symbols-outlined">link</span>
+    </span>
+    <div class="account-tile__body">
+      <div class="account-tile__title">Claim links</div>
+      <div class="account-tile__meta">Envoyer des xCHF par URL · annulable</div>
+    </div>
+    <span class="material-symbols-outlined account-tile__chev">chevron_right</span>
+  </a>
+</nav>
+
+<vit-passkey />

@@ -1,1 +1,35 @@
-<p>page-transactions works!</p>
+<section class="tx-page">
+  <header class="topbar">
+    <a class="back" [routerLink]="['/']" aria-label="Retour">
+      <span class="material-symbols-outlined">arrow_back</span>
+    </a>
+    <h1>Transactions</h1>
+  </header>
+
+  <div class="filters">
+    <button class="filter-chip" [class.active]="filter === 'all'" (click)="setFilter('all')">Toutes</button>
+    <button class="filter-chip" [class.active]="filter === 'out'" (click)="setFilter('out')">Envoyées</button>
+    <button class="filter-chip" [class.active]="filter === 'in'" (click)="setFilter('in')">Reçues</button>
+  </div>
+
+  <p class="empty" *ngIf="loading">Chargement…</p>
+  <p class="empty" *ngIf="!loading && error">{{ error }}</p>
+  <p class="empty" *ngIf="!loading && !error && !hasWallet">Crée un wallet pour voir l'activité</p>
+
+  <ul class="tx-list" *ngIf="!loading && !error && hasWallet">
+    <li class="tx-item" *ngFor="let tx of visible">
+      <div class="icon" [class.icon--out]="tx.direction === 'out'" [class.icon--in]="tx.direction === 'in'">
+        <span class="material-symbols-outlined">{{ tx.icon }}</span>
+      </div>
+      <div class="info">
+        <div class="title">{{ tx.title }}</div>
+        <div class="meta">{{ tx.meta }}</div>
+      </div>
+      <div class="amount" [class.amount--out]="tx.direction === 'out'" [class.amount--in]="tx.direction === 'in'">{{ tx.amount }}</div>
+    </li>
+  </ul>
+
+  <p class="empty" *ngIf="!loading && !error && hasWallet && !visible.length">
+    Aucune transaction à afficher.
+  </p>
+</section>

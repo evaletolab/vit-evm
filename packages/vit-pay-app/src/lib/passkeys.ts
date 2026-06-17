@@ -27,6 +27,9 @@ type PasskeyCredentialWithPubkeyCoordinates = PasskeyCredential & {
  */
 async function createPasskey(): Promise<PasskeyCredentialWithPubkeyCoordinates> {
   // Generate a passkey credential using WebAuthn API
+  // authenticatorAttachment: 'platform' forces device biometrics
+  // (Face ID / Touch ID / Windows Hello / Android biometrics)
+  // and excludes roaming authenticators (USB security keys, BLE).
   const passkeyCredential = (await navigator.credentials.create({
     publicKey: {
       pubKeyCredParams: [
@@ -38,12 +41,17 @@ async function createPasskey(): Promise<PasskeyCredentialWithPubkeyCoordinates> 
       ],
       challenge: crypto.getRandomValues(new Uint8Array(32)),
       rp: {
-        name: 'Safe Wallet',
+        name: 'ViT Wallet',
       },
       user: {
-        displayName: 'Safe Owner',
+        displayName: 'ViT Owner',
         id: crypto.getRandomValues(new Uint8Array(32)),
-        name: 'safe-owner',
+        name: 'vit-owner',
+      },
+      authenticatorSelection: {
+        authenticatorAttachment: 'platform',
+        userVerification: 'required',
+        residentKey: 'preferred',
       },
       timeout: 60000,
       attestation: 'none',

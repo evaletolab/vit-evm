@@ -1,0 +1,98 @@
+<section class="links-page">
+  <header class="topbar">
+    <a class="back" [routerLink]="['/']" aria-label="Retour">
+      <span class="material-symbols-outlined">arrow_back</span>
+    </a>
+    <h1>Claim links</h1>
+    <button *ngIf="view === 'list' && hasWallet && configured" class="add" type="button" (click)="openCreate()" aria-label="Nouveau">
+      <span class="material-symbols-outlined">add</span>
+    </button>
+    <span *ngIf="view !== 'list' || !hasWallet || !configured" class="back back--placeholder" aria-hidden="true"></span>
+  </header>
+
+  <p *ngIf="error" class="error">{{ error }}</p>
+  <p *ngIf="!hasWallet && !error" class="hint">Crée un wallet d'abord.</p>
+  <p *ngIf="!configured && hasWallet" class="hint">
+    Renseigne <code>environment.claimLinkAddress</code> après déploiement.
+  </p>
+
+  <!-- ===== LIST ===== -->
+  <ng-container *ngIf="view === 'list' && hasWallet && configured">
+    <button class="cta" type="button" (click)="openCreate()" [disabled]="busy">
+      <span class="material-symbols-outlined">link</span>
+      Créer un claim link
+    </button>
+
+    <ul class="link-list" *ngIf="links.length; else empty">
+      <li class="link" *ngFor="let l of links" [class.link--claimed]="l.status === 'claimed'" [class.link--cancelled]="l.status === 'cancelled'">
+        <div class="link__amount">{{ l.amount }} xCHF</div>
+        <div class="link__meta">
+          <span class="vit-chip" [class.vit-chip--success]="l.status === 'pending'" [class.vit-chip--warning]="l.status === 'cancelled'" [class.vit-chip--danger]="l.status === 'claimed'">
+            {{ l.status === 'pending' ? 'En attente' : l.status === 'claimed' ? 'Réclamé' : 'Annulé' }}
+          </span>
+          <span class="link__exp">{{ formatExpiry(l.expiry) }}</span>
+        </div>
+        <div class="link__actions" *ngIf="l.status === 'pending'">
+          <button class="icon-btn" (click)="share(l)" aria-label="Partager">
+            <span class="material-symbols-outlined">share</span>
+          </button>
+          <button class="icon-btn" (click)="copyLinkUrl(l)" aria-label="Copier">
+            <span class="material-symbols-outlined">content_copy</span>
+          </button>
+          <button class="icon-btn icon-btn--danger" (click)="cancelLink(l)" [disabled]="busy" aria-label="Annuler">
+            <span class="material-symbols-outlined">cancel</span>
+          </button>
+        </div>
+      </li>
+    </ul>
+
+    <ng-template #empty>
+      <div class="empty">
+        <span class="vit-label">Aucun claim link</span>
+        <p>Crée un link pour envoyer des xCHF par URL.</p>
+      </div>
+    </ng-template>
+  </ng-container>
+
+  <!-- ===== CREATE ===== -->
+  <form *ngIf="view === 'create' && hasWallet" class="link-form" (ngSubmit)="create()">
+    <label>
+      <span class="label-text">Montant (xCHF)</span>
+      <input type="text" inputmode="decimal" [(ngModel)]="amount" name="amount" placeholder="10.00" required [disabled]="busy" />
+    </label>
+    <label>
+      <span class="label-text">Expiration (heures, 0 = aucune)</span>
+      <input type="number" min="0" [(ngModel)]="expiryHours" name="expiry" [disabled]="busy" />
+    </label>
+    <p class="info">
+      Les fonds sont bloqués dans le contrat. Tu peux annuler à tout moment tant qu'ils ne sont pas réclamés.
+    </p>
+    <p *ngIf="error" class="error">{{ error }}</p>
+    <div class="form-actions">
+      <button type="button" class="secondary" (click)="cancelForm()" [disabled]="busy">Annuler</button>
+      <button type="submit" class="cta" [disabled]="busy || !amount">
+        {{ busy ? 'Création…' : 'Créer le link' }}
+      </button>
+    </div>
+  </form>
+
+  <!-- ===== CREATED (share URL) ===== -->
+  <div *ngIf="view === 'created' && lastLink" class="created">
+    <div class="created__amount">{{ lastLink.amount }} xCHF</div>
+    <p class="created__sub">Partage ce lien — tu peux l'annuler tant qu'il n'est pas réclamé.</p>
+    <div class="created__url">
+      <code>{{ lastUrl }}</code>
+    </div>
+    <div class="created__actions">
+      <button class="cta" type="button" (click)="copy()">
+        <span class="material-symbols-outlined">{{ copied ? 'check' : 'content_copy' }}</span>
+        {{ copied ? 'Copié' : 'Copier le lien' }}
+      </button>
+      <button class="secondary" type="button" (click)="share(lastLink)">
+        <span class="material-symbols-outlined">share</span>
+        Partager
+      </button>
+    </div>
+    <button class="link-back" type="button" (click)="view = 'list'">← Retour à mes links</button>
+  </div>
+</section>

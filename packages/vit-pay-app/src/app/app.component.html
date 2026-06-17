@@ -1,31 +1,25 @@
-
-<main class="main">
-
-  <div class="header">
-    <div>···- ·· −.</div>
-    <h1>ViT</h1>
-
-  </div>
-  <section class="center">
-    <div class="scan">
-      <span class="material-symbols-outlined">qr_code_scanner</span>
-      <div class="label">payer</div>
-    </div>
-    <div class="show">
-      <span class="material-symbols-outlined">receipt_long</span>
-      <div class="label">recevoir</div>
-    </div>
-
-    <div class="tools colspan-2">
-      <span hidden class="material-symbols-outlined">tune</span>
-      <button [routerLink]="['/account']" routerLinkActive="router-link-active"  class="label">créer</button>
-    </div>
-
-  </section>
-  <section class="bottom">
-    <p>Un porte-monnaie digital aussi simple et privé que celui que vous portez.</p>
-  </section>
-</main>
-
-
 <router-outlet />
+
+<nav class="vit-nav" aria-label="Navigation principale">
+  <a class="vit-nav__item" routerLink="/" routerLinkActive="vit-nav__item--active" [routerLinkActiveOptions]="{exact: true}">
+    <span class="material-symbols-outlined vit-nav__icon">home</span>
+    <span class="vit-nav__label">Accueil</span>
+  </a>
+  <a class="vit-nav__item" routerLink="/wallet" routerLinkActive="vit-nav__item--active">
+    <span class="material-symbols-outlined vit-nav__icon">credit_card</span>
+    <span class="vit-nav__label">Carte</span>
+  </a>
+  <a class="vit-nav__item vit-nav__item--center" routerLink="/buy" routerLinkActive="vit-nav__item--active">
+    <span class="vit-nav__fab">
+      <span class="material-symbols-outlined">qr_code_scanner</span>
+    </span>
+  </a>
+  <a class="vit-nav__item" routerLink="/txs" routerLinkActive="vit-nav__item--active">
+    <span class="material-symbols-outlined vit-nav__icon">bar_chart</span>
+    <span class="vit-nav__label">Activité</span>
+  </a>
+  <a class="vit-nav__item" routerLink="/account" routerLinkActive="vit-nav__item--active">
+    <span class="material-symbols-outlined vit-nav__icon">person</span>
+    <span class="vit-nav__label">Profil</span>
+  </a>
+</nav>

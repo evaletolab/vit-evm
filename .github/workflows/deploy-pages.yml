@@ -1,0 +1,59 @@
+name: Deploy vit-pay-app to GitHub Pages
+
+on:
+  push:
+    branches: [max-ux-2026]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: pages
+  cancel-in-progress: true
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+          cache: 'npm'
+
+      - name: Install dependencies (workspaces)
+        run: npm ci
+
+      - name: Workaround npm optional deps bug (rollup linux binary)
+        run: npm install --no-save --workspaces=false @rollup/rollup-linux-x64-gnu
+
+      - name: Build vit-core (workspace dep)
+        run: npm run build -w packages/vit-core --if-present
+
+      - name: Build vit-pay-app
+        run: npm run build -w packages/vit-pay-app -- --base-href /vit-evm/ --configuration production
+
+      - name: Add SPA fallback (404.html = index.html)
+        run: cp packages/vit-pay-app/dist/vi-tpay/browser/index.html packages/vit-pay-app/dist/vi-tpay/browser/404.html
+
+      - uses: actions/configure-pages@v5
+        with:
+          enablement: true
+
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: packages/vit-pay-app/dist/vi-tpay/browser
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - id: deployment
+        uses: actions/deploy-pages@v4
