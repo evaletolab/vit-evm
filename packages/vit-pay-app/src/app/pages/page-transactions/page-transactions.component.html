@@ -7,33 +7,29 @@
   </header>
 
   <div class="filters">
-    <button class="filter-chip active">Toutes</button>
-    <button class="filter-chip">Envoyées</button>
-    <button class="filter-chip">Reçues</button>
+    <button class="filter-chip" [class.active]="filter === 'all'" (click)="setFilter('all')">Toutes</button>
+    <button class="filter-chip" [class.active]="filter === 'out'" (click)="setFilter('out')">Envoyées</button>
+    <button class="filter-chip" [class.active]="filter === 'in'" (click)="setFilter('in')">Reçues</button>
   </div>
 
-  <ul class="tx-list">
-    <li class="tx-item">
-      <div class="icon icon--out">
-        <span class="material-symbols-outlined">arrow_upward</span>
+  <p class="empty" *ngIf="loading">Chargement…</p>
+  <p class="empty" *ngIf="!loading && error">{{ error }}</p>
+  <p class="empty" *ngIf="!loading && !error && !hasWallet">Crée un wallet pour voir l'activité</p>
+
+  <ul class="tx-list" *ngIf="!loading && !error && hasWallet">
+    <li class="tx-item" *ngFor="let tx of visible">
+      <div class="icon" [class.icon--out]="tx.direction === 'out'" [class.icon--in]="tx.direction === 'in'">
+        <span class="material-symbols-outlined">{{ tx.icon }}</span>
       </div>
       <div class="info">
-        <div class="title">Paiement envoyé</div>
-        <div class="meta">0xfd9c…8770 · Sepolia</div>
+        <div class="title">{{ tx.title }}</div>
+        <div class="meta">{{ tx.meta }}</div>
       </div>
-      <div class="amount amount--out">-12.50</div>
-    </li>
-    <li class="tx-item">
-      <div class="icon icon--in">
-        <span class="material-symbols-outlined">arrow_downward</span>
-      </div>
-      <div class="info">
-        <div class="title">Mint test xCHF</div>
-        <div class="meta">Aujourd'hui · 14:22</div>
-      </div>
-      <div class="amount amount--in">+100.00</div>
+      <div class="amount" [class.amount--out]="tx.direction === 'out'" [class.amount--in]="tx.direction === 'in'">{{ tx.amount }}</div>
     </li>
   </ul>
 
-  <p class="empty">Plus rien à afficher pour le moment.</p>
+  <p class="empty" *ngIf="!loading && !error && hasWallet && !visible.length">
+    Aucune transaction à afficher.
+  </p>
 </section>

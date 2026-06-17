@@ -1,8 +1,12 @@
 :host {
   display: block;
   min-height: 100vh;
-  background: var(--vit-color-background);
-  color: var(--vit-color-text);
-  padding: 1.25rem;
+  max-width: var(--vit-page-max);
+  margin: 0 auto;
+  background:
+    radial-gradient(ellipse 70% 40% at 50% 0%, rgba(124,92,255,.18), transparent 70%),
+    linear-gradient(180deg, var(--surface-1), var(--surface-2));
+  color: var(--text);
+  padding: 1.25rem 1.25rem calc(6.5rem + env(safe-area-inset-bottom));
   box-sizing: border-box;
 }

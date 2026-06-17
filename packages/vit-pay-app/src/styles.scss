@@ -1,139 +1,301 @@
-/* You can add global styles to this file, and also import other style files */
-:root{
-    /** Playful operations palette ***/
-    --vit-color-text: #1D1D1D;
-    --vit-color-background: #C6D1C0;       /* sage green */
-    --vit-color-surface: #2B2B2B;          /* card charcoal */
-    --vit-color-surface-alt: #1D1D1D;      /* deeper charcoal */
-    --vit-color-neutral: #2B2B2B;
-    --vit-color-primary: #F25C54;          /* coral */
-    --vit-color-secondary: #F9E58C;        /* pale yellow */
-    --vit-color-success: #9FE6A0;
-    --vit-color-danger: #FF6B6B;
-    --vit-color-warning: #FFD966;
-    --vit-color-accent-blue: #5A7BEF;
-    --vit-color-accent-orange: #F7941D;
-    --vit-color-accent-pink: #FAD6DC;
-    --vit-color-on-surface: #FFFFFF;
-    --vit-color-on-surface-muted: #CCCCCC;
+/* Lumen — design system tokens */
+:root {
+  /* Fonds */
+  --bg:            #06070D;
+  --surface-1:     #0C0E1A;
+  --surface-2:     #08090F;
 
-    --vit-radius-card: 1.25rem;
-    --vit-radius-chip: 999px;
-    --vit-shadow-card: 0 6px 20px rgba(0, 0, 0, 0.12);
+  /* Verre dépoli */
+  --glass:         rgba(255,255,255,.06);
+  --glass-strong:  rgba(18,20,32,.72);
+  --hairline:      rgba(255,255,255,.12);
+  --hairline-soft: rgba(255,255,255,.08);
 
-    --vit-gradient-primary: linear-gradient(62deg, var(--vit-color-primary) 25%, var(--vit-color-secondary) 100%);
-    
+  /* Texte */
+  --text:          #ECEDF5;
+  --text-2:        #C4C7D6;
+  --text-muted:    #8A8FA6;
+  --text-dim:      #6E7392;
 
-    --sl-color-neutral-1000 : var(--vit-color-text);
-    --sl-color-neutral-0 : var(--vit-color-background);
-    --sl-color-neutral-500 : var(--vit-color-neutral);
+  /* Accents néon */
+  --violet:        #7C5CFF;
+  --violet-deep:   #5B3FE0;
+  --cyan:          #3FD0F0;
+  --grad:          linear-gradient(135deg, #7C5CFF, #5B3FE0);
+  --grad-neon:     linear-gradient(135deg, #7C5CFF, #3FD0F0);
+  --grad-text:     linear-gradient(120deg, #FFFFFF, #B9A8FF 60%, #6FE3FF);
 
-    --sl-color-primary-500 : var(--vit-color-primary);
-    --sl-color-success-500 : var(--vit-color-success);
-    --sl-color-danger-500 : var(--vit-color-danger);
-    --sl-color-warning-500 : var(--vit-color-warning);
+  /* Sémantique */
+  --positive:      #4ADE9B;
+  --negative:      #FF6B85;
+  --warning:       #FFB454;
 
+  /* Rayons */
+  --r-phone: 39px;
+  --r-card:  22px;
+  --r-tile:  18px;
+  --r-btn:   18px;
+  --r-pill:  24px;
 
-    /** compute color variants 
-     * A difference of 40 between lightness values ensures a minimum 3:1 contrast ratio.
-     * A difference of 50 between lightness values ensures a minimum 4.5:1 contrast ratio.
-     * A difference of 60 between lightness values ensures a minimum 7:1 contrast ratio.
-     **/
+  /* Ombres colorées */
+  --shadow-phone: 0 30px 60px -20px rgba(124,92,255,.45), 0 0 0 1px rgba(255,255,255,.04);
+  --shadow-cta:   0 12px 26px -8px rgba(124,92,255,.8);
+  --shadow-card:  0 22px 44px -16px rgba(124,92,255,.7);
+  --shadow-tile:  0 8px 18px -6px rgba(124,92,255,.45);
 
-    --sl-color-primary-50 : color-mix(in srgb, white 95%, var(--sl-color-primary-500) 5%);
-    --sl-color-primary-100 : color-mix(in srgb, white 88%, var(--sl-color-primary-500) 12%);
-    --sl-color-primary-200 : color-mix(in srgb, white 70%, var(--sl-color-primary-500) 30%);
-    --sl-color-primary-300 : color-mix(in srgb, white 55%, var(--sl-color-primary-500) 45%);
-    --sl-color-primary-400 : color-mix(in srgb, white 40%, var(--sl-color-primary-500) 60%);
-    --sl-color-primary-600 : color-mix(in srgb, var(--sl-color-primary-500) 90%, black 10%);
-    --sl-color-primary-700 : color-mix(in srgb, var(--sl-color-primary-500) 80%, black 20%);
-    --sl-color-primary-800 : color-mix(in srgb, var(--sl-color-primary-500) 65%, black 35%);
-    --sl-color-primary-900 : color-mix(in srgb, var(--sl-color-primary-500) 50%, black 50%);
-    --sl-color-primary-950 : color-mix(in srgb, var(--sl-color-primary-500) 30%, black 70%);
+  /* === Shoelace overrides (dark) === */
+  --sl-color-neutral-0:    var(--bg);
+  --sl-color-neutral-50:   #0A0C16;
+  --sl-color-neutral-100:  #0F1120;
+  --sl-color-neutral-200:  #161826;
+  --sl-color-neutral-300:  #1F2233;
+  --sl-color-neutral-400:  #2A2E44;
+  --sl-color-neutral-500:  #3A3F58;
+  --sl-color-neutral-600:  #5B6082;
+  --sl-color-neutral-700:  var(--text-muted);
+  --sl-color-neutral-800:  var(--text-2);
+  --sl-color-neutral-900:  var(--text);
+  --sl-color-neutral-950:  #FFFFFF;
+  --sl-color-neutral-1000: #FFFFFF;
 
+  --sl-color-primary-500: var(--violet);
+  --sl-color-primary-50:  color-mix(in srgb, var(--bg) 90%, var(--violet) 10%);
+  --sl-color-primary-100: color-mix(in srgb, var(--bg) 80%, var(--violet) 20%);
+  --sl-color-primary-200: color-mix(in srgb, var(--bg) 65%, var(--violet) 35%);
+  --sl-color-primary-300: color-mix(in srgb, var(--bg) 50%, var(--violet) 50%);
+  --sl-color-primary-400: color-mix(in srgb, var(--bg) 30%, var(--violet) 70%);
+  --sl-color-primary-600: color-mix(in srgb, var(--violet) 90%, black 10%);
+  --sl-color-primary-700: color-mix(in srgb, var(--violet) 75%, black 25%);
+  --sl-color-primary-800: color-mix(in srgb, var(--violet) 55%, black 45%);
+  --sl-color-primary-900: color-mix(in srgb, var(--violet) 35%, black 65%);
+  --sl-color-primary-950: color-mix(in srgb, var(--violet) 20%, black 80%);
 
-    --sl-color-success-50 : color-mix(in srgb, white 95%, var(--sl-color-success-500) 5%);
-    --sl-color-success-100 : color-mix(in srgb, white 88%, var(--sl-color-success-500) 12%); 
-    --sl-color-success-200 : color-mix(in srgb, white 70%, var(--sl-color-success-500) 30%);
-    --sl-color-success-300 : color-mix(in srgb, white 55%, var(--sl-color-success-500) 45%); 
-    --sl-color-success-400 : color-mix(in srgb, white 40%, var(--sl-color-success-500) 60%); 
-    --sl-color-success-600 : color-mix(in srgb, var(--sl-color-success-500) 90%, black 10%);
-    --sl-color-success-700 : color-mix(in srgb, var(--sl-color-success-500) 80%, black 20%);
-    --sl-color-success-800 : color-mix(in srgb, var(--sl-color-success-500) 65%, black 35%); 
-    --sl-color-success-900 : color-mix(in srgb, var(--sl-color-success-500) 50%, black 50%);
-    --sl-color-success-950 : color-mix(in srgb, var(--sl-color-success-500) 30%, black 70%); 
-    
-    --sl-color-warning-50 : color-mix(in srgb, white 95%, var(--sl-color-warning-500) 5%);
-    --sl-color-warning-100 : color-mix(in srgb, white 88%, var(--sl-color-warning-500) 12%);
-    --sl-color-warning-200 : color-mix(in srgb, white 70%, var(--sl-color-warning-500) 30%);
-    --sl-color-warning-300 : color-mix(in srgb, white 55%, var(--sl-color-warning-500) 45%); 
-    --sl-color-warning-400 : color-mix(in srgb, white 40%, var(--sl-color-warning-500) 60%); 
-    --sl-color-warning-600 : color-mix(in srgb, var(--sl-color-warning-500) 90%, black 10%);
-    --sl-color-warning-700 : color-mix(in srgb, var(--sl-color-warning-500) 80%, black 20%);
-    --sl-color-warning-800 : color-mix(in srgb, var(--sl-color-warning-500) 65%, black 35%); 
-    --sl-color-warning-900 : color-mix(in srgb, var(--sl-color-warning-500) 50%, black 50%);
-    --sl-color-warning-950 : color-mix(in srgb, var(--sl-color-warning-500) 30%, black 70%); 
-    
-    --sl-color-danger-50 : color-mix(in srgb, white 95%, var(--sl-color-danger-500) 5%);
-    --sl-color-danger-100 : color-mix(in srgb, white 88%, var(--sl-color-danger-500) 12%);
-    --sl-color-danger-200 : color-mix(in srgb, white 70%, var(--sl-color-danger-500) 30%);
-    --sl-color-danger-300 : color-mix(in srgb, white 55%, var(--sl-color-danger-500) 45%); 
-    --sl-color-danger-400 : color-mix(in srgb, white 40%, var(--sl-color-danger-500) 60%); 
-    --sl-color-danger-600 : color-mix(in srgb, var(--sl-color-danger-500) 90%, black 10%);
-    --sl-color-danger-700 : color-mix(in srgb, var(--sl-color-danger-500) 80%, black 20%);
-    --sl-color-danger-800 : color-mix(in srgb, var(--sl-color-danger-500) 65%, black 35%); 
-    --sl-color-danger-900 : color-mix(in srgb, var(--sl-color-danger-500) 50%, black 50%);
-    --sl-color-danger-950 : color-mix(in srgb, var(--sl-color-danger-500) 30%, black 70%); 
-    
-    --sl-color-neutral-50 : color-mix(in srgb, white 95%, var(--sl-color-neutral-500) 5%);
-    --sl-color-neutral-100 : color-mix(in srgb, white 88%, var(--sl-color-neutral-500) 12%);
-    --sl-color-neutral-200 : color-mix(in srgb, white 70%, var(--sl-color-neutral-500) 30%);
-    --sl-color-neutral-300 : color-mix(in srgb, white 55%, var(--sl-color-neutral-500) 45%); 
-    --sl-color-neutral-400 : color-mix(in srgb, white 40%, var(--sl-color-neutral-500) 60%); 
-    --sl-color-neutral-600 : color-mix(in srgb, var(--sl-color-neutral-500) 90%, black 10%);
-    --sl-color-neutral-700 : color-mix(in srgb, var(--sl-color-neutral-500) 80%, black 20%);
-    --sl-color-neutral-800 : color-mix(in srgb, var(--sl-color-neutral-500) 65%, black 35%); 
-    --sl-color-neutral-900 : color-mix(in srgb, var(--sl-color-neutral-500) 50%, black 50%);
-    --sl-color-neutral-950 : color-mix(in srgb, var(--sl-color-neutral-500) 30%, black 70%); 
+  --sl-color-success-500: var(--positive);
+  --sl-color-success-50:  color-mix(in srgb, var(--bg) 90%, var(--positive) 10%);
+  --sl-color-success-100: color-mix(in srgb, var(--bg) 80%, var(--positive) 20%);
+  --sl-color-success-200: color-mix(in srgb, var(--bg) 60%, var(--positive) 40%);
+  --sl-color-success-300: color-mix(in srgb, var(--bg) 45%, var(--positive) 55%);
+  --sl-color-success-400: color-mix(in srgb, var(--bg) 25%, var(--positive) 75%);
+  --sl-color-success-600: color-mix(in srgb, var(--positive) 85%, black 15%);
+  --sl-color-success-700: color-mix(in srgb, var(--positive) 70%, black 30%);
+  --sl-color-success-800: color-mix(in srgb, var(--positive) 50%, black 50%);
+  --sl-color-success-900: color-mix(in srgb, var(--positive) 30%, black 70%);
+  --sl-color-success-950: color-mix(in srgb, var(--positive) 15%, black 85%);
+
+  --sl-color-danger-500: var(--negative);
+  --sl-color-warning-500: var(--warning);
 }
 
+* { box-sizing: border-box; }
 
-body{
+html, body {
   margin: 0;
-  font-family: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
-  font-feature-settings: "cv02", "cv03", "cv04", "cv11";
+  min-height: 100%;
+  background: var(--bg);
+  color: var(--text);
+  font-family: 'Space Grotesk', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  font-size: 15px;
   -webkit-font-smoothing: antialiased;
-  background-color: var(--vit-color-background);
-  color: var(--vit-color-text);
+  -moz-osx-font-smoothing: grayscale;
 }
 
-h1, h2, h3 {
+/* === Page container responsive === */
+/* Toutes les pages se contraignent en colonne « téléphone » sur desktop. */
+:root {
+  --vit-page-max: 28rem; /* ~448px */
+}
+
+@media (min-width: 768px) {
+  body {
+    background:
+      radial-gradient(ellipse 40% 30% at 50% 0%, rgba(124,92,255,.08), transparent 70%),
+      var(--bg);
+  }
+}
+
+h1, h2, h3, h4 {
+  font-family: 'Space Grotesk', sans-serif;
   font-weight: 700;
-  letter-spacing: -0.01em;
+  letter-spacing: -0.02em;
+  color: var(--text);
+  margin: 0;
+}
+h1 { font-size: 28px; }
+h2 { font-size: 20px; }
+h3 { font-size: 17px; }
+
+p { color: var(--text-2); margin: 0; }
+
+a { color: var(--violet); text-decoration: none; }
+a:hover { color: var(--cyan); }
+
+/* === Surfaces verre === */
+.vit-glass {
+  background: var(--glass);
+  border: 1px solid var(--hairline);
+  border-radius: var(--r-tile);
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
 }
 
 .vit-card {
-  background-color: var(--vit-color-surface);
-  color: var(--vit-color-on-surface);
-  border-radius: var(--vit-radius-card);
-  padding: 1rem;
-  box-shadow: var(--vit-shadow-card);
+  background: var(--glass);
+  border: 1px solid var(--hairline);
+  border-radius: var(--r-card);
+  color: var(--text);
+  padding: 18px;
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
 }
 
+/* === Texte lumineux (gros chiffres) === */
+.vit-luminous {
+  background: var(--grad-text);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  font-weight: 700;
+  letter-spacing: -1.5px;
+}
+
+/* === Labels mono === */
+.vit-mono,
+.vit-label {
+  font-family: 'Space Mono', ui-monospace, SFMono-Regular, monospace;
+}
+.vit-label {
+  font-size: 11px;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  color: var(--text-muted);
+}
+
+/* === Chips === */
 .vit-chip {
   display: inline-flex;
   align-items: center;
-  gap: 0.35rem;
-  padding: 0.25rem 0.65rem;
-  border-radius: var(--vit-radius-chip);
-  font-size: 0.8rem;
+  gap: 6px;
+  padding: 4px 10px;
+  border-radius: var(--r-pill);
+  font-family: 'Space Mono', monospace;
+  font-size: 11px;
+  letter-spacing: 1px;
+  background: var(--glass);
+  border: 1px solid var(--hairline);
+  color: var(--text-2);
+}
+.vit-chip--success {
+  color: var(--positive);
+  background: rgba(74,222,155,.12);
+  border-color: rgba(74,222,155,.3);
+}
+.vit-chip--warning {
+  color: var(--warning);
+  background: rgba(255,180,84,.12);
+  border-color: rgba(255,180,84,.3);
+}
+.vit-chip--danger {
+  color: var(--negative);
+  background: rgba(255,107,133,.12);
+  border-color: rgba(255,107,133,.3);
+}
+
+/* === Boutons === */
+.vit-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  height: 54px;
+  padding: 0 22px;
+  border-radius: var(--r-btn);
+  font-family: 'Space Grotesk', sans-serif;
   font-weight: 600;
-  background: var(--vit-color-secondary);
-  color: var(--vit-color-text);
+  font-size: 16px;
+  cursor: pointer;
+  border: none;
+  transition: transform .12s ease, box-shadow .2s ease;
 }
-.vit-chip--success { background: var(--vit-color-success); color: #103616; }
-.vit-chip--warning { background: var(--vit-color-warning); color: #4a3a00; }
-.vit-chip--danger  { background: var(--vit-color-danger);  color: #4a0d0d; }
-[hidden] {
-  display: none !important;
+.vit-btn:active { transform: translateY(1px); }
+
+.vit-btn--primary {
+  background: var(--grad);
+  color: #fff;
+  box-shadow: var(--shadow-cta);
 }
+.vit-btn--ghost {
+  background: var(--glass);
+  border: 1px solid var(--hairline);
+  color: var(--text);
+  backdrop-filter: blur(10px);
+}
+
+/* === Halo d'ambiance === */
+.vit-glow {
+  position: absolute;
+  border-radius: 50%;
+  filter: blur(40px);
+  pointer-events: none;
+  background: radial-gradient(circle, rgba(124,92,255,.40), transparent 65%);
+}
+.vit-glow--cyan {
+  background: radial-gradient(circle, rgba(63,208,240,.30), transparent 65%);
+}
+
+/* === Grille de fond === */
+.vit-grid-bg {
+  position: absolute;
+  inset: 0;
+  background-image:
+    linear-gradient(rgba(255,255,255,.035) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(255,255,255,.035) 1px, transparent 1px);
+  background-size: 48px 48px;
+  mask-image: radial-gradient(ellipse 80% 60% at 50% 30%, #000 30%, transparent 80%);
+  -webkit-mask-image: radial-gradient(ellipse 80% 60% at 50% 30%, #000 30%, transparent 80%);
+  pointer-events: none;
+}
+
+/* === Animations === */
+@keyframes hf-pop  { 0%{transform:scale(.5);opacity:0} 65%{transform:scale(1.12)} 100%{transform:scale(1);opacity:1} }
+@keyframes hf-scan { 0%{top:14%} 100%{top:82%} }
+@keyframes hf-float{ 0%,100%{transform:translateY(0)} 50%{transform:translateY(-7px)} }
+
+/* === Scrollbar discrète === */
+::-webkit-scrollbar { width: 8px; height: 8px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb {
+  background: var(--hairline);
+  border-radius: 4px;
+}
+::-webkit-scrollbar-thumb:hover { background: var(--text-dim); }
+
+/* === Shoelace tweaks === */
+sl-input::part(form-control),
+sl-select::part(form-control) {
+  color: var(--text);
+}
+sl-input::part(base),
+sl-select::part(combobox),
+sl-textarea::part(base) {
+  background: var(--glass);
+  border: 1px solid var(--hairline);
+  border-radius: var(--r-tile);
+  color: var(--text);
+  backdrop-filter: blur(10px);
+}
+sl-button::part(base) {
+  border-radius: var(--r-btn);
+}
+sl-button[variant="primary"]::part(base) {
+  background: var(--grad);
+  border: none;
+  color: #fff;
+  box-shadow: var(--shadow-cta);
+}
+sl-dialog::part(panel) {
+  background: var(--surface-1);
+  border: 1px solid var(--hairline);
+  color: var(--text);
+}
+
+[hidden] { display: none !important; }

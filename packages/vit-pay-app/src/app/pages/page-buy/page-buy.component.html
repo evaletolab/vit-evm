@@ -1,9 +1,13 @@
 <section class="buy-page">
-  <header class="topbar">
+  <header class="topbar topbar--centered">
     <a class="back" [routerLink]="['/']" aria-label="Retour">
       <span class="material-symbols-outlined">arrow_back</span>
     </a>
-    <h1>Payer</h1>
+    <div class="topbar__title">
+      <h1>Payer en magasin</h1>
+      <p class="topbar__subtitle">Alignez le QR code du commerçant</p>
+    </div>
+    <span class="back back--placeholder" aria-hidden="true"></span>
   </header>
 
   <!-- idle : prompt scan or manual -->
@@ -18,10 +22,29 @@
   </div>
 
   <!-- scanning : camera live -->
-  <div class="video-card" *ngIf="step === 'scanning'">
-    <video #video playsinline muted></video>
-    <div class="scan-overlay"><div class="scan-frame"></div></div>
-    <button class="cta cancel" (click)="reset()">Annuler</button>
+  <div class="scanner-stage" *ngIf="step === 'scanning'">
+    <video #video class="scanner-stage__video" playsinline muted></video>
+    <div class="scanner-stage__shade" aria-hidden="true"></div>
+    <div class="viseur" aria-hidden="true">
+      <span class="viseur__corner viseur__corner--tl"></span>
+      <span class="viseur__corner viseur__corner--tr"></span>
+      <span class="viseur__corner viseur__corner--bl"></span>
+      <span class="viseur__corner viseur__corner--br"></span>
+      <span class="viseur__line"></span>
+    </div>
+  </div>
+
+  <div class="scan-toolbar" *ngIf="step === 'scanning'">
+    <button class="scan-toolbar__chip scan-toolbar__chip--flash" type="button" aria-label="Flash">
+      <span class="material-symbols-outlined">bolt</span>
+    </button>
+    <a class="scan-toolbar__qr" [routerLink]="['/sent']">
+      <span class="vit-label">Ou afficher</span>
+      <span class="scan-toolbar__qr-title">Mon QR code</span>
+    </a>
+    <button class="scan-toolbar__chip" type="button" (click)="reset()" aria-label="Fermer">
+      <span class="material-symbols-outlined">close</span>
+    </button>
   </div>
 
   <!-- confirm : review tx -->

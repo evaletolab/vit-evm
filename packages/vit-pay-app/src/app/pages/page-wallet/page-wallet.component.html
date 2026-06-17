@@ -34,6 +34,26 @@
         </div>
         <span class="vit-chip vit-chip--success">{{ s.deployed ? 'Déployé' : 'Pending' }}</span>
       </header>
+
+      <div class="holo-card" aria-hidden="true">
+        <div class="holo-card__halo"></div>
+        <div class="holo-card__top">
+          <span class="holo-card__brand">VIT</span>
+          <span class="material-symbols-outlined holo-card__signal">wifi_tethering</span>
+        </div>
+        <div class="holo-card__chip"></div>
+        <div class="holo-card__number">
+          {{ s.accountAddress.slice(2,6).toUpperCase() }}
+          <span>····</span>
+          <span>····</span>
+          {{ s.accountAddress.slice(-4).toUpperCase() }}
+        </div>
+        <div class="holo-card__foot">
+          <span class="holo-card__name">{{ shortAddress(s.accountAddress) }}</span>
+          <span class="holo-card__network">{{ s.chainId === 11155111 ? 'SEPOLIA' : 'CHAIN ' + s.chainId }}</span>
+        </div>
+      </div>
+
       <dl>
         <dt>Adresse</dt>
         <dd><code>{{ s.accountAddress }}</code></dd>

@@ -1,41 +1,83 @@
-<main class="main">
+<main class="home">
+  <div class="home__bg-grid" aria-hidden="true"></div>
 
-  <div class="header">
-    <div class="brand">
-      <div class="avatar">V</div>
-      <div>
-        <h1>ViT</h1>
-        <div class="subtitle">Porte-monnaie xCHF</div>
+  <header class="topbar">
+    <div class="greeting">
+      <div class="greeting__hi">Bonsoir,</div>
+      <h1>{{ hasWallet ? (shortAddr || 'Wallet') : 'Visiteur' }}</h1>
+    </div>
+    <div class="avatar" [class.avatar--off]="!hasWallet" aria-hidden="true"></div>
+  </header>
+
+  <section class="balance">
+    <div class="balance__label">Solde disponible</div>
+    <div class="balance__amount">
+      {{ balance }}<span class="balance__unit">xCHF</span>
+    </div>
+    <div class="balance__delta" *ngIf="hasWallet; else noWalletDelta">
+      <span class="material-symbols-outlined">trending_up</span>
+      Sponsorisé · zéro frais
+    </div>
+    <ng-template #noWalletDelta>
+      <div class="balance__delta balance__delta--warn">
+        Crée ton wallet pour commencer
       </div>
-    </div>
-    <div class="status-chip" [class.status-chip--off]="!hasWallet">
-      {{ hasWallet ? 'Connecté' : 'Pas de wallet' }}
-    </div>
-  </div>
-
-  <div class="balance-card">
-    <div class="label">Solde</div>
-    <div class="amount">{{ balance }} <span class="unit">xCHF</span></div>
-    <div class="delta">{{ hasWallet ? shortAddr : 'Crée ton wallet pour commencer' }}</div>
-  </div>
-
-  <section class="center">
-    <div class="scan" [routerLink]="['/buy']" role="button" tabindex="0">
-      <span class="material-symbols-outlined">qr_code_scanner</span>
-      <div class="label">payer</div>
-    </div>
-    <div class="show" [routerLink]="['/sent']" role="button" tabindex="0">
-      <span class="material-symbols-outlined">receipt_long</span>
-      <div class="label">recevoir</div>
-    </div>
-
-    <div class="tools colspan-2" [routerLink]="['/wallet']" role="button" tabindex="0">
-      <span class="material-symbols-outlined">add_circle</span>
-      <div class="label">créer un wallet</div>
-    </div>
+    </ng-template>
   </section>
 
-  <section class="bottom">
-    <p>Un porte-monnaie digital aussi simple et privé que celui que vous portez.</p>
+  <nav class="quick-actions" aria-label="Actions rapides">
+    <a class="qa qa--primary" [routerLink]="['/buy']" role="button">
+      <span class="qa__tile">
+        <span class="material-symbols-outlined">arrow_outward</span>
+      </span>
+      <span class="qa__label">Envoyer</span>
+    </a>
+    <a class="qa" [routerLink]="['/sent']" role="button">
+      <span class="qa__tile">
+        <span class="material-symbols-outlined">south_west</span>
+      </span>
+      <span class="qa__label">Recevoir</span>
+    </a>
+    <a class="qa" [routerLink]="['/buy']" role="button">
+      <span class="qa__tile">
+        <span class="material-symbols-outlined">qr_code_scanner</span>
+      </span>
+      <span class="qa__label">Scanner</span>
+    </a>
+    <a class="qa" [routerLink]="['/wallet']" role="button">
+      <span class="qa__tile">
+        <span class="material-symbols-outlined">add</span>
+      </span>
+      <span class="qa__label">Wallet</span>
+    </a>
+  </nav>
+
+  <section class="txs">
+    <div class="txs__head">
+      <span class="vit-label">Transactions</span>
+      <a class="txs__more" [routerLink]="['/txs']">Tout voir</a>
+    </div>
+
+    <ul class="tx-list" *ngIf="recentTxs.length; else txsEmpty">
+      <li class="tx" *ngFor="let tx of recentTxs" [class.tx--in]="tx.direction === 'in'" [class.tx--out]="tx.direction === 'out'">
+        <span class="tx__icon">
+          <span class="material-symbols-outlined">{{ tx.icon }}</span>
+        </span>
+        <div class="tx__info">
+          <div class="tx__title">{{ tx.title }}</div>
+          <div class="tx__meta">{{ tx.meta }}</div>
+        </div>
+        <div class="tx__amount">{{ tx.amount }} xCHF</div>
+      </li>
+    </ul>
+    <ng-template #txsEmpty>
+      <ul class="tx-list">
+        <li class="tx-list__empty">
+          <span class="vit-label">
+            {{ loadingTxs ? 'Chargement…' : (hasWallet ? 'Aucune transaction récente' : 'Crée un wallet pour voir l\'activité') }}
+          </span>
+        </li>
+      </ul>
+    </ng-template>
   </section>
 </main>

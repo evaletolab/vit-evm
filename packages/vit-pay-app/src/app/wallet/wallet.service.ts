@@ -85,6 +85,15 @@ const ERC20_TRANSFER_ABI = ['function transfer(address to, uint256 amount) retur
 const ERC20_BALANCE_ABI = ['function balanceOf(address account) view returns (uint256)'];
 const MOCK_ERC20_MINT_ABI = ['function mint(address to, uint256 amount)'];
 
+export interface RecentTransfer {
+  hash: string;
+  blockNumber: number;
+  timestamp: number;
+  direction: 'in' | 'out';
+  counterparty: string;
+  amount: bigint;
+}
+
 // Walks an Error's `cause` chain and joins messages with " → ".
 // Useful for bundler errors where abstractionkit wraps the raw RPC response
 // (e.g. "bundler eth_sendUserOperation rpc call failed → AA24 signature error").
@@ -211,6 +220,68 @@ export class WalletService {
       provider,
     );
     return (await token['balanceOf'](state.accountAddress)) as bigint;
+  }
+
+  async getRecentZchfTransfers(
+    limit = 10,
+    lookbackBlocks = 50_000,
+    chunkSize = 9_900,
+  ): Promise<RecentTransfer[]> {
+    const state = this.requireState();
+    assertConfigUsable(this.config);
+    const provider = new ethers.JsonRpcProvider(this.config.nodeRpcUrl);
+    const latest = await provider.getBlockNumber();
+    const fromBlock = Math.max(0, latest - lookbackBlocks);
+    const transferTopic = ethers.id('Transfer(address,address,uint256)');
+    const paddedAccount = ethers.zeroPadValue(state.accountAddress.toLowerCase(), 32);
+
+    const ranges: Array<{ from: number; to: number }> = [];
+    for (let to = latest; to >= fromBlock; to -= chunkSize) {
+      const from = Math.max(fromBlock, to - chunkSize + 1);
+      ranges.push({ from, to });
+      if (from === fromBlock) break;
+    }
+
+    const collected: ethers.Log[] = [];
+    for (const { from, to } of ranges) {
+      const [outLogs, inLogs] = await Promise.all([
+        provider.getLogs({
+          address: this.config.zchfTokenAddress,
+          fromBlock: from, toBlock: to,
+          topics: [transferTopic, paddedAccount, null],
+        }),
+        provider.getLogs({
+          address: this.config.zchfTokenAddress,
+          fromBlock: from, toBlock: to,
+          topics: [transferTopic, null, paddedAccount],
+        }),
+      ]);
+      collected.push(...outLogs, ...inLogs);
+      if (collected.length >= limit * 2) break;
+    }
+
+    const all = collected
+      .sort((a, b) => (b.blockNumber - a.blockNumber) || (b.index - a.index))
+      .slice(0, limit);
+
+    const uniqueBlocks = Array.from(new Set(all.map((l) => l.blockNumber)));
+    const blocks = await Promise.all(uniqueBlocks.map((bn) => provider.getBlock(bn)));
+    const tsByBlock = new Map<number, number>();
+    blocks.forEach((b) => { if (b) tsByBlock.set(b.number, Number(b.timestamp)); });
+
+    return all.map((log) => {
+      const fromAddr = ethers.getAddress('0x' + log.topics[1].slice(26));
+      const toAddr = ethers.getAddress('0x' + log.topics[2].slice(26));
+      const isIn = toAddr.toLowerCase() === state.accountAddress.toLowerCase();
+      return {
+        hash: log.transactionHash,
+        blockNumber: log.blockNumber,
+        timestamp: tsByBlock.get(log.blockNumber) ?? 0,
+        direction: isIn ? 'in' : 'out',
+        counterparty: isIn ? fromAddr : toAddr,
+        amount: BigInt(log.data),
+      };
+    });
   }
 
   async mintTestZchf(amount: bigint): Promise<UserOperationResult> {
@@ -597,6 +668,25 @@ export class WalletService {
         debug: buildDebug(),
       };
     }
+
+    // Refresh gas fees against the current base fee — bundler-side estimates
+    // can be stale on Sepolia. Bumping BEFORE sponsoring keeps the paymaster
+    // signature valid (it signs over the bumped values).
+    try {
+      const provider = new ethers.JsonRpcProvider(this.config.nodeRpcUrl);
+      const latest = await provider.getBlock('latest');
+      const baseFee = latest?.baseFeePerGas ?? 0n;
+      if (baseFee > 0n) {
+        const minFee = (baseFee * 200n) / 100n;
+        if ((userOperation as { maxFeePerGas: bigint }).maxFeePerGas < minFee) {
+          (userOperation as { maxFeePerGas: bigint }).maxFeePerGas = minFee;
+        }
+        const minPriority = 1_500_000_000n;
+        if ((userOperation as { maxPriorityFeePerGas: bigint }).maxPriorityFeePerGas < minPriority) {
+          (userOperation as { maxPriorityFeePerGas: bigint }).maxPriorityFeePerGas = minPriority;
+        }
+      }
+    } catch { /* keep bundler-estimated fees */ }
 
     const paymaster = new CandidePaymaster(this.config.paymasterUrl);
     try {
