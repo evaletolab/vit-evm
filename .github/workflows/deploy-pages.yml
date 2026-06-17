@@ -28,6 +28,9 @@ jobs:
       - name: Install dependencies (workspaces)
         run: npm ci
 
+      - name: Workaround npm optional deps bug (rollup linux binary)
+        run: npm install --no-save --workspaces=false @rollup/rollup-linux-x64-gnu
+
       - name: Build vit-core (workspace dep)
         run: npm run build -w packages/vit-core --if-present
 
