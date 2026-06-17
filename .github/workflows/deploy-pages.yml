@@ -2,7 +2,7 @@ name: Deploy vit-pay-app to GitHub Pages
 
 on:
   push:
-    branches: [master]
+    branches: [max-ux-2026]
   workflow_dispatch:
 
 permissions:
