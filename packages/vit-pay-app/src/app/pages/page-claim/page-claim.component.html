@@ -1,0 +1,50 @@
+<section class="claim-page">
+  <header class="topbar">
+    <a class="back" [routerLink]="['/']" aria-label="Accueil">
+      <span class="material-symbols-outlined">home</span>
+    </a>
+    <h1>Récupérer des xCHF</h1>
+  </header>
+
+  <div class="loading-card" *ngIf="step === 'loading'">
+    <span class="material-symbols-outlined">hourglass_top</span>
+    <p>Vérification du lien…</p>
+  </div>
+
+  <div class="error-card" *ngIf="step === 'error'">
+    <span class="material-symbols-outlined">error</span>
+    <h2>Lien indisponible</h2>
+    <p>{{ error }}</p>
+  </div>
+
+  <div class="claim-card" *ngIf="step === 'ready' || step === 'claiming'">
+    <div class="amount-hero">{{ amount }} <span class="unit">xCHF</span></div>
+    <p class="sender">de <code>{{ senderShort }}</code></p>
+
+    <p class="error" *ngIf="error">{{ error }}</p>
+
+    <div class="wallet-block" *ngIf="hasWallet; else noWallet">
+      <span class="vit-label">Reçu sur</span>
+      <code>{{ short(walletAddress) }}</code>
+    </div>
+    <ng-template #noWallet>
+      <p class="warn">
+        Crée d'abord un wallet sur l'accueil pour pouvoir réclamer.
+        <a [routerLink]="['/wallet']">Aller au wallet →</a>
+      </p>
+    </ng-template>
+
+    <button class="cta" type="button" (click)="claim()" [disabled]="!hasWallet || step === 'claiming'">
+      <span class="material-symbols-outlined">redeem</span>
+      {{ step === 'claiming' ? 'Réception…' : 'Réclamer' }}
+    </button>
+  </div>
+
+  <div class="done-card" *ngIf="step === 'done'">
+    <span class="material-symbols-outlined check">check_circle</span>
+    <h2>Fonds reçus</h2>
+    <p>{{ amount }} xCHF crédités sur ton wallet.</p>
+    <code *ngIf="txHash">{{ txHash }}</code>
+    <a class="cta" [routerLink]="['/']">Voir mon solde</a>
+  </div>
+</section>

@@ -23,6 +23,10 @@ export const environment = {
   // Limite de paiement journalière en wei ZCHF (1000 ZCHF en dev, MVP 0.3
   // §11). Mettre à `undefined` pour désactiver.
   maxDailyZchfAmount: 1000n * 10n ** 18n,
+  // VitClaimLink déployé sur Sepolia. Hash-locked escrow pour links de claim
+  // (envoyer des xCHF par URL). À déployer via
+  // `cd packages/vit-safe-modules && npx hardhat run scripts/deployClaimLink.js --network sepolia`.
+  claimLinkAddress: '0x4159090C5CbA619126cEE49d2802b0Dcee337F0e' as string,
   // OAuth Google (People API readonly). Crée un OAuth Client ID Web dans la
   // Google Cloud Console, ajoute `http://localhost:4200` aux origines
   // autorisées, et colle le client ID ici. '' = bouton masqué.

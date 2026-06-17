@@ -84,6 +84,13 @@ function stringifyUserOp(userOp: unknown): string {
 const ERC20_TRANSFER_ABI = ['function transfer(address to, uint256 amount) returns (bool)'];
 const ERC20_BALANCE_ABI = ['function balanceOf(address account) view returns (uint256)'];
 const MOCK_ERC20_MINT_ABI = ['function mint(address to, uint256 amount)'];
+const ERC20_APPROVE_ABI = ['function approve(address spender, uint256 amount) returns (bool)'];
+const CLAIMLINK_ABI = [
+  'function create(bytes32 id, address token, uint128 amount, uint64 expiry, bytes32 secretHash)',
+  'function claim(bytes32 id, bytes32 secret, address recipient)',
+  'function cancel(bytes32 id)',
+  'function getLink(bytes32 id) view returns (tuple(address sender, address token, uint128 amount, uint64 expiry, uint8 status, bytes32 secretHash))',
+];
 
 export interface RecentTransfer {
   hash: string;
@@ -595,6 +602,125 @@ export class WalletService {
       state.accountAddress,
     );
     return this.executeSponsoredUserOp([finalizeTx]);
+  }
+
+  // === ClaimLink ===
+
+  async createClaimLink(
+    claimLinkAddress: string,
+    id: string,
+    amount: bigint,
+    expiry: bigint,
+    secretHash: string,
+  ): Promise<UserOperationResult> {
+    this.checkDailyLimit(amount);
+    const approveTx = this.buildErc20Approve(
+      this.config.zchfTokenAddress,
+      claimLinkAddress,
+      amount,
+    );
+    const createTx = this.buildClaimLinkCreate(
+      claimLinkAddress,
+      id,
+      this.config.zchfTokenAddress,
+      amount,
+      expiry,
+      secretHash,
+    );
+    const result = await this.executeSponsoredUserOp([approveTx, createTx]);
+    if (result.success) this.incrementDailySpending(amount);
+    return result;
+  }
+
+  async claimClaimLink(
+    claimLinkAddress: string,
+    id: string,
+    secret: string,
+    recipient: string,
+  ): Promise<UserOperationResult> {
+    const tx = this.buildClaimLinkClaim(claimLinkAddress, id, secret, recipient);
+    return this.executeSponsoredUserOp([tx]);
+  }
+
+  async cancelClaimLink(
+    claimLinkAddress: string,
+    id: string,
+  ): Promise<UserOperationResult> {
+    const tx = this.buildClaimLinkCancel(claimLinkAddress, id);
+    return this.executeSponsoredUserOp([tx]);
+  }
+
+  async readClaimLink(
+    claimLinkAddress: string,
+    id: string,
+  ): Promise<{
+    sender: string;
+    token: string;
+    amount: bigint;
+    expiry: bigint;
+    status: number;
+    secretHash: string;
+  }> {
+    assertConfigUsable(this.config);
+    const provider = new ethers.JsonRpcProvider(this.config.nodeRpcUrl);
+    const contract = new ethers.Contract(claimLinkAddress, CLAIMLINK_ABI, provider);
+    const link = await contract['getLink'](id);
+    return {
+      sender:     link.sender as string,
+      token:      link.token as string,
+      amount:     link.amount as bigint,
+      expiry:     link.expiry as bigint,
+      status:     Number(link.status),
+      secretHash: link.secretHash as string,
+    };
+  }
+
+  private buildErc20Approve(tokenAddress: string, spender: string, amount: bigint): MetaTransaction {
+    const iface = new ethers.Interface(ERC20_APPROVE_ABI);
+    return {
+      to: tokenAddress,
+      value: 0n,
+      data: iface.encodeFunctionData('approve', [spender, amount]),
+    };
+  }
+
+  private buildClaimLinkCreate(
+    claimLinkAddress: string,
+    id: string,
+    token: string,
+    amount: bigint,
+    expiry: bigint,
+    secretHash: string,
+  ): MetaTransaction {
+    const iface = new ethers.Interface(CLAIMLINK_ABI);
+    return {
+      to: claimLinkAddress,
+      value: 0n,
+      data: iface.encodeFunctionData('create', [id, token, amount, expiry, secretHash]),
+    };
+  }
+
+  private buildClaimLinkClaim(
+    claimLinkAddress: string,
+    id: string,
+    secret: string,
+    recipient: string,
+  ): MetaTransaction {
+    const iface = new ethers.Interface(CLAIMLINK_ABI);
+    return {
+      to: claimLinkAddress,
+      value: 0n,
+      data: iface.encodeFunctionData('claim', [id, secret, recipient]),
+    };
+  }
+
+  private buildClaimLinkCancel(claimLinkAddress: string, id: string): MetaTransaction {
+    const iface = new ethers.Interface(CLAIMLINK_ABI);
+    return {
+      to: claimLinkAddress,
+      value: 0n,
+      data: iface.encodeFunctionData('cancel', [id]),
+    };
   }
 
   private buildErc20Transfer(

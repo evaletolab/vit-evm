@@ -9,6 +9,8 @@ import { PageSentComponent } from './pages/page-sent/page-sent.component';
 import { PageTransactionsComponent } from './pages/page-transactions/page-transactions.component';
 import { PageWalletComponent } from './pages/page-wallet/page-wallet.component';
 import { PageContactsComponent } from './pages/page-contacts/page-contacts.component';
+import { PageLinksComponent } from './pages/page-links/page-links.component';
+import { PageClaimComponent } from './pages/page-claim/page-claim.component';
 
 
 
@@ -20,6 +22,8 @@ const routes: Routes = [
   { path: 'txs', component: PageTransactionsComponent },
   { path: 'wallet', component: PageWalletComponent },
   { path: 'contacts', component: PageContactsComponent },
+  { path: 'links', component: PageLinksComponent },
+  { path: 'claim', component: PageClaimComponent },
 ];
 
 @NgModule({
