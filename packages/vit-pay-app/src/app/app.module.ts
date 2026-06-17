@@ -11,6 +11,7 @@ import { PageSentComponent } from './pages/page-sent/page-sent.component';
 import { PageTransactionsComponent } from './pages/page-transactions/page-transactions.component';
 import { PageBuyComponent } from './pages/page-buy/page-buy.component';
 import { PageWalletComponent } from './pages/page-wallet/page-wallet.component';
+import { PageContactsComponent } from './pages/page-contacts/page-contacts.component';
 import { VitMintComponent } from './vit-mint/vit-mint.component';
 import { VitPasskeyComponent } from './vit-passkey/vit-passkey.component';
 
@@ -24,6 +25,7 @@ import { VitPasskeyComponent } from './vit-passkey/vit-passkey.component';
     PageTransactionsComponent,
     PageBuyComponent,
     PageWalletComponent,
+    PageContactsComponent,
     VitMintComponent,
     VitPasskeyComponent
   ],

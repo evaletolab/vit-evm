@@ -23,4 +23,8 @@ export const environment = {
   // Limite de paiement journalière en wei ZCHF (1000 ZCHF en dev, MVP 0.3
   // §11). Mettre à `undefined` pour désactiver.
   maxDailyZchfAmount: 1000n * 10n ** 18n,
+  // OAuth Google (People API readonly). Crée un OAuth Client ID Web dans la
+  // Google Cloud Console, ajoute `http://localhost:4200` aux origines
+  // autorisées, et colle le client ID ici. '' = bouton masqué.
+  googleClientId: '' as string,
 };

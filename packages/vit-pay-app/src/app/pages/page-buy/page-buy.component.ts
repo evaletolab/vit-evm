@@ -16,6 +16,7 @@ import {
   parseZchfAmount,
 } from '../../wallet/wallet.utils';
 import { UserOperationResult } from '../../wallet/wallet.types';
+import { ContactsService, Contact } from '../../contacts/contacts.service';
 
 type Step = 'idle' | 'scanning' | 'confirm' | 'sending' | 'done' | 'error';
 
@@ -33,14 +34,52 @@ export class PageBuyComponent implements AfterViewInit, OnDestroy {
   errorMessage = '';
   lastResult?: UserOperationResult;
 
+  contactsOpen = false;
+  contacts: Contact[] = [];
+  matchedContact?: Contact;
+
   private stream?: MediaStream;
   private detector?: any;
   private rafId?: number;
   private scanCanvas?: HTMLCanvasElement;
+  private ownerAddress = '';
 
-  constructor(private wallet: WalletService, private zone: NgZone) {}
+  constructor(
+    private wallet: WalletService,
+    private zone: NgZone,
+    private contactsSvc: ContactsService,
+  ) {}
 
-  ngAfterViewInit(): void {}
+  async ngAfterViewInit(): Promise<void> {
+    try {
+      const state = await this.wallet.loadWallet();
+      if (state) {
+        this.ownerAddress = state.accountAddress;
+        this.contacts = this.contactsSvc.list(this.ownerAddress);
+      }
+    } catch {
+      /* no wallet — fine, contact picker stays empty */
+    }
+  }
+
+  openContacts(): void {
+    if (this.ownerAddress) {
+      this.contacts = this.contactsSvc.list(this.ownerAddress);
+    }
+    this.contactsOpen = true;
+  }
+  closeContacts(): void { this.contactsOpen = false; }
+
+  pickContact(c: Contact): void {
+    this.to = c.address;
+    this.matchedContact = c;
+    this.contactsOpen = false;
+  }
+
+  onToChange(): void {
+    if (!this.ownerAddress || !this.to) { this.matchedContact = undefined; return; }
+    this.matchedContact = this.contactsSvc.findByAddress(this.ownerAddress, this.to);
+  }
 
   ngOnDestroy(): void {
     this.stopScan();

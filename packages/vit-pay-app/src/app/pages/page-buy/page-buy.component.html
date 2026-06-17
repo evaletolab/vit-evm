@@ -52,7 +52,16 @@
     <h2>Confirmer le paiement</h2>
     <label>
       <span class="label-text">Destinataire</span>
-      <input type="text" [(ngModel)]="to" placeholder="0x…" [disabled]="step === 'sending'" />
+      <div class="recipient-row">
+        <input type="text" [(ngModel)]="to" (ngModelChange)="onToChange()" placeholder="0x…" [disabled]="step === 'sending'" />
+        <button type="button" class="picker-btn" (click)="openContacts()" [disabled]="step === 'sending'" aria-label="Choisir dans le carnet">
+          <span class="material-symbols-outlined">contacts</span>
+        </button>
+      </div>
+      <p class="matched" *ngIf="matchedContact">
+        <span class="material-symbols-outlined">verified</span>
+        {{ matchedContact.name }}
+      </p>
     </label>
     <label>
       <span class="label-text">Montant (xCHF)</span>
@@ -80,5 +89,28 @@
   <div class="hint">
     <span class="vit-chip">xCHF · Sepolia</span>
     <span>Frais sponsorisés</span>
+  </div>
+
+  <!-- contact picker bottom sheet -->
+  <div class="picker" *ngIf="contactsOpen" (click)="closeContacts()">
+    <div class="picker__sheet" (click)="$event.stopPropagation()">
+      <div class="picker__handle"></div>
+      <h3>Carnet d'adresses</h3>
+      <ul class="picker__list" *ngIf="contacts.length; else pickerEmpty">
+        <li *ngFor="let c of contacts" class="picker__row" (click)="pickContact(c)">
+          <span class="picker__avatar">{{ c.name.charAt(0).toUpperCase() }}</span>
+          <div class="picker__info">
+            <div class="picker__name">{{ c.name }}</div>
+            <div class="picker__addr">{{ c.address.slice(0,6) }}…{{ c.address.slice(-4) }}</div>
+          </div>
+        </li>
+      </ul>
+      <ng-template #pickerEmpty>
+        <p class="picker__empty">
+          Aucun contact.
+          <a [routerLink]="['/contacts']">Ouvrir le carnet</a>
+        </p>
+      </ng-template>
+    </div>
   </div>
 </section>
