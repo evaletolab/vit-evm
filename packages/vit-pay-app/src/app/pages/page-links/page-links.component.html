@@ -4,6 +4,9 @@
       <span class="material-symbols-outlined">arrow_back</span>
     </a>
     <h1>Claim links</h1>
+    <button *ngIf="view === 'list' && hasWallet && configured" class="add" type="button" (click)="refresh()" [disabled]="busy" aria-label="Rafraîchir">
+      <span class="material-symbols-outlined">refresh</span>
+    </button>
     <button *ngIf="view === 'list' && hasWallet && configured" class="add" type="button" (click)="openCreate()" aria-label="Nouveau">
       <span class="material-symbols-outlined">add</span>
     </button>

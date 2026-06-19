@@ -42,6 +42,7 @@ export class PageLinksComponent implements OnInit {
       this.hasWallet = true;
       this.owner = state.accountAddress;
       this.links = this.cl.list(this.owner);
+      this.cl.refreshStatuses(this.owner).then((fresh) => { this.links = fresh; });
     } catch (e: unknown) {
       this.error = e instanceof Error ? e.message : 'Erreur';
     }
@@ -118,6 +119,17 @@ export class PageLinksComponent implements OnInit {
       this.links = this.cl.list(this.owner);
     } catch (e: unknown) {
       this.error = e instanceof Error ? e.message : 'Erreur';
+      this.links = this.cl.list(this.owner);
+    } finally {
+      this.busy = false;
+    }
+  }
+
+  async refresh(): Promise<void> {
+    if (!this.owner) return;
+    this.busy = true;
+    try {
+      this.links = await this.cl.refreshStatuses(this.owner);
     } finally {
       this.busy = false;
     }
