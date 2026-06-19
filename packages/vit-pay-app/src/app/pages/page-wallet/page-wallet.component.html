@@ -269,9 +269,19 @@
           Finalisable après bloc :
           <code>{{ recoveryRequest.executeAfter }}</code>
         </p>
-        <button (click)="finalizeRecovery()" [disabled]="busy">
-          {{ busy ? 'Finalisation…' : 'Finaliser la recovery' }}
-        </button>
+        <div class="recovery-actions">
+          <button (click)="finalizeRecovery()" [disabled]="busy || !canFinalizeRecovery">
+            {{ busy ? 'Finalisation…' : (canFinalizeRecovery ? 'Finaliser la recovery' : 'Grace period en cours') }}
+          </button>
+          <button class="danger" (click)="cancelOnChainRecovery()" [disabled]="busy">
+            <span class="material-symbols-outlined">block</span>
+            Annuler cette recovery
+          </button>
+        </div>
+        <p class="hint warn">
+          ⚠️ Si cette demande n'est pas de vous, annulez-la <strong>avant</strong>
+          la fin du grace period pour bloquer le changement d'owner.
+        </p>
       </div>
 
       <div *ngIf="lastRecoveryOp" class="result">

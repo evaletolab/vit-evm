@@ -727,6 +727,21 @@ export class WalletService {
     return this.executeSponsoredUserOp([finalizeTx]);
   }
 
+  /**
+   * Annule la recovery on-chain en cours. Appel signé par le Safe (l'owner
+   * actuel) → seul l'utilisateur encore en possession de sa passkey peut
+   * l'invoquer. Sert de garde-fou contre une recovery malicieuse lancée par
+   * un guardian compromis : pendant le grace period, l'owner légitime peut
+   * encore tuer la requête.
+   */
+  async cancelRecoveryOnChain(): Promise<UserOperationResult> {
+    const module = new SocialRecoveryModule(
+      this.config.socialRecoveryModuleAddress,
+    );
+    const cancelTx = module.createCancelRecoveryMetaTransaction();
+    return this.executeSponsoredUserOp([cancelTx]);
+  }
+
   // === ClaimLink ===
 
   async createClaimLink(

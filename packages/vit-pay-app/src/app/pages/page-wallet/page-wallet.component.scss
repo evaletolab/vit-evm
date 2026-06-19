@@ -574,3 +574,33 @@
     font-weight: 600;
   }
 }
+
+.recovery-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  margin-top: 0.5rem;
+
+  button.danger {
+    background: rgba(255,107,133,.14);
+    border: 1px solid rgba(255,107,133,.35);
+    color: var(--negative);
+
+    &:hover:not(:disabled) {
+      background: rgba(255,107,133,.22);
+    }
+  }
+}
+
+.hint.warn {
+  margin-top: 0.5rem;
+  padding: 0.5rem 0.7rem;
+  border-radius: var(--r-tile);
+  background: rgba(255,180,84,.10);
+  border: 1px solid rgba(255,180,84,.25);
+  color: var(--warning);
+  font-size: 12.5px;
+  line-height: 1.4;
+
+  strong { color: var(--text); }
+}

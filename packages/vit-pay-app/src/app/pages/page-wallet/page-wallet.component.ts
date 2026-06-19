@@ -337,4 +337,27 @@ export class PageWalletComponent implements OnInit, AfterViewInit, OnDestroy {
       this.busy = false;
     }
   }
+
+  async cancelOnChainRecovery(): Promise<void> {
+    if (!confirm('Annuler la recovery en cours ? Cette action est irréversible sur cette requête.')) return;
+    this.busy = true;
+    this.error = undefined;
+    try {
+      const result = await this.wallet.cancelRecoveryOnChain();
+      this.lastRecoveryOp = result;
+      if (!result.success && result.error) {
+        this.error = mapPaymasterError(new Error(result.error));
+      }
+      await this.refreshRecoveryRequest();
+    } catch (err) {
+      this.error = err instanceof Error ? err.message : String(err);
+    } finally {
+      this.busy = false;
+    }
+  }
+
+  get canFinalizeRecovery(): boolean {
+    if (!this.recoveryRequest) return false;
+    return BigInt(Math.floor(Date.now() / 1000)) >= BigInt(this.recoveryRequest.executeAfter);
+  }
 }
