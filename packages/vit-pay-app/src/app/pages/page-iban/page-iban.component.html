@@ -1,0 +1,178 @@
+<section class="iban-page">
+  <header class="iban-head">
+    <a class="back" [routerLink]="['/account']" aria-label="Retour">
+      <span class="material-symbols-outlined">arrow_back</span>
+    </a>
+    <h1>IBAN · Mt Pelerin</h1>
+  </header>
+
+  <ol class="stepper" aria-label="Progression">
+    <li [class.active]="step === 'checklist'" [class.done]="step === 'kyc' || step === 'enter' || step === 'done'">
+      <span>1</span><label>Préparer</label>
+    </li>
+    <li [class.active]="step === 'kyc'" [class.done]="step === 'enter' || step === 'done'">
+      <span>2</span><label>KYC</label>
+    </li>
+    <li [class.active]="step === 'enter'" [class.done]="step === 'done'">
+      <span>3</span><label>IBAN</label>
+    </li>
+    <li [class.active]="step === 'done'">
+      <span>4</span><label>Fini</label>
+    </li>
+  </ol>
+
+  <p class="error" *ngIf="error">{{ error }}</p>
+
+  <!-- Étape 1 : préparer les documents -->
+  <div class="vit-card" *ngIf="step === 'checklist'">
+    <h3>Avant de commencer</h3>
+    <p class="lead">
+      Mt Pelerin est un broker régulé en Suisse. Ils ont besoin de vérifier
+      ton identité (KYC) pour t'attribuer un IBAN. Prépare ces 4 éléments,
+      ça prend ~10 min.
+    </p>
+
+    <ul class="checklist">
+      <li *ngFor="let item of checklist">
+        <span class="material-symbols-outlined">{{ item.icon }}</span>
+        <span>{{ item.label }}</span>
+      </li>
+    </ul>
+
+    <div class="addr-row" *ngIf="address">
+      <div>
+        <div class="vit-label">Adresse à recevoir (pré-injectée)</div>
+        <code>{{ address }}</code>
+      </div>
+      <button class="ghost" type="button" (click)="copyAddress()" aria-label="Copier">
+        <span class="material-symbols-outlined">content_copy</span>
+      </button>
+    </div>
+
+    <button class="vit-btn vit-btn--primary cta" type="button"
+            (click)="startKyc()" [disabled]="!address">
+      <span class="material-symbols-outlined">arrow_forward</span>
+      Je suis prêt · Lancer la KYC
+    </button>
+    <p class="warn" *ngIf="!address">
+      Adresse du Safe introuvable — crée d'abord ton wallet.
+    </p>
+  </div>
+
+  <!-- Étape 2 : KYC en cours sur Mt Pelerin -->
+  <div class="vit-card" *ngIf="step === 'kyc'">
+    <h3>KYC sur Mt Pelerin</h3>
+    <p class="lead">
+      Mt Pelerin n'a pas de page d'inscription séparée : le compte se crée
+      <strong>via le widget d'achat</strong>. Tape un montant en CHF (10 CHF suffit pour
+      tester), confirme l'adresse Safe pré-injectée, et Mt Pelerin te
+      demandera <strong>email + KYC</strong> au moment du paiement.
+    </p>
+
+    <div class="tip">
+      <span class="material-symbols-outlined">lightbulb</span>
+      <div>
+        <strong>Où trouver l'IBAN ?</strong>
+        <p>
+          Une fois la KYC validée (quelques minutes à quelques heures), ouvre
+          ton compte Mt Pelerin → section <em>Bank / IBAN</em>. Format attendu :
+          <code>CH00 0000 0000 0000 0000 0</code>.
+        </p>
+      </div>
+    </div>
+
+    <button class="vit-btn vit-btn--ghost" type="button" (click)="openAccount()">
+      <span class="material-symbols-outlined">account_circle</span>
+      Ouvrir mon compte Mt Pelerin
+    </button>
+    <button class="vit-btn vit-btn--primary cta" type="button" (click)="goTo('enter')">
+      <span class="material-symbols-outlined">edit</span>
+      J'ai mon IBAN · Le saisir
+    </button>
+    <button class="link-back" type="button" (click)="goTo('checklist')">
+      ← Retour à la checklist
+    </button>
+  </div>
+
+  <!-- Étape 3 : saisie de l'IBAN -->
+  <div class="vit-card" *ngIf="step === 'enter'">
+    <h3>Saisir mon IBAN</h3>
+    <p class="lead">
+      Colle ici l'IBAN suisse fourni par Mt Pelerin. On vérifie le contrôle
+      mod-97 (norme ISO 13616) avant d'enregistrer.
+    </p>
+
+    <label class="field">
+      <span class="vit-label">IBAN</span>
+      <input type="text"
+             placeholder="CH00 0000 0000 0000 0000 0"
+             [ngModel]="iban"
+             (ngModelChange)="onIbanInput($event)"
+             autocapitalize="characters"
+             autocomplete="off"
+             spellcheck="false">
+    </label>
+    <p class="error" *ngIf="ibanError">{{ ibanError }}</p>
+
+    <button class="vit-btn vit-btn--primary cta" type="button"
+            (click)="saveIban()" [disabled]="!iban">
+      <span class="material-symbols-outlined">save</span>
+      Enregistrer
+    </button>
+    <button class="link-back" type="button" (click)="goTo('kyc')">
+      ← Pas encore d'IBAN
+    </button>
+  </div>
+
+  <!-- Étape 4 : terminé, accès achat/vente -->
+  <ng-container *ngIf="step === 'done'">
+    <div class="vit-card iban-card done-card">
+      <div class="check-row">
+        <span class="material-symbols-outlined check">check_circle</span>
+        <div>
+          <h3>IBAN configuré</h3>
+          <code class="iban-display">{{ iban }}</code>
+        </div>
+      </div>
+      <p class="hint">Visible sur ta carte dans l'onglet Carte.</p>
+      <div class="iban-actions">
+        <button class="vit-btn vit-btn--ghost" type="button" (click)="goTo('enter')">
+          <span class="material-symbols-outlined">edit</span>
+          Modifier
+        </button>
+        <button class="vit-btn vit-btn--ghost" type="button" (click)="clearIban()">
+          <span class="material-symbols-outlined">delete</span>
+          Effacer
+        </button>
+      </div>
+    </div>
+
+    <div class="vit-card iban-card">
+      <h3>Acheter / Vendre xCHF</h3>
+      <div class="mode-switch" role="tablist">
+        <button type="button" role="tab"
+                [class.active]="mode === 'buy'"
+                [attr.aria-selected]="mode === 'buy'"
+                (click)="setMode('buy')">
+          <span class="material-symbols-outlined">south</span>
+          Acheter xCHF
+        </button>
+        <button type="button" role="tab"
+                [class.active]="mode === 'sell'"
+                [attr.aria-selected]="mode === 'sell'"
+                (click)="setMode('sell')">
+          <span class="material-symbols-outlined">north</span>
+          Vendre xCHF
+        </button>
+      </div>
+      <label class="field">
+        <span class="vit-label">Montant {{ mode === 'buy' ? '(CHF)' : '(xCHF)' }}</span>
+        <input type="text" inputmode="decimal" placeholder="100" [(ngModel)]="amount">
+      </label>
+      <button class="vit-btn vit-btn--primary cta" type="button" (click)="openWidget()">
+        <span class="material-symbols-outlined">open_in_new</span>
+        {{ mode === 'buy' ? 'Acheter sur Mt Pelerin' : 'Vendre sur Mt Pelerin' }}
+      </button>
+    </div>
+  </ng-container>
+</section>

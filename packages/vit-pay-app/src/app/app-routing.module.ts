@@ -11,6 +11,7 @@ import { PageWalletComponent } from './pages/page-wallet/page-wallet.component';
 import { PageContactsComponent } from './pages/page-contacts/page-contacts.component';
 import { PageLinksComponent } from './pages/page-links/page-links.component';
 import { PageClaimComponent } from './pages/page-claim/page-claim.component';
+import { PageIbanComponent } from './pages/page-iban/page-iban.component';
 import { requireWalletGuard } from './wallet/wallet.guard';
 
 
@@ -24,6 +25,7 @@ const routes: Routes = [
   { path: 'wallet', component: PageWalletComponent },
   { path: 'contacts', component: PageContactsComponent, canActivate: [requireWalletGuard] },
   { path: 'links', component: PageLinksComponent, canActivate: [requireWalletGuard] },
+  { path: 'iban', component: PageIbanComponent, canActivate: [requireWalletGuard] },
   { path: 'claim', component: PageClaimComponent },
 ];
 
