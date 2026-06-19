@@ -24,7 +24,7 @@ import {
   shortAddress,
 } from '../../wallet/wallet.utils';
 
-type ViewState = 'no-wallet' | 'loading' | 'ready';
+type ViewState = 'no-wallet' | 'loading' | 'ready' | 'recover';
 
 @Component({
   selector: 'vit-page-wallet',
@@ -81,6 +81,10 @@ export class PageWalletComponent implements OnInit, AfterViewInit, OnDestroy {
   recoveryRequest: RecoveryRequest | null = null;
   lastRecoveryOp?: UserOperationResult;
 
+  // recovery depuis un nouvel appareil (vue 'recover')
+  recoverSafeAddress = '';
+  recoverNewOwnerAddress = '';
+
   // exported for template
   readonly shortAddress = shortAddress;
 
@@ -116,6 +120,52 @@ export class PageWalletComponent implements OnInit, AfterViewInit, OnDestroy {
     } catch (err) {
       this.error = err instanceof Error ? err.message : String(err);
       this.view = 'no-wallet';
+    }
+  }
+
+  openRecover(): void {
+    this.error = undefined;
+    this.recoverSafeAddress = '';
+    this.recoverNewOwnerAddress = '';
+    this.wallet.cancelPendingRecovery();
+    this.view = 'recover';
+  }
+
+  cancelRecover(): void {
+    this.wallet.cancelPendingRecovery();
+    this.recoverSafeAddress = '';
+    this.recoverNewOwnerAddress = '';
+    this.error = undefined;
+    this.view = 'no-wallet';
+  }
+
+  async startRecover(): Promise<void> {
+    this.busy = true;
+    this.error = undefined;
+    try {
+      const out = await this.wallet.startNewDeviceRecovery(this.recoverSafeAddress);
+      this.recoverNewOwnerAddress = out.newOwnerAddress;
+    } catch (err) {
+      this.error = err instanceof Error ? err.message : String(err);
+    } finally {
+      this.busy = false;
+    }
+  }
+
+  async verifyRecover(): Promise<void> {
+    this.busy = true;
+    this.error = undefined;
+    try {
+      this.state = await this.wallet.verifyAndAdoptRecoveredWallet();
+      this.recoverSafeAddress = '';
+      this.recoverNewOwnerAddress = '';
+      this.view = 'ready';
+      await this.refreshBalance();
+      await this.refreshRecoveryRequest();
+    } catch (err) {
+      this.error = err instanceof Error ? err.message : String(err);
+    } finally {
+      this.busy = false;
     }
   }
 

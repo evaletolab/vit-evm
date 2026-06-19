@@ -16,6 +16,66 @@
     <button (click)="createWallet()" [disabled]="busy">
       {{ busy ? 'Création…' : 'Créer mon wallet' }}
     </button>
+
+    <hr />
+
+    <h2>Déjà un compte ?</h2>
+    <p>
+      Si vous avez perdu l'accès à votre passkey mais que des guardians sont
+      configurés, vous pouvez récupérer votre Safe sur cet appareil.
+    </p>
+    <button class="secondary" (click)="openRecover()" [disabled]="busy">
+      Récupérer mon compte
+    </button>
+  </article>
+
+  <!-- Recovery depuis un nouvel appareil -->
+  <article *ngIf="view === 'recover'" class="card">
+    <h2>Récupérer mon compte</h2>
+    <p>
+      Création d'une nouvelle passkey locale, à autoriser ensuite par vos
+      guardians via la fonctionnalité <strong>recovery</strong> du
+      SocialRecoveryModule.
+    </p>
+
+    <label>
+      Adresse de votre Safe à récupérer
+      <input
+        type="text"
+        [(ngModel)]="recoverSafeAddress"
+        placeholder="0x…"
+        [disabled]="busy || !!recoverNewOwnerAddress"
+      />
+    </label>
+    <button
+      *ngIf="!recoverNewOwnerAddress"
+      (click)="startRecover()"
+      [disabled]="busy">
+      {{ busy ? 'Création passkey…' : 'Créer ma passkey de récupération' }}
+    </button>
+
+    <div *ngIf="recoverNewOwnerAddress" class="result">
+      <p>
+        ✅ Nouvelle passkey créée. Partagez cette <strong>owner address</strong>
+        à vos guardians :
+      </p>
+      <p><code>{{ recoverNewOwnerAddress }}</code></p>
+      <p>
+        Les guardians doivent appeler <code>executeRecovery({{
+        recoverSafeAddress }}, [{{ recoverNewOwnerAddress }}], 1)</code> sur le
+        SocialRecoveryModule, l'approuver à hauteur du threshold, puis attendre
+        le grace period et appeler <code>finalizeRecovery</code>. Une fois cela
+        fait, cliquer ci-dessous.
+      </p>
+      <button (click)="verifyRecover()" [disabled]="busy">
+        {{ busy ? 'Vérification…' : 'Vérifier la récupération' }}
+      </button>
+    </div>
+
+    <hr />
+    <button class="secondary" (click)="cancelRecover()" [disabled]="busy">
+      Annuler
+    </button>
   </article>
 
   <article *ngIf="view === 'loading'" class="card">
