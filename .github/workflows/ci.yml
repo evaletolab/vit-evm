@@ -1,0 +1,41 @@
+name: CI
+
+on:
+  pull_request:
+  push:
+    branches: [main, max-ux-2026]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build-and-test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+          cache: 'npm'
+
+      - name: Install dependencies (workspaces)
+        run: npm ci
+
+      - name: Build vit-core
+        run: npm run build --workspace=packages/vit-core --if-present
+
+      - name: Build vit-pay-app
+        run: npm run build --workspace=packages/vit-pay-app
+
+      - name: Test (all workspaces)
+        run: npm test
+
+      - name: npm audit (high+)
+        run: npm audit --audit-level=high --omit=dev
+        continue-on-error: true
