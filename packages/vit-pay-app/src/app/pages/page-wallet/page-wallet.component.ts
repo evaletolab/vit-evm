@@ -9,6 +9,7 @@ import {
   ViewChildren,
 } from '@angular/core';
 import { WalletService } from '../../wallet/wallet.service';
+import { ThemeService } from '../../theme/theme.service';
 import {
   RecoveryRequest,
   UserOperationDebug,
@@ -33,14 +34,19 @@ type ViewState = 'no-wallet' | 'loading' | 'ready';
 export class PageWalletComponent implements OnInit, AfterViewInit, OnDestroy {
   view: ViewState = 'no-wallet';
   activeCardIndex = 0;
-  readonly cardTabs = [
-    { title: 'Compte',    icon: 'account_balance_wallet' },
-    { title: 'Recevoir',  icon: 'download' },
-    { title: 'Envoyer',   icon: 'send' },
-    { title: 'Appareils', icon: 'devices' },
-    { title: 'Recovery',  icon: 'shield_lock' },
+  private readonly allCardTabs = [
+    { title: 'Compte',    icon: 'account_balance_wallet', dev: false },
+    { title: 'Recevoir',  icon: 'download',               dev: true  },
+    { title: 'Envoyer',   icon: 'send',                   dev: false },
+    { title: 'Appareils', icon: 'devices',                dev: false },
+    { title: 'Recovery',  icon: 'shield_lock',            dev: false },
   ];
+  get cardTabs(): { title: string; icon: string }[] {
+    const dev = this.theme.isDevMode();
+    return this.allCardTabs.filter((t) => dev || !t.dev);
+  }
   get cardTitles(): string[] { return this.cardTabs.map((t) => t.title); }
+  get devMode(): boolean { return this.theme.isDevMode(); }
 
   @ViewChild('deck') deckRef?: ElementRef<HTMLElement>;
   @ViewChildren('deckCard') deckCards?: QueryList<ElementRef<HTMLElement>>;
@@ -78,7 +84,7 @@ export class PageWalletComponent implements OnInit, AfterViewInit, OnDestroy {
   // exported for template
   readonly shortAddress = shortAddress;
 
-  constructor(private wallet: WalletService) {}
+  constructor(private wallet: WalletService, private theme: ThemeService) {}
 
   async ngOnInit(): Promise<void> {
     this.view = 'loading';

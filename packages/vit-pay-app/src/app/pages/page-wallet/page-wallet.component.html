@@ -72,8 +72,8 @@
       </dl>
     </article>
 
-    <!-- F2 : recevoir des ZCHF de test (MockZCHF) -->
-    <article #deckCard class="card card--receive">
+    <!-- F2 : recevoir des ZCHF de test (MockZCHF) — dev only -->
+    <article *ngIf="devMode" #deckCard class="card card--receive">
       <header class="card-head">
         <div class="card-head__badge card-head__badge--secondary"><span class="material-symbols-outlined">download</span></div>
         <div>
@@ -103,7 +103,7 @@
           ✅ Mint inclus : <code>{{ lastFaucet.transactionHash }}</code>
         </p>
         <p *ngIf="!lastFaucet.success">❌ {{ lastFaucet.error }}</p>
-        <details *ngIf="lastFaucet.debug" class="debug">
+        <details *ngIf="devMode && lastFaucet.debug" class="debug">
           <summary>Debug UserOperation</summary>
           <button (click)="copyDebug(lastFaucet.debug!)">Copier JSON</button>
           <pre><code>{{ formatDebug(lastFaucet.debug!) }}</code></pre>
@@ -156,7 +156,7 @@
           ✅ Transaction incluse : <code>{{ lastPayment.transactionHash }}</code>
         </p>
         <p *ngIf="!lastPayment.success">❌ {{ lastPayment.error }}</p>
-        <details *ngIf="lastPayment.debug" class="debug">
+        <details *ngIf="devMode && lastPayment.debug" class="debug">
           <summary>Debug UserOperation</summary>
           <button (click)="copyDebug(lastPayment.debug!)">Copier JSON</button>
           <pre><code>{{ formatDebug(lastPayment.debug!) }}</code></pre>
@@ -207,7 +207,7 @@
           ✅ Owner ajouté : <code>{{ addDeviceResult.address }}</code>
         </p>
         <p *ngIf="!addDeviceResult.op.success">❌ {{ addDeviceResult.op.error }}</p>
-        <details *ngIf="addDeviceResult.op.debug" class="debug">
+        <details *ngIf="devMode && addDeviceResult.op.debug" class="debug">
           <summary>Debug UserOperation</summary>
           <button (click)="copyDebug(addDeviceResult.op.debug!)">Copier JSON</button>
           <pre><code>{{ formatDebug(addDeviceResult.op.debug!) }}</code></pre>
@@ -272,7 +272,7 @@
           ✅ Opération recovery : <code>{{ lastRecoveryOp.transactionHash }}</code>
         </p>
         <p *ngIf="!lastRecoveryOp.success">❌ {{ lastRecoveryOp.error }}</p>
-        <details *ngIf="lastRecoveryOp.debug" class="debug">
+        <details *ngIf="devMode && lastRecoveryOp.debug" class="debug">
           <summary>Debug UserOperation</summary>
           <button (click)="copyDebug(lastRecoveryOp.debug!)">Copier JSON</button>
           <pre><code>{{ formatDebug(lastRecoveryOp.debug!) }}</code></pre>
