@@ -2,6 +2,18 @@
 <html lang="en">
 <head>
   <meta charset="utf-8">
+  <meta http-equiv="Content-Security-Policy" content="
+    default-src 'self';
+    script-src 'self' https://accounts.google.com;
+    style-src 'self' 'unsafe-inline' https://fonts.googleapis.com;
+    font-src 'self' data: https://fonts.gstatic.com;
+    img-src 'self' data: blob:;
+    connect-src 'self' https: wss:;
+    frame-src 'self' https://accounts.google.com;
+    form-action 'self';
+    base-uri 'self';
+    object-src 'none';
+  ">
   <title>ViTpay</title>
   <base href="/">
   <meta name="viewport" content="width=device-width, initial-scale=1">
