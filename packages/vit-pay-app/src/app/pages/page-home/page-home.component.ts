@@ -1,4 +1,5 @@
 import { Component, OnInit } from '@angular/core';
+import { Router } from '@angular/router';
 import { ethers } from 'ethers';
 import { WalletService, RecentTransfer } from '../../wallet/wallet.service';
 import { formatZchfAmount, shortAddress } from '../../wallet/wallet.utils';
@@ -24,12 +25,15 @@ export class PageHomeComponent implements OnInit {
   loadingTxs = false;
   recentTxs: RecentTx[] = [];
 
-  constructor(private wallet: WalletService) {}
+  constructor(private wallet: WalletService, private router: Router) {}
 
   async ngOnInit(): Promise<void> {
     try {
       const state = await this.wallet.loadWallet();
-      if (!state) return;
+      if (!state) {
+        this.router.navigate(['/wallet']);
+        return;
+      }
       this.hasWallet = true;
       this.shortAddr = shortAddress(state.accountAddress);
 
@@ -46,6 +50,7 @@ export class PageHomeComponent implements OnInit {
         .finally(() => { this.loadingTxs = false; });
     } catch {
       this.hasWallet = false;
+      this.router.navigate(['/wallet']);
     }
   }
 
