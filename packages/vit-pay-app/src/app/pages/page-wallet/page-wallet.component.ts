@@ -84,7 +84,19 @@ export class PageWalletComponent implements OnInit, AfterViewInit, OnDestroy {
   // exported for template
   readonly shortAddress = shortAddress;
 
-  constructor(private wallet: WalletService, private theme: ThemeService) {}
+  iban: string | null = null;
+
+  constructor(private wallet: WalletService, private theme: ThemeService) {
+    try {
+      this.iban = localStorage.getItem('vit-iban');
+    } catch {
+      this.iban = null;
+    }
+  }
+
+  formatIban(iban: string): string {
+    return iban.replace(/\s+/g, '').toUpperCase().replace(/(.{4})/g, '$1 ').trim();
+  }
 
   async ngOnInit(): Promise<void> {
     this.view = 'loading';

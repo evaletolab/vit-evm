@@ -48,6 +48,13 @@
           <span>····</span>
           {{ s.accountAddress.slice(-4).toUpperCase() }}
         </div>
+        <div class="holo-card__iban">
+          <span class="holo-card__iban-label">IBAN</span>
+          <span class="holo-card__iban-value" *ngIf="iban; else noIban">{{ formatIban(iban) }}</span>
+          <ng-template #noIban>
+            <a class="holo-card__iban-cta" [routerLink]="['/iban']">Configurer →</a>
+          </ng-template>
+        </div>
         <div class="holo-card__foot">
           <span class="holo-card__name">{{ shortAddress(s.accountAddress) }}</span>
           <span class="holo-card__network">{{ s.chainId === 11155111 ? 'SEPOLIA' : 'CHAIN ' + s.chainId }}</span>

@@ -226,6 +226,36 @@
         }
       }
 
+      &__iban {
+        position: relative;
+        display: flex;
+        align-items: baseline;
+        gap: 8px;
+        z-index: 1;
+      }
+      &__iban-label {
+        font-family: 'Space Mono', monospace;
+        font-size: 0.6rem;
+        letter-spacing: 2px;
+        color: rgba(255,255,255,.7);
+        text-transform: uppercase;
+      }
+      &__iban-value {
+        font-family: 'Space Mono', monospace;
+        font-size: 0.78rem;
+        letter-spacing: 1.5px;
+        color: #fff;
+        font-weight: 600;
+      }
+      &__iban-cta {
+        font-family: 'Space Mono', monospace;
+        font-size: 0.7rem;
+        letter-spacing: 1px;
+        color: rgba(255,255,255,.85);
+        text-decoration: underline;
+        text-underline-offset: 3px;
+      }
+
       &__foot {
         position: relative;
         display: flex;
