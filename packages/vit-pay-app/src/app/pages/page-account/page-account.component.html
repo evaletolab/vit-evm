@@ -1,25 +1,97 @@
-<nav class="account-links">
-  <a class="account-tile" [routerLink]="['/contacts']">
-    <span class="account-tile__icon">
-      <span class="material-symbols-outlined">contacts</span>
-    </span>
-    <div class="account-tile__body">
-      <div class="account-tile__title">Carnet d'adresses</div>
-      <div class="account-tile__meta">Whitelist pour paiements plus rapides</div>
-    </div>
-    <span class="material-symbols-outlined account-tile__chev">chevron_right</span>
-  </a>
+<ng-container *ngIf="tab === 'menu'">
+  <nav class="account-links">
+    <a class="account-tile" [routerLink]="['/contacts']">
+      <span class="account-tile__icon">
+        <span class="material-symbols-outlined">contacts</span>
+      </span>
+      <div class="account-tile__body">
+        <div class="account-tile__title">Carnet d'adresses</div>
+        <div class="account-tile__meta">Whitelist pour paiements plus rapides</div>
+      </div>
+      <span class="material-symbols-outlined account-tile__chev">chevron_right</span>
+    </a>
 
-  <a class="account-tile" [routerLink]="['/links']">
-    <span class="account-tile__icon">
-      <span class="material-symbols-outlined">link</span>
-    </span>
-    <div class="account-tile__body">
-      <div class="account-tile__title">Claim links</div>
-      <div class="account-tile__meta">Envoyer des xCHF par URL · annulable</div>
-    </div>
-    <span class="material-symbols-outlined account-tile__chev">chevron_right</span>
-  </a>
-</nav>
+    <a class="account-tile" [routerLink]="['/links']">
+      <span class="account-tile__icon">
+        <span class="material-symbols-outlined">link</span>
+      </span>
+      <div class="account-tile__body">
+        <div class="account-tile__title">Claim links</div>
+        <div class="account-tile__meta">Envoyer des xCHF par URL · annulable</div>
+      </div>
+      <span class="material-symbols-outlined account-tile__chev">chevron_right</span>
+    </a>
 
-<vit-passkey />
+    <button class="account-tile" type="button" (click)="openSettings()">
+      <span class="account-tile__icon">
+        <span class="material-symbols-outlined">tune</span>
+      </span>
+      <div class="account-tile__body">
+        <div class="account-tile__title">Réglages</div>
+        <div class="account-tile__meta">Couleurs · mode dev</div>
+      </div>
+      <span class="material-symbols-outlined account-tile__chev">chevron_right</span>
+    </button>
+  </nav>
+
+  <vit-passkey />
+</ng-container>
+
+<section class="settings-pane" *ngIf="tab === 'settings'">
+  <header class="settings-head">
+    <button class="back" type="button" (click)="closeSettings()" aria-label="Retour">
+      <span class="material-symbols-outlined">arrow_back</span>
+    </button>
+    <h2>Réglages</h2>
+  </header>
+
+  <div class="settings-card">
+    <h3>Couleurs</h3>
+
+    <div class="preset-grid">
+      <button class="preset" type="button"
+              *ngFor="let p of presets"
+              (click)="applyPreset(p)"
+              [attr.aria-label]="'Appliquer ' + p.label">
+        <span class="preset__swatches">
+          <span class="preset__swatch" [style.background]="p.colors.surface1"></span>
+          <span class="preset__swatch" [style.background]="p.colors.surface2"></span>
+          <span class="preset__swatch" [style.background]="p.colors.violet"></span>
+          <span class="preset__swatch" [style.background]="p.colors.violetDeep"></span>
+        </span>
+        <span class="preset__label">{{ p.label }}</span>
+      </button>
+    </div>
+
+    <label class="color-row" *ngFor="let def of colorDefs">
+      <div class="color-row__label">
+        <div class="color-row__title">{{ def.label }}</div>
+        <div class="color-row__meta">
+          <code>{{ def.cssVar }}</code> · {{ colors[def.key] }}
+          <span *ngIf="def.alpha !== undefined">· α {{ def.alpha }}</span>
+        </div>
+      </div>
+      <input type="color" [value]="colors[def.key]"
+             (input)="onColorChange(def.key, $any($event.target).value)">
+    </label>
+
+    <button class="vit-btn vit-btn--ghost reset-btn" type="button" (click)="resetColors()">
+      <span class="material-symbols-outlined">restart_alt</span>
+      Réinitialiser
+    </button>
+  </div>
+
+  <div class="settings-card">
+    <h3>Avancé</h3>
+    <label class="toggle-row">
+      <div class="toggle-row__label">
+        <div class="toggle-row__title">Mode dev</div>
+        <div class="toggle-row__meta">Active « Recevoir » + logs UserOperation</div>
+      </div>
+      <span class="toggle" [class.toggle--on]="devMode" role="switch"
+            [attr.aria-checked]="devMode" (click)="toggleDevMode()">
+        <span class="toggle__dot"></span>
+      </span>
+    </label>
+  </div>
+</section>
