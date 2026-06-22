@@ -18,16 +18,18 @@ jobs:
   build:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
 
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@v5
         with:
-          node-version: '20'
+          node-version: '22'
+          cache: 'npm'
 
       - name: Install dependencies (workspaces)
-        run: |
-          rm -f package-lock.json
-          npm install
+        run: npm ci
+
+      - name: Install rollup linux binary (npm optional deps bug 4828)
+        run: npm install --no-save @rollup/rollup-linux-x64-gnu@4.46.2
 
       - name: Build vit-core (workspace dep)
         run: npm run build -w packages/vit-core --if-present
