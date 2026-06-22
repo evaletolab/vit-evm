@@ -119,9 +119,7 @@
               "@shoelace-style/shoelace/dist/themes/light.css",
               "src/styles.scss"
             ],
-            "scripts": [
-              "@shoelace-style/shoelace/dist/shoelace.js"
-            ]
+            "scripts": []
           }
         }
       }
