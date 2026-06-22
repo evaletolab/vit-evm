@@ -36,6 +36,12 @@
               {
                 "glob": "**/*",
                 "input": "public"
+              },
+              "src/manifest.webmanifest",
+              {
+                "glob": "**/*",
+                "input": "src/assets",
+                "output": "assets"
               }
             ],
             "styles": [
@@ -49,7 +55,8 @@
               "buffer"
             ],
             "scripts": [
-            ]
+            ],
+            "serviceWorker": "ngsw-config.json"
           },
           "configurations": {
             "production": {
@@ -105,7 +112,8 @@
           "options": {
             "polyfills": [
               "zone.js",
-              "zone.js/testing"
+              "zone.js/testing",
+              "src/polyfills-test.ts"
             ],
             "tsConfig": "tsconfig.spec.json",
             "inlineStyleLanguage": "scss",
