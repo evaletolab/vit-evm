@@ -9,6 +9,7 @@ import {
   ViewChildren,
 } from '@angular/core';
 import { WalletService } from '../../wallet/wallet.service';
+import { ThemeService } from '../../theme/theme.service';
 import {
   RecoveryRequest,
   UserOperationDebug,
@@ -23,7 +24,7 @@ import {
   shortAddress,
 } from '../../wallet/wallet.utils';
 
-type ViewState = 'no-wallet' | 'loading' | 'ready';
+type ViewState = 'no-wallet' | 'loading' | 'ready' | 'recover';
 
 @Component({
   selector: 'vit-page-wallet',
@@ -33,14 +34,19 @@ type ViewState = 'no-wallet' | 'loading' | 'ready';
 export class PageWalletComponent implements OnInit, AfterViewInit, OnDestroy {
   view: ViewState = 'no-wallet';
   activeCardIndex = 0;
-  readonly cardTabs = [
-    { title: 'Compte',    icon: 'account_balance_wallet' },
-    { title: 'Recevoir',  icon: 'download' },
-    { title: 'Envoyer',   icon: 'send' },
-    { title: 'Appareils', icon: 'devices' },
-    { title: 'Recovery',  icon: 'shield_lock' },
+  private readonly allCardTabs = [
+    { title: 'Compte',    icon: 'account_balance_wallet', dev: false },
+    { title: 'Recevoir',  icon: 'download',               dev: true  },
+    { title: 'Envoyer',   icon: 'send',                   dev: false },
+    { title: 'Appareils', icon: 'devices',                dev: false },
+    { title: 'Recovery',  icon: 'shield_lock',            dev: false },
   ];
+  get cardTabs(): { title: string; icon: string }[] {
+    const dev = this.theme.isDevMode();
+    return this.allCardTabs.filter((t) => dev || !t.dev);
+  }
   get cardTitles(): string[] { return this.cardTabs.map((t) => t.title); }
+  get devMode(): boolean { return this.theme.isDevMode(); }
 
   @ViewChild('deck') deckRef?: ElementRef<HTMLElement>;
   @ViewChildren('deckCard') deckCards?: QueryList<ElementRef<HTMLElement>>;
@@ -75,10 +81,26 @@ export class PageWalletComponent implements OnInit, AfterViewInit, OnDestroy {
   recoveryRequest: RecoveryRequest | null = null;
   lastRecoveryOp?: UserOperationResult;
 
+  // recovery depuis un nouvel appareil (vue 'recover')
+  recoverSafeAddress = '';
+  recoverNewOwnerAddress = '';
+
   // exported for template
   readonly shortAddress = shortAddress;
 
-  constructor(private wallet: WalletService) {}
+  iban: string | null = null;
+
+  constructor(private wallet: WalletService, private theme: ThemeService) {
+    try {
+      this.iban = localStorage.getItem('vit-iban');
+    } catch {
+      this.iban = null;
+    }
+  }
+
+  formatIban(iban: string): string {
+    return iban.replace(/\s+/g, '').toUpperCase().replace(/(.{4})/g, '$1 ').trim();
+  }
 
   async ngOnInit(): Promise<void> {
     this.view = 'loading';
@@ -98,6 +120,52 @@ export class PageWalletComponent implements OnInit, AfterViewInit, OnDestroy {
     } catch (err) {
       this.error = err instanceof Error ? err.message : String(err);
       this.view = 'no-wallet';
+    }
+  }
+
+  openRecover(): void {
+    this.error = undefined;
+    this.recoverSafeAddress = '';
+    this.recoverNewOwnerAddress = '';
+    this.wallet.cancelPendingRecovery();
+    this.view = 'recover';
+  }
+
+  cancelRecover(): void {
+    this.wallet.cancelPendingRecovery();
+    this.recoverSafeAddress = '';
+    this.recoverNewOwnerAddress = '';
+    this.error = undefined;
+    this.view = 'no-wallet';
+  }
+
+  async startRecover(): Promise<void> {
+    this.busy = true;
+    this.error = undefined;
+    try {
+      const out = await this.wallet.startNewDeviceRecovery(this.recoverSafeAddress);
+      this.recoverNewOwnerAddress = out.newOwnerAddress;
+    } catch (err) {
+      this.error = err instanceof Error ? err.message : String(err);
+    } finally {
+      this.busy = false;
+    }
+  }
+
+  async verifyRecover(): Promise<void> {
+    this.busy = true;
+    this.error = undefined;
+    try {
+      this.state = await this.wallet.verifyAndAdoptRecoveredWallet();
+      this.recoverSafeAddress = '';
+      this.recoverNewOwnerAddress = '';
+      this.view = 'ready';
+      await this.refreshBalance();
+      await this.refreshRecoveryRequest();
+    } catch (err) {
+      this.error = err instanceof Error ? err.message : String(err);
+    } finally {
+      this.busy = false;
     }
   }
 
@@ -318,5 +386,28 @@ export class PageWalletComponent implements OnInit, AfterViewInit, OnDestroy {
     } finally {
       this.busy = false;
     }
+  }
+
+  async cancelOnChainRecovery(): Promise<void> {
+    if (!confirm('Annuler la recovery en cours ? Cette action est irréversible sur cette requête.')) return;
+    this.busy = true;
+    this.error = undefined;
+    try {
+      const result = await this.wallet.cancelRecoveryOnChain();
+      this.lastRecoveryOp = result;
+      if (!result.success && result.error) {
+        this.error = mapPaymasterError(new Error(result.error));
+      }
+      await this.refreshRecoveryRequest();
+    } catch (err) {
+      this.error = err instanceof Error ? err.message : String(err);
+    } finally {
+      this.busy = false;
+    }
+  }
+
+  get canFinalizeRecovery(): boolean {
+    if (!this.recoveryRequest) return false;
+    return BigInt(Math.floor(Date.now() / 1000)) >= BigInt(this.recoveryRequest.executeAfter);
   }
 }

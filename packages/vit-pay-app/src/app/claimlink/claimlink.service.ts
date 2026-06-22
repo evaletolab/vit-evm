@@ -74,9 +74,20 @@ export class ClaimLinkService {
   async cancel(id: string): Promise<UserOperationResult> {
     const addr = this.contractAddress();
     if (!addr) throw new Error('ClaimLink contract address non configurée');
+    const owner = await this.requireOwner();
+
+    const onChain = await this.wallet.readClaimLink(addr, id);
+    if (onChain.status === 1) {
+      this.updateStatus(owner, id, 'claimed');
+      throw new Error('Ce lien a déjà été réclamé par le destinataire — rien à annuler.');
+    }
+    if (onChain.status === 2) {
+      this.updateStatus(owner, id, 'cancelled');
+      throw new Error('Ce lien est déjà annulé.');
+    }
+
     const op = await this.wallet.cancelClaimLink(addr, id);
     if (op.success) {
-      const owner = await this.requireOwner();
       this.updateStatus(owner, id, 'cancelled');
     }
     return op;
@@ -92,6 +103,26 @@ export class ClaimLinkService {
     const addr = this.contractAddress();
     if (!addr) throw new Error('ClaimLink contract address non configurée');
     return this.wallet.readClaimLink(addr, id);
+  }
+
+  async refreshStatuses(owner: string): Promise<StoredLink[]> {
+    const addr = this.contractAddress();
+    if (!addr) return this.list(owner);
+    const list = this.list(owner);
+    const pending = list.filter((l) => l.status === 'pending');
+    if (pending.length === 0) return list;
+    await Promise.all(
+      pending.map(async (l) => {
+        try {
+          const oc = await this.wallet.readClaimLink(addr, l.id);
+          if (oc.status === 1) this.updateStatus(owner, l.id, 'claimed');
+          else if (oc.status === 2) this.updateStatus(owner, l.id, 'cancelled');
+        } catch {
+          // network glitch — laisse le status local intact
+        }
+      }),
+    );
+    return this.list(owner);
   }
 
   list(owner: string): StoredLink[] {

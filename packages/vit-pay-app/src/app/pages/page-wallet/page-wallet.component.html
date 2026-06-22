@@ -16,6 +16,66 @@
     <button (click)="createWallet()" [disabled]="busy">
       {{ busy ? 'Création…' : 'Créer mon wallet' }}
     </button>
+
+    <hr />
+
+    <h2>Déjà un compte ?</h2>
+    <p>
+      Si vous avez perdu l'accès à votre passkey mais que des guardians sont
+      configurés, vous pouvez récupérer votre Safe sur cet appareil.
+    </p>
+    <button class="secondary" (click)="openRecover()" [disabled]="busy">
+      Récupérer mon compte
+    </button>
+  </article>
+
+  <!-- Recovery depuis un nouvel appareil -->
+  <article *ngIf="view === 'recover'" class="card">
+    <h2>Récupérer mon compte</h2>
+    <p>
+      Création d'une nouvelle passkey locale, à autoriser ensuite par vos
+      guardians via la fonctionnalité <strong>recovery</strong> du
+      SocialRecoveryModule.
+    </p>
+
+    <label>
+      Adresse de votre Safe à récupérer
+      <input
+        type="text"
+        [(ngModel)]="recoverSafeAddress"
+        placeholder="0x…"
+        [disabled]="busy || !!recoverNewOwnerAddress"
+      />
+    </label>
+    <button
+      *ngIf="!recoverNewOwnerAddress"
+      (click)="startRecover()"
+      [disabled]="busy">
+      {{ busy ? 'Création passkey…' : 'Créer ma passkey de récupération' }}
+    </button>
+
+    <div *ngIf="recoverNewOwnerAddress" class="result">
+      <p>
+        ✅ Nouvelle passkey créée. Partagez cette <strong>owner address</strong>
+        à vos guardians :
+      </p>
+      <p><code>{{ recoverNewOwnerAddress }}</code></p>
+      <p>
+        Les guardians doivent appeler <code>executeRecovery({{
+        recoverSafeAddress }}, [{{ recoverNewOwnerAddress }}], 1)</code> sur le
+        SocialRecoveryModule, l'approuver à hauteur du threshold, puis attendre
+        le grace period et appeler <code>finalizeRecovery</code>. Une fois cela
+        fait, cliquer ci-dessous.
+      </p>
+      <button (click)="verifyRecover()" [disabled]="busy">
+        {{ busy ? 'Vérification…' : 'Vérifier la récupération' }}
+      </button>
+    </div>
+
+    <hr />
+    <button class="secondary" (click)="cancelRecover()" [disabled]="busy">
+      Annuler
+    </button>
   </article>
 
   <article *ngIf="view === 'loading'" class="card">
@@ -48,6 +108,13 @@
           <span>····</span>
           {{ s.accountAddress.slice(-4).toUpperCase() }}
         </div>
+        <div class="holo-card__iban">
+          <span class="holo-card__iban-label">IBAN</span>
+          <span class="holo-card__iban-value" *ngIf="iban; else noIban">{{ formatIban(iban) }}</span>
+          <ng-template #noIban>
+            <a class="holo-card__iban-cta" [routerLink]="['/iban']">Configurer →</a>
+          </ng-template>
+        </div>
         <div class="holo-card__foot">
           <span class="holo-card__name">{{ shortAddress(s.accountAddress) }}</span>
           <span class="holo-card__network">{{ s.chainId === 11155111 ? 'SEPOLIA' : 'CHAIN ' + s.chainId }}</span>
@@ -72,8 +139,8 @@
       </dl>
     </article>
 
-    <!-- F2 : recevoir des ZCHF de test (MockZCHF) -->
-    <article #deckCard class="card card--receive">
+    <!-- F2 : recevoir des ZCHF de test (MockZCHF) — dev only -->
+    <article *ngIf="devMode" #deckCard class="card card--receive">
       <header class="card-head">
         <div class="card-head__badge card-head__badge--secondary"><span class="material-symbols-outlined">download</span></div>
         <div>
@@ -103,7 +170,7 @@
           ✅ Mint inclus : <code>{{ lastFaucet.transactionHash }}</code>
         </p>
         <p *ngIf="!lastFaucet.success">❌ {{ lastFaucet.error }}</p>
-        <details *ngIf="lastFaucet.debug" class="debug">
+        <details *ngIf="devMode && lastFaucet.debug" class="debug">
           <summary>Debug UserOperation</summary>
           <button (click)="copyDebug(lastFaucet.debug!)">Copier JSON</button>
           <pre><code>{{ formatDebug(lastFaucet.debug!) }}</code></pre>
@@ -156,7 +223,7 @@
           ✅ Transaction incluse : <code>{{ lastPayment.transactionHash }}</code>
         </p>
         <p *ngIf="!lastPayment.success">❌ {{ lastPayment.error }}</p>
-        <details *ngIf="lastPayment.debug" class="debug">
+        <details *ngIf="devMode && lastPayment.debug" class="debug">
           <summary>Debug UserOperation</summary>
           <button (click)="copyDebug(lastPayment.debug!)">Copier JSON</button>
           <pre><code>{{ formatDebug(lastPayment.debug!) }}</code></pre>
@@ -207,7 +274,7 @@
           ✅ Owner ajouté : <code>{{ addDeviceResult.address }}</code>
         </p>
         <p *ngIf="!addDeviceResult.op.success">❌ {{ addDeviceResult.op.error }}</p>
-        <details *ngIf="addDeviceResult.op.debug" class="debug">
+        <details *ngIf="devMode && addDeviceResult.op.debug" class="debug">
           <summary>Debug UserOperation</summary>
           <button (click)="copyDebug(addDeviceResult.op.debug!)">Copier JSON</button>
           <pre><code>{{ formatDebug(addDeviceResult.op.debug!) }}</code></pre>
@@ -262,9 +329,19 @@
           Finalisable après bloc :
           <code>{{ recoveryRequest.executeAfter }}</code>
         </p>
-        <button (click)="finalizeRecovery()" [disabled]="busy">
-          {{ busy ? 'Finalisation…' : 'Finaliser la recovery' }}
-        </button>
+        <div class="recovery-actions">
+          <button (click)="finalizeRecovery()" [disabled]="busy || !canFinalizeRecovery">
+            {{ busy ? 'Finalisation…' : (canFinalizeRecovery ? 'Finaliser la recovery' : 'Grace period en cours') }}
+          </button>
+          <button class="danger" (click)="cancelOnChainRecovery()" [disabled]="busy">
+            <span class="material-symbols-outlined">block</span>
+            Annuler cette recovery
+          </button>
+        </div>
+        <p class="hint warn">
+          ⚠️ Si cette demande n'est pas de vous, annulez-la <strong>avant</strong>
+          la fin du grace period pour bloquer le changement d'owner.
+        </p>
       </div>
 
       <div *ngIf="lastRecoveryOp" class="result">
@@ -272,7 +349,7 @@
           ✅ Opération recovery : <code>{{ lastRecoveryOp.transactionHash }}</code>
         </p>
         <p *ngIf="!lastRecoveryOp.success">❌ {{ lastRecoveryOp.error }}</p>
-        <details *ngIf="lastRecoveryOp.debug" class="debug">
+        <details *ngIf="devMode && lastRecoveryOp.debug" class="debug">
           <summary>Debug UserOperation</summary>
           <button (click)="copyDebug(lastRecoveryOp.debug!)">Copier JSON</button>
           <pre><code>{{ formatDebug(lastRecoveryOp.debug!) }}</code></pre>

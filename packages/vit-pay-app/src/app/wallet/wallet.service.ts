@@ -85,6 +85,12 @@ const ERC20_TRANSFER_ABI = ['function transfer(address to, uint256 amount) retur
 const ERC20_BALANCE_ABI = ['function balanceOf(address account) view returns (uint256)'];
 const MOCK_ERC20_MINT_ABI = ['function mint(address to, uint256 amount)'];
 const ERC20_APPROVE_ABI = ['function approve(address spender, uint256 amount) returns (bool)'];
+const SAFE_GET_OWNERS_ABI = ['function getOwners() view returns (address[])'];
+
+export interface NewDeviceRecoveryStart {
+  newOwnerAddress: string;
+  safeAddress: string;
+}
 const CLAIMLINK_ABI = [
   'function create(bytes32 id, address token, uint128 amount, uint64 expiry, bytes32 secretHash)',
   'function claim(bytes32 id, bytes32 secret, address recipient)',
@@ -125,6 +131,11 @@ function formatErrorChain(err: unknown): string {
 export class WalletService {
   private config: WalletConfig = getWalletConfig();
   private state: WalletState | null = null;
+  private pendingRecovery: {
+    safeAddress: string;
+    passkey: PasskeyLocalStorageFormat;
+    newOwnerAddress: string;
+  } | null = null;
 
   constructor(private storage: WalletStorageService) {}
 
@@ -593,6 +604,118 @@ export class WalletService {
     }
   }
 
+  // === Recovery depuis un nouvel appareil ===
+  // Flux : nouvel appareil crée une passkey locale → on dérive l'owner address
+  // WebAuthn → l'utilisateur partage cette address à ses guardians → guardians
+  // déclenchent executeRecovery(safe, [newOwner], 1) + approbations → après le
+  // grace period, anyone peut appeler finalizeRecovery sur le module. Ensuite,
+  // le nouvel appareil vérifie que la nouvelle owner address est bien dans
+  // Safe.getOwners() puis enregistre le wallet localement.
+  async startNewDeviceRecovery(safeAddress: string): Promise<NewDeviceRecoveryStart> {
+    if (!ethers.isAddress(safeAddress)) {
+      throw new Error('Adresse Safe invalide');
+    }
+    if (typeof navigator === 'undefined' || !navigator.credentials) {
+      throw new Error('WebAuthn indisponible dans ce navigateur');
+    }
+    const credential = await createPasskey();
+    const passkey = toLocalStorageFormat(credential);
+    const newOwnerAddress = SafeAccount.getSignerLowerCaseAddress(
+      passkey.pubkeyCoordinates,
+      WEBAUTHN_CANONICAL_OVERRIDES,
+    );
+    this.pendingRecovery = {
+      safeAddress: ethers.getAddress(safeAddress),
+      passkey,
+      newOwnerAddress,
+    };
+    return { safeAddress: this.pendingRecovery.safeAddress, newOwnerAddress };
+  }
+
+  getPendingRecovery(): NewDeviceRecoveryStart | null {
+    if (!this.pendingRecovery) return null;
+    return {
+      safeAddress: this.pendingRecovery.safeAddress,
+      newOwnerAddress: this.pendingRecovery.newOwnerAddress,
+    };
+  }
+
+  cancelPendingRecovery(): void {
+    this.pendingRecovery = null;
+  }
+
+  // Vérifie on-chain que la rotation d'owner a bien eu lieu (les guardians ont
+  // déclenché + finalisé la recovery). Si oui, enregistre le wallet localement.
+  async verifyAndAdoptRecoveredWallet(): Promise<WalletState> {
+    if (!this.pendingRecovery) {
+      throw new Error('Aucune récupération en cours');
+    }
+    assertConfigUsable(this.config);
+    const provider = new ethers.JsonRpcProvider(this.config.nodeRpcUrl);
+    const safe = new ethers.Contract(
+      this.pendingRecovery.safeAddress,
+      SAFE_GET_OWNERS_ABI,
+      provider,
+    );
+    let owners: string[];
+    try {
+      owners = (await safe['getOwners']()) as string[];
+    } catch (err) {
+      throw new Error(
+        'Impossible de lire les owners du Safe. Le compte est-il déployé ? ' +
+          formatErrorChain(err),
+      );
+    }
+    const expected = this.pendingRecovery.newOwnerAddress.toLowerCase();
+    const lowerOwners = owners.map((o) => o.toLowerCase());
+    if (!lowerOwners.includes(expected)) {
+      throw new Error(
+        'La nouvelle passkey n\'est pas encore owner du Safe. Les guardians ' +
+          'doivent d\'abord exécuter executeRecovery puis finalizeRecovery ' +
+          'sur le SocialRecoveryModule.',
+      );
+    }
+
+    const passkey = this.pendingRecovery.passkey;
+    const stored: StoredWallet = {
+      version: 1,
+      accountAddress: this.pendingRecovery.safeAddress,
+      chainId: Number(this.config.chainId),
+      credentialId: passkey.rawId,
+      webauthnPublicKey: {
+        x: '0x' + passkey.pubkeyCoordinates.x.toString(16),
+        y: '0x' + passkey.pubkeyCoordinates.y.toString(16),
+      },
+      owners: lowerOwners,
+      recoveryEnabled: true,
+      zchfTokenAddress: this.config.zchfTokenAddress,
+    };
+    this.storage.save(stored);
+
+    let deployed = false;
+    try {
+      const code = await provider.getCode(stored.accountAddress);
+      deployed = code !== '0x';
+    } catch {
+      deployed = false;
+    }
+
+    this.state = {
+      accountAddress: stored.accountAddress,
+      chainId: stored.chainId,
+      owners: stored.owners,
+      recoveryEnabled: true,
+      zchfTokenAddress: stored.zchfTokenAddress,
+      passkey: {
+        rawId: passkey.rawId,
+        pubkeyCoordinates: passkey.pubkeyCoordinates,
+      },
+      deployed,
+    };
+    this.pendingRecovery = null;
+    return this.state;
+  }
+
   async finalizeRecovery(): Promise<UserOperationResult> {
     const state = this.requireState();
     const module = new SocialRecoveryModule(
@@ -602,6 +725,21 @@ export class WalletService {
       state.accountAddress,
     );
     return this.executeSponsoredUserOp([finalizeTx]);
+  }
+
+  /**
+   * Annule la recovery on-chain en cours. Appel signé par le Safe (l'owner
+   * actuel) → seul l'utilisateur encore en possession de sa passkey peut
+   * l'invoquer. Sert de garde-fou contre une recovery malicieuse lancée par
+   * un guardian compromis : pendant le grace period, l'owner légitime peut
+   * encore tuer la requête.
+   */
+  async cancelRecoveryOnChain(): Promise<UserOperationResult> {
+    const module = new SocialRecoveryModule(
+      this.config.socialRecoveryModuleAddress,
+    );
+    const cancelTx = module.createCancelRecoveryMetaTransaction();
+    return this.executeSponsoredUserOp([cancelTx]);
   }
 
   // === ClaimLink ===
