@@ -28,7 +28,9 @@ jobs:
         run: npm ci
 
       - name: Install rollup linux binary (npm optional deps bug 4828)
-        run: npm install --no-save @rollup/rollup-linux-x64-gnu@4.46.2
+        run: |
+          ROLLUP_VERSION=$(node -p "require('./node_modules/rollup/package.json').version")
+          npm install --no-save @rollup/rollup-linux-x64-gnu@$ROLLUP_VERSION
 
       - name: Build vit-core
         run: npm run build --workspace=packages/vit-core --if-present
