@@ -1,6 +1,7 @@
-import { APP_INITIALIZER, CUSTOM_ELEMENTS_SCHEMA, NgModule } from '@angular/core';
+import { APP_INITIALIZER, CUSTOM_ELEMENTS_SCHEMA, NgModule, isDevMode } from '@angular/core';
 import { BrowserModule } from '@angular/platform-browser';
 import { FormsModule } from '@angular/forms';
+import { ServiceWorkerModule } from '@angular/service-worker';
 import { WalletStorageService } from './wallet/wallet-storage.service';
 
 import { AppRoutingModule } from './app-routing.module';
@@ -40,6 +41,10 @@ import { VitPasskeyComponent } from './vit-passkey/vit-passkey.component';
     BrowserModule,
     FormsModule,
     AppRoutingModule,
+    ServiceWorkerModule.register('ngsw-worker.js', {
+      enabled: !isDevMode(),
+      registrationStrategy: 'registerWhenStable:30000'
+    }),
   ],
   providers: [
     {

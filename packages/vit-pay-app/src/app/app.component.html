@@ -1,5 +1,18 @@
 <router-outlet />
 
+<div class="vit-install-banner" *ngIf="showInstallPrompt" role="dialog" aria-label="Installer ViTpay">
+  <button class="vit-install-banner__close" type="button" (click)="dismissInstallPrompt()" aria-label="Fermer">
+    <span class="material-symbols-outlined">close</span>
+  </button>
+  <div class="vit-install-banner__text">
+    Installez ViTpay sur votre appareil pour un accès rapide.
+  </div>
+  <button class="vit-install-banner__btn" type="button" (click)="installPWA()">
+    <span class="material-symbols-outlined">download</span>
+    Installer
+  </button>
+</div>
+
 <nav class="vit-nav" aria-label="Navigation principale">
   <a class="vit-nav__item" routerLink="/" routerLinkActive="vit-nav__item--active" [routerLinkActiveOptions]="{exact: true}">
     <span class="material-symbols-outlined vit-nav__icon">home</span>
