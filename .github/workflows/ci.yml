@@ -3,7 +3,7 @@ name: CI
 on:
   pull_request:
   push:
-    branches: [main, max-ux-2026]
+    branches: [master, max-ux-2026]
   workflow_dispatch:
 
 permissions:
