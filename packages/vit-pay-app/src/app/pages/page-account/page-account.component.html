@@ -33,6 +33,28 @@
       <span class="material-symbols-outlined account-tile__chev">chevron_right</span>
     </a>
 
+    <a class="account-tile" [routerLink]="['/devices']">
+      <span class="account-tile__icon">
+        <span class="material-symbols-outlined">devices</span>
+      </span>
+      <div class="account-tile__body">
+        <div class="account-tile__title">Appareils</div>
+        <div class="account-tile__meta">Ajouter une passkey · multi-device</div>
+      </div>
+      <span class="material-symbols-outlined account-tile__chev">chevron_right</span>
+    </a>
+
+    <a class="account-tile" [routerLink]="['/recovery']">
+      <span class="account-tile__icon">
+        <span class="material-symbols-outlined">shield_lock</span>
+      </span>
+      <div class="account-tile__body">
+        <div class="account-tile__title">Recovery</div>
+        <div class="account-tile__meta">Guardians · rotation d'owner</div>
+      </div>
+      <span class="material-symbols-outlined account-tile__chev">chevron_right</span>
+    </a>
+
     <button class="account-tile" type="button" (click)="openSettings()">
       <span class="account-tile__icon">
         <span class="material-symbols-outlined">tune</span>

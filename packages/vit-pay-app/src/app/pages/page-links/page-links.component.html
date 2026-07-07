@@ -21,6 +21,10 @@
 
   <!-- ===== LIST ===== -->
   <ng-container *ngIf="view === 'list' && hasWallet && configured">
+    <p class="info">
+      Un claim link te permet d'envoyer des xCHF via une simple URL : le montant est bloqué dans un contrat et n'importe qui possédant le lien peut le réclamer. Tu peux l'annuler et récupérer les fonds tant qu'il n'a pas été réclamé.
+    </p>
+
     <button class="cta" type="button" (click)="openCreate()" [disabled]="busy">
       <span class="material-symbols-outlined">link</span>
       Créer un claim link

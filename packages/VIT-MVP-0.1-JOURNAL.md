@@ -1022,3 +1022,140 @@ Itération 0.4 (§11) inchangée. Ajouter à la dette :
 - Vérifier que `addDeviceWithPasskey`, `enableRecovery`, `finalizeRecovery`
   utilisent bien le même `signAndSendUserOp` (donc bénéficient du fix) —
   confirmé par grep : oui, single entry point.
+
+## 21. Itération 0.5 — Pages dédiées `/devices` et `/recovery` (extraction depuis `page-wallet`)
+
+### 21.1 Contexte
+
+`page-wallet` accumulait les cartes "Envoyer ZCHF", "Ajouter un appareil" et la
+gestion recovery en plus de l'overview du Safe (677+ LoC visées par l'audit
+P2 §8). En parallèle, `/wallet` est passée derrière `devOnlyGuard` (cf. doc
+UX Claude, `VIT-MVP-0.1.tmp.md`), donc les actions multi-device / recovery
+devaient rester accessibles hors mode dev sans dépendre de cette route.
+
+Aucune nouvelle méthode `WalletService` : `addDeviceWithPasskey`,
+`addOwnerByAddress`, `enableRecovery`, `finalizeRecovery`,
+`cancelRecoveryOnChain`, `getCachedRecoveryRequest`/`getRecoveryRequest`
+existaient déjà (§18/§19). Ce tour n'ajoute que l'exposition UI — traité ici
+car ça touche directement la surface recovery/passkeys (règle CLAUDE.md).
+
+### 21.2 `page-devices` (nouveau, route `/devices`)
+
+- Option A — passkey locale : `addDevice()` → `wallet.addDeviceWithPasskey()`.
+- Option B — par address (device distant) : saisie d'une owner address
+  (`isValidEvmAddress`), `addOwnerByAddress()`.
+- Bloc debug UserOp (JSON + copier) affiché uniquement si `theme.isDevMode()`.
+- Erreurs mappées via `mapPaymasterError`.
+
+### 21.3 `page-recovery` (nouveau, route `/recovery`)
+
+- `enableRecovery(guardians[], threshold)` : guardians saisis en texte libre,
+  split sur `[\s,;]+`.
+- Cache-first : `getCachedRecoveryRequest()` au `ngOnInit` (affichage immédiat)
+  puis `getRecoveryRequest()` réseau pour rafraîchir.
+- `canFinalizeRecovery` : compare `Date.now()` à `recoveryRequest.executeAfter`
+  (grace period) côté client — garde-fou UX, l'enforcement réel reste
+  on-chain dans le module ERC-7579.
+- `cancelOnChainRecovery()` : confirm() bloquant avant `cancelRecoveryOnChain()`
+  — répond à l'item d'audit P1 #4 ("Recovery sans UI cancel").
+
+### 21.4 `page-wallet` : retrait des cartes déplacées
+
+Template : suppression des cartes "F3 : envoyer un paiement sponsorisé" et
+"F4 : ajouter un device" (179 lignes) — logique équivalente désormais dans
+`page-buy` (paiement) et `page-devices` (multi-owner). `page-wallet` recentré
+sur l'overview du Safe (solde, adresse, statut déployé).
+
+### 21.5 Fichiers modifiés
+
+```
+packages/vit-pay-app/src/app/pages/page-devices/*          (nouveau)
+packages/vit-pay-app/src/app/pages/page-recovery/*          (nouveau)
+packages/vit-pay-app/src/app/pages/page-wallet/*            (cartes retirées)
+packages/vit-pay-app/src/app/app.module.ts                  (+2 déclarations)
+packages/vit-pay-app/src/app/app-routing.module.ts          (+2 routes, requireWalletGuard)
+```
+
+### 21.6 Vérifications
+
+- Pas de test E2E dédié ajouté — les méthodes `WalletService` sous-jacentes
+  sont couvertes par les vérifications §18/§19 (inchangées, seul le point
+  d'entrée UI change).
+- À faire : E2E `cancelOnChainRecovery` (confirm + tx annulation) et
+  `addOwnerByAddress` avec une address invalide (message FR attendu).
+
+### 21.7 Suite
+
+- Dette §8 (P2, `wallet.service.ts` à découper en `RecoveryService` /
+  `DailySpendingService`) toujours ouverte — cette itération ne touche que
+  la couche présentation.
+- `/devices` et `/recovery` sont sous `requireWalletGuard` (pas
+  `devOnlyGuard`) : accessibles même hors mode dev, contrairement à
+  `/wallet`. À confirmer que c'est le comportement voulu en prod.
+
+## 22. Fix 5 — Revert vide bundler (`eth_estimateUserOperationGas -> b''`) sur claim link
+
+### 22.1 Symptôme
+
+Rapporté dans `VIT-MVP-0.1.tmp.md` (itération §"Iteration UX Claude…", notes
+de test) : création d'un claim link depuis `/buy` (envoi par e-mail/SMS)
+échoue avec un revert vide côté bundler pendant l'estimation de gas — aucun
+message exploitable pour l'utilisateur.
+
+### 22.2 Diagnostic
+
+Deux pistes envisagées dans la doc initiale :
+1. `/buy` passe `expiry = 0n` alors que `/links` utilise `now + 24h`.
+2. Solde xCHF insuffisant sur le Safe, sans preflight côté client.
+
+Lecture de `packages/vit-safe-modules/contracts/VitClaimLink.sol:24,54` :
+`expiry` est documenté et implémenté comme `0 = no expiry` — piste 1 écartée,
+`VitClaimLink.create` n'exige aucune expiration future.
+
+Piste 2 retenue : `create()` appelle `IERC20(token).safeTransferFrom(...)`
+après avoir déjà écrit l'état (`links[id] = ...`) et émis l'event. Si le
+`transferFrom` interne du mock ZCHF revert sans chaîne de message (pattern
+courant sur les mocks « require(condition) » sans reason string), Solidity
+renvoie un revert de longueur zéro — exactement le `b''` vu par le bundler
+pendant la simulation d'`eth_estimateUserOperationGas`. Ni `sendZchfPayment`
+ni `createClaimLink` (`wallet.service.ts`) ne vérifiaient le solde avant de
+soumettre la UserOperation (limite journalière uniquement).
+
+### 22.3 Solution
+
+Nouvelle méthode privée `WalletService.checkSufficientBalance(amount)` :
+lit `getZchfBalance()` (déjà existante) et throw une erreur FR explicite
+(`Solde xCHF insuffisant : X disponible, Y requis.`) si insuffisant — avant
+toute construction de UserOperation. Branchée dans :
+- `createClaimLink()` — le chemin effectivement cassé.
+- `sendZchfPayment()` — même lacune latente (dette notée dans la doc UX),
+  fermée par cohérence puisque le pattern et le coût sont identiques.
+
+### 22.4 Fichiers modifiés
+
+```
+packages/vit-pay-app/src/app/wallet/wallet.service.ts
+  + checkSufficientBalance(amount): Promise<void>
+  ~ createClaimLink() : + await this.checkSufficientBalance(amount)
+  ~ sendZchfPayment()  : + await this.checkSufficientBalance(amount)
+```
+
+### 22.5 Vérifications
+
+- `ng build` (prod) : OK, aucune régression TS.
+- **Non testé E2E** : nécessite un wallet Sepolia sciemment sous-approvisionné
+  face à un montant de claim link pour confirmer que le message FR s'affiche
+  bien à la place du crash bundler. À faire au prochain passage device avant
+  de considérer le flux "envoi par lien" comme validé de bout en bout.
+- Hypothèse "require sans message côté mock ZCHF" non vérifiée sur le
+  bytecode déployé (source du mock hors de ce repo) — le fix reste valide
+  même si la cause exacte du revert vide diffère, puisqu'il empêche
+  simplement toute soumission de UserOperation en cas de solde insuffisant.
+
+### 22.6 Suite
+
+- Si le test E2E révèle une autre cause (ex. allowance résiduelle, montant
+  mal formaté), rouvrir cette section plutôt que d'empiler un fix 6 isolé.
+- Envisager d'exposer `checkSufficientBalance` au niveau UI (désactiver le
+  bouton "Envoyer" tant que le solde est insuffisant) plutôt que de laisser
+  l'utilisateur découvrir l'erreur après coup.

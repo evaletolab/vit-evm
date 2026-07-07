@@ -5,9 +5,9 @@
   max-width: var(--vit-page-max);
   margin: 0 auto;
   background:
-    radial-gradient(ellipse 70% 40% at 50% 0%, rgba(124,92,255,.20), transparent 70%),
-    radial-gradient(ellipse 60% 40% at 50% 100%, rgba(63,208,240,.10), transparent 70%),
-    linear-gradient(180deg, var(--surface-1), var(--surface-2));
+    radial-gradient(ellipse 70% 40% at 50% 0%, rgba(204,120,92,.14), transparent 70%),
+    radial-gradient(ellipse 60% 40% at 50% 100%, rgba(93,184,166,.08), transparent 70%),
+    linear-gradient(180deg, var(--surface-2), var(--bg));
   color: var(--text);
   padding: 1.25rem 1.25rem calc(6.5rem + env(safe-area-inset-bottom));
   box-sizing: border-box;
@@ -178,7 +178,7 @@
     }
 
     &__qr-title {
-      font-family: 'Space Grotesk', sans-serif;
+      font-family: 'Inter', sans-serif;
       font-size: 0.95rem;
       font-weight: 600;
       background: var(--grad-text);
@@ -211,7 +211,7 @@
     .scan-icon { font-size: 5rem; }
     p { margin: 0; font-size: 1.05rem; text-align: center; color: #fff; }
     .hint-text {
-      font-family: 'Space Mono', monospace;
+      font-family: 'JetBrains Mono', monospace;
       font-size: 11px;
       letter-spacing: 2px;
       text-transform: uppercase;
@@ -258,9 +258,10 @@
     gap: 8px;
     align-items: stretch;
 
-    input { flex: 1; }
+    input { flex: 1; min-width: 0; }
     .picker-btn {
       width: 48px;
+      flex-shrink: 0;
       border: 1px solid var(--hairline);
       background: var(--glass);
       color: var(--text);
@@ -281,11 +282,22 @@
     align-items: center;
     gap: 6px;
     color: var(--positive);
-    font-family: 'Space Mono', monospace;
+    font-family: 'JetBrains Mono', monospace;
     font-size: 11px;
     letter-spacing: 1px;
     text-transform: uppercase;
     .material-symbols-outlined { font-size: 14px; }
+  }
+
+  .recipient-hint {
+    margin: 6px 0 0;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    color: var(--violet);
+    font-size: 0.78rem;
+    font-weight: 500;
+    .material-symbols-outlined { font-size: 16px; }
   }
 
   .picker {
@@ -354,17 +366,17 @@
       display: flex;
       align-items: center;
       justify-content: center;
-      font-family: 'Space Grotesk', sans-serif;
+      font-family: 'Inter', sans-serif;
       font-weight: 700;
     }
     &__name {
-      font-family: 'Space Grotesk', sans-serif;
+      font-family: 'Inter', sans-serif;
       font-weight: 600;
       font-size: 0.9rem;
       color: var(--text);
     }
     &__addr {
-      font-family: 'Space Mono', monospace;
+      font-family: 'JetBrains Mono', monospace;
       font-size: 11px;
       color: var(--text-muted);
     }
@@ -395,7 +407,7 @@
       gap: 0.3rem;
 
       .label-text {
-        font-family: 'Space Mono', monospace;
+        font-family: 'JetBrains Mono', monospace;
         font-size: 10px;
         text-transform: uppercase;
         letter-spacing: 2px;
@@ -409,7 +421,7 @@
         background: rgba(255, 255, 255, 0.04);
         color: var(--text);
         border-radius: var(--r-tile);
-        font-family: 'Space Mono', monospace;
+        font-family: 'JetBrains Mono', monospace;
         font-size: 0.95rem;
         backdrop-filter: blur(10px);
 
@@ -464,15 +476,46 @@
     }
     h2 { margin: 0; font-size: 1.3rem; letter-spacing: -0.02em; }
     code {
-      font-family: 'Space Mono', monospace;
+      font-family: 'JetBrains Mono', monospace;
       font-size: 0.75rem;
       letter-spacing: 1px;
-      background: rgba(0, 0, 0, 0.35);
+      background: var(--surface-2);
       border: 1px solid var(--hairline-soft);
       padding: 0.4rem 0.6rem;
       border-radius: 8px;
       word-break: break-all;
       color: var(--text-2);
+    }
+
+    .done-sub {
+      margin: 0;
+      font-size: 0.88rem;
+      color: var(--text-2);
+      line-height: 1.45;
+      strong { color: var(--text); }
+    }
+
+    .claim-url {
+      width: 100%;
+      code { display: block; text-align: left; }
+    }
+
+    .actions {
+      display: flex;
+      gap: 0.6rem;
+      width: 100%;
+      justify-content: center;
+      flex-wrap: wrap;
+    }
+
+    .link-back {
+      background: none;
+      border: none;
+      color: var(--text-muted);
+      font: inherit;
+      font-size: 0.82rem;
+      cursor: pointer;
+      padding: 4px;
     }
   }
 
@@ -480,7 +523,7 @@
     display: flex;
     align-items: center;
     gap: 0.75rem;
-    font-family: 'Space Mono', monospace;
+    font-family: 'JetBrains Mono', monospace;
     font-size: 11px;
     letter-spacing: 1px;
     color: var(--text-muted);

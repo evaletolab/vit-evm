@@ -37,9 +37,6 @@ export class PageWalletComponent implements OnInit, AfterViewInit, OnDestroy {
   private readonly allCardTabs = [
     { title: 'Compte',    icon: 'account_balance_wallet', dev: false },
     { title: 'Recevoir',  icon: 'download',               dev: true  },
-    { title: 'Envoyer',   icon: 'send',                   dev: false },
-    { title: 'Appareils', icon: 'devices',                dev: false },
-    { title: 'Recovery',  icon: 'shield_lock',            dev: false },
   ];
   get cardTabs(): { title: string; icon: string }[] {
     const dev = this.theme.isDevMode();

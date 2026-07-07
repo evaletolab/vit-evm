@@ -18,10 +18,16 @@
     <span class="material-symbols-outlined vit-nav__icon">home</span>
     <span class="vit-nav__label">Accueil</span>
   </a>
-  <a class="vit-nav__item" routerLink="/wallet" routerLinkActive="vit-nav__item--active">
+  <a class="vit-nav__item" routerLink="/wallet" routerLinkActive="vit-nav__item--active" *ngIf="theme.isDevMode(); else navContacts">
     <span class="material-symbols-outlined vit-nav__icon">credit_card</span>
-    <span class="vit-nav__label">Carte</span>
+    <span class="vit-nav__label">Compte</span>
   </a>
+  <ng-template #navContacts>
+    <a class="vit-nav__item" routerLink="/contacts" routerLinkActive="vit-nav__item--active">
+      <span class="material-symbols-outlined vit-nav__icon">contacts</span>
+      <span class="vit-nav__label">Carnet</span>
+    </a>
+  </ng-template>
   <a class="vit-nav__item vit-nav__item--center" routerLink="/buy" routerLinkActive="vit-nav__item--active">
     <span class="vit-nav__fab">
       <span class="material-symbols-outlined">qr_code_scanner</span>

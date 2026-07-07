@@ -1,0 +1,88 @@
+<section class="devices-page">
+  <header class="devices-head">
+    <a class="back" [routerLink]="['/account']" aria-label="Retour">
+      <span class="material-symbols-outlined">arrow_back</span>
+    </a>
+    <h1>Appareils</h1>
+  </header>
+
+  <p class="error" *ngIf="error">{{ error }}</p>
+
+  <!-- Card 1 : passkey locale -->
+  <div class="vit-card">
+    <div class="card-head">
+      <span class="card-head__icon">
+        <span class="material-symbols-outlined">fingerprint</span>
+      </span>
+      <div>
+        <h3>Ajouter une passkey sur cet appareil</h3>
+        <p class="lead">
+          Crée une seconde passkey (FaceID / TouchID / Windows Hello) <strong>sur cet appareil</strong>
+          et l'enregistre comme owner additionnel du Safe. Utile si tu veux un backup local.
+        </p>
+      </div>
+    </div>
+
+    <button class="vit-btn vit-btn--primary cta" type="button"
+            (click)="addDevice()" [disabled]="busy">
+      <span class="material-symbols-outlined">add</span>
+      {{ busy ? 'Création…' : 'Créer une passkey locale' }}
+    </button>
+  </div>
+
+  <!-- Card 2 : autoriser un appareil distant -->
+  <div class="vit-card">
+    <div class="card-head">
+      <span class="card-head__icon">
+        <span class="material-symbols-outlined">phonelink_lock</span>
+      </span>
+      <div>
+        <h3>Autoriser un autre appareil</h3>
+        <p class="lead">
+          Sur l'appareil cible (qui n'a pas encore de wallet), crée une passkey
+          et copie son <strong>owner address</strong>. Colle-la ici, puis signe
+          depuis cet appareil pour l'autoriser comme nouvel owner.
+        </p>
+      </div>
+    </div>
+
+    <label class="field">
+      <span class="vit-label">Owner address de l'appareil distant</span>
+      <input type="text"
+             [(ngModel)]="externalOwnerAddress"
+             placeholder="0x…"
+             autocomplete="off"
+             spellcheck="false"
+             [disabled]="busy">
+    </label>
+
+    <button class="vit-btn vit-btn--primary cta" type="button"
+            (click)="addOwnerByAddress()" [disabled]="busy || !externalOwnerAddress">
+      <span class="material-symbols-outlined">check_circle</span>
+      {{ busy ? 'Autorisation…' : 'Autoriser cet owner' }}
+    </button>
+  </div>
+
+  <!-- Résultat -->
+  <div class="vit-card result-card" *ngIf="addDeviceResult">
+    <div class="result-row" [class.success]="addDeviceResult.op.success" [class.error]="!addDeviceResult.op.success">
+      <span class="material-symbols-outlined result-icon">
+        {{ addDeviceResult.op.success ? 'check_circle' : 'error' }}
+      </span>
+      <div>
+        <h3>{{ addDeviceResult.op.success ? 'Owner ajouté' : 'Échec' }}</h3>
+        <code *ngIf="addDeviceResult.op.success">{{ addDeviceResult.address }}</code>
+        <p *ngIf="!addDeviceResult.op.success" class="msg">{{ addDeviceResult.op.error }}</p>
+      </div>
+    </div>
+
+    <details *ngIf="devMode && addDeviceResult.op.debug" class="debug">
+      <summary>Debug UserOperation</summary>
+      <button class="vit-btn vit-btn--ghost" type="button" (click)="copyDebug(addDeviceResult.op.debug!)">
+        <span class="material-symbols-outlined">content_copy</span>
+        Copier JSON
+      </button>
+      <pre><code>{{ formatDebug(addDeviceResult.op.debug!) }}</code></pre>
+    </details>
+  </div>
+</section>

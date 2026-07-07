@@ -1,6 +1,6 @@
 import { Injectable } from '@angular/core';
 
-const STORAGE_KEY = 'vit-settings';
+const STORAGE_KEY = 'vit-settings-v2';
 
 export type ColorKey =
   | 'bg' | 'surface1' | 'surface2'
@@ -18,24 +18,26 @@ export interface ColorDef {
   visible?: boolean;
 }
 
+// Palette « Claude » (warm-canvas editorial) — cf. DESIGN.md.
+// Canvas crème, coral primaire, ink chaud, dark navy en surface d'appoint.
 export const COLOR_DEFS: ColorDef[] = [
-  { key: 'bg',           cssVar: '--bg',            label: 'Fond',              default: '#06070D' },
-  { key: 'surface1',     cssVar: '--surface-1',     label: 'Fond droit',        default: '#0C0E1A', visible: true },
-  { key: 'surface2',     cssVar: '--surface-2',     label: 'Fond gauche',       default: '#08090F', visible: true },
-  { key: 'glass',        cssVar: '--glass',         label: 'Verre',             default: '#FFFFFF', alpha: 0.06 },
-  { key: 'glassStrong',  cssVar: '--glass-strong',  label: 'Verre fort',        default: '#121420', alpha: 0.72 },
-  { key: 'hairline',     cssVar: '--hairline',      label: 'Trait',             default: '#FFFFFF', alpha: 0.12 },
-  { key: 'hairlineSoft', cssVar: '--hairline-soft', label: 'Trait doux',        default: '#FFFFFF', alpha: 0.08 },
-  { key: 'text',         cssVar: '--text',          label: 'Texte',             default: '#ECEDF5', visible: true },
-  { key: 'text2',        cssVar: '--text-2',        label: 'Texte 2',           default: '#C4C7D6' },
-  { key: 'textMuted',    cssVar: '--text-muted',    label: 'Texte estompé',     default: '#8A8FA6' },
-  { key: 'textDim',      cssVar: '--text-dim',      label: 'Texte sombre',      default: '#6E7392' },
-  { key: 'violet',       cssVar: '--violet',        label: 'Bouton gauche',     default: '#7C5CFF', visible: true },
-  { key: 'violetDeep',   cssVar: '--violet-deep',   label: 'Bouton droit',      default: '#5B3FE0', visible: true },
-  { key: 'cyan',         cssVar: '--cyan',          label: 'Cyan',              default: '#3FD0F0' },
-  { key: 'positive',     cssVar: '--positive',      label: 'Positif',           default: '#4ADE9B' },
-  { key: 'negative',     cssVar: '--negative',      label: 'Négatif',           default: '#FF6B85' },
-  { key: 'warning',      cssVar: '--warning',       label: 'Alerte',            default: '#FFB454' },
+  { key: 'bg',           cssVar: '--bg',            label: 'Fond',              default: '#FAF9F5' },
+  { key: 'surface1',     cssVar: '--surface-1',     label: 'Fond droit',        default: '#EFE9DE', visible: true },
+  { key: 'surface2',     cssVar: '--surface-2',     label: 'Fond gauche',       default: '#F5F0E8', visible: true },
+  { key: 'glass',        cssVar: '--glass',         label: 'Verre',             default: '#FFFFFF', alpha: 0.60 },
+  { key: 'glassStrong',  cssVar: '--glass-strong',  label: 'Verre fort',        default: '#FAF9F5', alpha: 0.80 },
+  { key: 'hairline',     cssVar: '--hairline',      label: 'Trait',             default: '#141413', alpha: 0.12 },
+  { key: 'hairlineSoft', cssVar: '--hairline-soft', label: 'Trait doux',        default: '#141413', alpha: 0.07 },
+  { key: 'text',         cssVar: '--text',          label: 'Texte',             default: '#141413', visible: true },
+  { key: 'text2',        cssVar: '--text-2',        label: 'Texte 2',           default: '#3D3D3A' },
+  { key: 'textMuted',    cssVar: '--text-muted',    label: 'Texte estompé',     default: '#6C6A64' },
+  { key: 'textDim',      cssVar: '--text-dim',      label: 'Texte sombre',      default: '#8E8B82' },
+  { key: 'violet',       cssVar: '--violet',        label: 'Bouton gauche',     default: '#CC785C', visible: true },
+  { key: 'violetDeep',   cssVar: '--violet-deep',   label: 'Bouton droit',      default: '#A9583E', visible: true },
+  { key: 'cyan',         cssVar: '--cyan',          label: 'Cyan',              default: '#5DB8A6' },
+  { key: 'positive',     cssVar: '--positive',      label: 'Positif',           default: '#5DB872' },
+  { key: 'negative',     cssVar: '--negative',      label: 'Négatif',           default: '#C64545' },
+  { key: 'warning',      cssVar: '--warning',       label: 'Alerte',            default: '#D4A017' },
 ];
 
 export type ColorMap = Partial<Record<ColorKey, string>>;
@@ -47,6 +49,11 @@ export interface ColorPreset {
 }
 
 export const COLOR_PRESETS: ColorPreset[] = [
+  {
+    id: 'claude',
+    label: 'Claude',
+    colors: { surface1: '#EFE9DE', surface2: '#F5F0E8', text: '#141413', violet: '#CC785C', violetDeep: '#A9583E' },
+  },
   {
     id: 'lumen',
     label: 'Lumen',

@@ -29,7 +29,7 @@
     .subtitle {
       margin: 0;
       color: var(--text-muted);
-      font-family: 'Space Mono', monospace;
+      font-family: 'JetBrains Mono', monospace;
       font-size: 11px;
       letter-spacing: 2px;
       text-transform: uppercase;
@@ -114,7 +114,7 @@
 
       &__eyebrow {
         margin: 0;
-        font-family: 'Space Mono', monospace;
+        font-family: 'JetBrains Mono', monospace;
         font-size: 11px;
         text-transform: uppercase;
         letter-spacing: 2px;
@@ -174,7 +174,7 @@
         z-index: 1;
       }
       &__brand {
-        font-family: 'Space Grotesk', sans-serif;
+        font-family: 'Inter', sans-serif;
         font-weight: 700;
         font-size: 0.95rem;
         letter-spacing: 4px;
@@ -209,7 +209,7 @@
 
       &__number {
         position: relative;
-        font-family: 'Space Mono', monospace;
+        font-family: 'JetBrains Mono', monospace;
         font-size: 1.05rem;
         letter-spacing: 3px;
         font-weight: 700;
@@ -234,21 +234,21 @@
         z-index: 1;
       }
       &__iban-label {
-        font-family: 'Space Mono', monospace;
+        font-family: 'JetBrains Mono', monospace;
         font-size: 0.6rem;
         letter-spacing: 2px;
         color: rgba(255,255,255,.7);
         text-transform: uppercase;
       }
       &__iban-value {
-        font-family: 'Space Mono', monospace;
+        font-family: 'JetBrains Mono', monospace;
         font-size: 0.78rem;
         letter-spacing: 1.5px;
         color: #fff;
         font-weight: 600;
       }
       &__iban-cta {
-        font-family: 'Space Mono', monospace;
+        font-family: 'JetBrains Mono', monospace;
         font-size: 0.7rem;
         letter-spacing: 1px;
         color: rgba(255,255,255,.85);
@@ -264,14 +264,14 @@
         z-index: 1;
       }
       &__name {
-        font-family: 'Space Mono', monospace;
+        font-family: 'JetBrains Mono', monospace;
         font-size: 0.7rem;
         letter-spacing: 2px;
         text-transform: uppercase;
         opacity: 0.92;
       }
       &__network {
-        font-family: 'Space Mono', monospace;
+        font-family: 'JetBrains Mono', monospace;
         font-size: 0.7rem;
         letter-spacing: 2px;
         font-weight: 700;
@@ -301,7 +301,7 @@
       display: flex;
       flex-direction: column;
       gap: 0.3rem;
-      font-family: 'Space Mono', monospace;
+      font-family: 'JetBrains Mono', monospace;
       font-size: 11px;
       letter-spacing: 2px;
       color: var(--text-muted);
@@ -316,7 +316,7 @@
         border-radius: var(--r-tile);
         background: rgba(255, 255, 255, 0.04);
         color: var(--text);
-        font-family: 'Space Mono', monospace;
+        font-family: 'JetBrains Mono', monospace;
         font-size: 0.85rem;
         text-transform: none;
         letter-spacing: 0;
@@ -363,7 +363,7 @@
 
       dt {
         color: var(--text-muted);
-        font-family: 'Space Mono', monospace;
+        font-family: 'JetBrains Mono', monospace;
         text-transform: uppercase;
         font-size: 10px;
         letter-spacing: 2px;
@@ -373,7 +373,7 @@
         margin: 0;
         word-break: break-all;
         color: var(--text);
-        font-family: 'Space Mono', monospace;
+        font-family: 'JetBrains Mono', monospace;
         font-size: 0.8rem;
         ul {
           margin: 0;
@@ -391,7 +391,7 @@
     }
 
     code {
-      font-family: 'Space Mono', monospace;
+      font-family: 'JetBrains Mono', monospace;
       font-size: 0.8rem;
       background: rgba(255, 255, 255, 0.06);
       border: 1px solid var(--hairline-soft);
@@ -420,7 +420,7 @@
       color: var(--text);
       padding: 0.4rem 0.85rem;
       border-radius: var(--r-pill);
-      font-family: 'Space Mono', monospace;
+      font-family: 'JetBrains Mono', monospace;
       font-size: 0.8rem;
       letter-spacing: 1px;
       align-self: flex-start;
@@ -431,7 +431,7 @@
       summary {
         cursor: pointer;
         color: var(--cyan);
-        font-family: 'Space Mono', monospace;
+        font-family: 'JetBrains Mono', monospace;
         font-size: 11px;
         letter-spacing: 2px;
         text-transform: uppercase;
@@ -443,7 +443,7 @@
         padding: 0.85rem;
         border-radius: var(--r-tile);
         overflow-x: auto;
-        font-family: 'Space Mono', monospace;
+        font-family: 'JetBrains Mono', monospace;
         font-size: 0.72rem;
         color: var(--text-2);
       }
@@ -544,7 +544,7 @@
                     font-variation-settings 220ms ease;
       }
       .tab__label {
-        font-family: 'Space Mono', monospace;
+        font-family: 'JetBrains Mono', monospace;
         font-size: 0.6rem;
         font-weight: 700;
         letter-spacing: 1.5px;

@@ -462,3 +462,153 @@ Le MVP est valide si:
 - Recovery: une grace period trop courte est acceptable en dev, pas en production.
 - Couplage Candide: evite via `WalletService`.
 
+
+## Iteration UX Claude + envoi par lien + gating dev-mode (2026-07-01)
+
+Iteration produit / UX. Aucun changement de contrat ni de flux UserOp, sauf le
+nouveau chemin d'envoi par lien qui reutilise `createClaimLink`.
+
+### Theme "Claude" (warm-canvas editorial)
+
+Charte importee via `npx getdesign@latest add claude` -> genere `DESIGN.md`
+(reference, non buildee). Palette creme / coral / ink appliquee au niveau des
+tokens plutot qu'ecran par ecran:
+
+- `app/theme/theme.service.ts`: `COLOR_DEFS.default` remappes (canvas `#FAF9F5`,
+  ink `#141413`, coral primaire `#CC785C` / `#A9583E`, teal `#5DB8A6`, semantiques
+  Claude). Preset "Claude" ajoute en tete. `STORAGE_KEY` bumpe `vit-settings` ->
+  `vit-settings-v2` pour que d'anciennes couleurs sombres memorisees n'ecrasent pas
+  le nouveau defaut (effet de bord: reset du toggle `devMode` -> OFF).
+  Attention: `ThemeService.apply()` ecrit les vars en inline sur `<html>`, donc
+  editer `styles.scss` seul ne suffit pas -> changer les defaults ici.
+- `styles.scss`: typo, ombres, hairlines, grille de fond et rampe Shoelace passees
+  en clair / chaud (lignes de grille `rgba(20,20,19,.04)`, halos coral).
+- `index.html`: polices Fraunces (serif editorial, substitut Copernicus/Tiempos,
+  titres) + Inter (sans, body/UI) + JetBrains Mono (labels/chiffres), chargees en
+  `display=block` (le texte reste invisible jusqu'au chargement -> pas de FOUT /
+  reflow visible). `theme-color` -> creme. `<html lang="fr">` (evite la traduction
+  auto Chrome qui injectait un CSS gstatic bloque par la CSP).
+- Sweep global `Space Grotesk -> Inter`, `Space Mono -> JetBrains Mono`.
+
+### Gating dev-mode de /wallet + nav adaptative
+
+- `app/wallet/wallet.guard.ts`: nouveau `devOnlyGuard` sur la route `wallet`.
+  Regle: toujours accessible tant qu'aucun wallet n'existe (onboarding), sinon
+  reserve au "Mode dev". Sans l'exemption onboarding, `requireWalletGuard`
+  (`/` -> `/wallet`) et `devOnlyGuard` (`/wallet` -> `/`) se renvoyaient en boucle
+  infinie -> page blanche en navigation privee / premier lancement. Corrige.
+- `app.component.html`: l'onglet nav bas vers `/wallet` ("Compte") n'est visible
+  qu'en Mode dev; sinon remplace par "Carnet" -> `/contacts` (nav pleine, FAB
+  centre).
+- Home: le 4e quick-action "Wallet" pointe desormais vers `/links` ("Liens").
+
+### /buy - envoi par e-mail / SMS via claim link
+
+- `page-buy.component.ts`: `send()` route selon le type de destinataire
+  (`recipientKind()`: adresse EVM / e-mail / telephone).
+  - adresse -> paiement direct (inchange);
+  - e-mail / telephone -> `ClaimLinkService.create(amountWei, 0n)` puis `openDraft()`
+    ouvre un brouillon `mailto:` (e-mail) ou `sms:` (telephone).
+- Cross-plateforme SMS: iOS attend le separateur `&` (`sms:<num>&body=`), Android
+  `?`. Helper `isIOS()` (gere l'iPad "MacIntel" tactile) + numero sanitize
+  (`replace(/[^\d+]/g,'')`). Sans ce distinguo le corps du SMS est perdu sur iOS.
+- Ecran "done" dedie a l'envoi par lien (URL + copier + rouvrir le brouillon). Le
+  lien reste annulable depuis `/links` (pas d'expiration posee).
+- Bouton scanner QR ajoute a cote du carnet dans la ligne destinataire
+  (`startScan()`), et ecran `idle` supprime (redondant) -> `/buy` ouvre directement
+  le formulaire (`step` initial = `confirm`, etat `idle` retire du type).
+
+### Reglages (page-account)
+
+Template restyle sur la palette Claude: halos coral, overlays ink au lieu de blanc
+translucide, toggle "Mode dev" en piste sombre discrete + point blanc avec ombre
+(ON = coral).
+
+### /devices + /recovery - extraction depuis page-wallet
+
+`page-wallet` (677+ LoC, dette P2 audit §8) melait overview du Safe, envoi de
+paiement, ajout de device et recovery. Les deux dernieres cartes sont extraites
+en pages dediees, routees sous `requireWalletGuard` (accessibles meme hors
+Mode dev, contrairement a `/wallet` qui est derriere `devOnlyGuard`):
+
+- `page-devices` (nouveau): ajout d'un owner au Safe, soit par passkey locale
+  (`addDeviceWithPasskey`), soit par address d'un device distant deja muni de
+  sa propre passkey (`addOwnerByAddress`).
+- `page-recovery` (nouveau): activer la recovery (guardians + threshold),
+  suivre la requete en cours (cache-first via `getCachedRecoveryRequest`, puis
+  refresh reseau), la finaliser une fois la grace period ecoulee, ou l'annuler
+  on-chain (`cancelRecoveryOnChain`, confirm() bloquant) - repond a l'item
+  d'audit P1 #4 ("Recovery sans UI cancel").
+
+Aucune nouvelle methode `WalletService`: la logique (`addDeviceWithPasskey`,
+`enableRecovery`, `finalizeRecovery`, `cancelRecoveryOnChain`, ...) existait
+deja (journal §18/§19); seul le point d'entree UI change. Voir journal §21
+pour le detail (regle CLAUDE.md: tout changement touchant recovery/passkeys
+doit y etre reference).
+
+`page-wallet` recentree sur l'overview du Safe (solde, adresse, statut
+deploye) suite au retrait des deux cartes.
+
+### page-sent - selecteur de contacts
+
+Ajout d'un picker de contacts (`ContactsService.list()`) dans `/sent`:
+`openContacts()` liste les contacts connus, `pickContact()` navigue vers
+`/buy` avec `to`/`amount` pre-remplis en query params. Fonctionnel, pas
+seulement du restyle.
+
+### Doc PWA
+
+`pwa.md` (racine repo, nouveau): etat d'implementation du service worker
+Angular (ngsw-config, script de recovery SW dans index.html, config nginx de
+cache, prompt d'installation Android/Chrome). Reference a part car orthogonal
+au theme/wallet - pas encore linke depuis `CLAUDE.md`/README.
+
+### Fichiers modifies
+
+```
+packages/vit-pay-app/DESIGN.md                         (nouveau, reference charte)
+packages/vit-pay-app/src/index.html                    (fonts, lang=fr, theme-color)
+packages/vit-pay-app/src/styles.scss                   (tokens clairs, typo)
+packages/vit-pay-app/src/app/theme/theme.service.ts    (palette Claude, STORAGE_KEY v2)
+packages/vit-pay-app/src/app/wallet/wallet.service.ts  (+ checkSufficientBalance, fix bundler revert vide)
+packages/vit-pay-app/src/app/wallet/wallet.guard.ts    (+ devOnlyGuard, exempt onboarding)
+packages/vit-pay-app/src/app/app-routing.module.ts     (devOnlyGuard /wallet, routes /devices /recovery)
+packages/vit-pay-app/src/app/app.module.ts             (declare PageDevices/PageRecovery)
+packages/vit-pay-app/src/app/app.component.*           (nav Compte<->Carnet, halos coral)
+packages/vit-pay-app/src/app/pages/page-home/*         (quick-action -> /links, recolor)
+packages/vit-pay-app/src/app/pages/page-links/*        (phrase explicative)
+packages/vit-pay-app/src/app/pages/page-buy/*          (envoi par lien, QR scan, idle retire)
+packages/vit-pay-app/src/app/pages/page-account/*      (reglages restyles Claude)
+packages/vit-pay-app/src/app/pages/page-sent/*         (selecteur de contacts)
+packages/vit-pay-app/src/app/pages/page-wallet/*       (cartes envoi/devices retirees)
+packages/vit-pay-app/src/app/pages/page-devices/*      (nouveau, cf. journal §21)
+packages/vit-pay-app/src/app/pages/page-recovery/*     (nouveau, cf. journal §21)
+packages/vit-pay-app/src/app/pages/page-claim|page-contacts|page-iban|page-transactions/*.scss
+                                                        (recolor Claude, style seulement)
+pwa.md                                                  (nouveau, doc PWA - voir ci-dessus)
+```
+
+### Notes de test / dette
+
+- Tunnel HTTPS pour tester passkey / camera sur mobile: le dev server (builder
+  `application` / Vite) bloque les hosts externes (403, `allowedHosts` d'`angular.json`
+  ignore). Contournement: `cloudflared tunnel --url http://localhost:4200
+  --http-host-header localhost:4200` (reecrit le Host vu par Vite; le navigateur
+  garde le domaine trycloudflare HTTPS -> WebAuthn OK).
+- Audit mobile (statique): mailto / sms / partage / clipboard / camera / WebAuthn OK
+  iOS + Android sous HTTPS uniquement (l'IP LAN ne marche pas). Banniere PWA
+  `beforeinstallprompt` = Android/Chrome seulement (iOS = ajout manuel).
+- **Corrige** — erreur `eth_estimateUserOperationGas -> b''` (revert vide en
+  simulation bundler) a l'envoi via claim link. Fausse piste ecartee:
+  `VitClaimLink.create` accepte explicitement `expiry = 0` (« 0 = no expiry »,
+  cf. `VitClaimLink.sol:24,54`) — le `0n` envoye par `/buy` n'est pas en cause.
+  Cause probable retenue: solde xCHF insuffisant sur le Safe. Le
+  `transferFrom` interne au mock ZCHF revert sans message sur solde
+  insuffisant, ce qui remonte comme un revert vide au niveau du bundler
+  (indiscernable d'un vrai bug cote UI). Fix: `WalletService.checkSufficientBalance()`
+  (nouveau) lit `getZchfBalance()` et fail fast avec un message FR explicite
+  avant de soumettre la UserOperation — branche dans `createClaimLink()` (le
+  chemin casse) et dans `sendZchfPayment()` (meme lacune latente, cf. audit
+  P1 §3 dette "pas de preflight de solde"). Pas encore re-teste E2E sur
+  Sepolia avec un wallet sciemment sous-approvisionne — a verifier au prochain
+  passage device.

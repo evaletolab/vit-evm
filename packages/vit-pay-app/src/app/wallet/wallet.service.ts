@@ -317,6 +317,7 @@ export class WalletService {
       throw new Error(`Invalid destination address: ${to}`);
     }
     this.checkDailyLimit(amount);
+    await this.checkSufficientBalance(amount);
     const transferTx = this.buildErc20Transfer(this.config.zchfTokenAddress, to, amount);
     const preflight = await this.runPreflight([transferTx]);
     const result = await this.executeSponsoredUserOp([transferTx]);
@@ -344,6 +345,21 @@ export class WalletService {
     }
     const remaining = spentToday >= limit ? 0n : limit - spentToday;
     return { spentToday, limit, remaining, date: today };
+  }
+
+  // Le token ZCHF (mock inclus) revert sans message sur solde insuffisant lors
+  // du `transferFrom` interne — le bundler renvoie alors un revert vide
+  // (`eth_estimateUserOperationGas` -> `b''`) impossible à distinguer d'un
+  // vrai bug côté UI. On vérifie donc le solde côté client avant de soumettre
+  // la UserOperation, pour échouer avec un message clair plutôt qu'un crash
+  // de simulation bundler opaque.
+  private async checkSufficientBalance(amount: bigint): Promise<void> {
+    const balance = await this.getZchfBalance();
+    if (balance < amount) {
+      const have = ethers.formatUnits(balance, 18);
+      const need = ethers.formatUnits(amount, 18);
+      throw new Error(`Solde xCHF insuffisant : ${have} disponible, ${need} requis.`);
+    }
   }
 
   private checkDailyLimit(amount: bigint): void {
@@ -752,6 +768,7 @@ export class WalletService {
     secretHash: string,
   ): Promise<UserOperationResult> {
     this.checkDailyLimit(amount);
+    await this.checkSufficientBalance(amount);
     const approveTx = this.buildErc20Approve(
       this.config.zchfTokenAddress,
       claimLinkAddress,

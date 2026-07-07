@@ -20,7 +20,7 @@ npm workspaces, racine à `C:\Users\Maxence\Desktop\kari\vit-evm`.
 
 Le package vit-core est publié sous le nom **`kng2-web3`** (legacy). Dans `vit-pay-app/package.json` la dépendance est `"kng2-web3": "*"` → résolue via workspace local. **Ne pas importer le barrel `from 'kng2-web3'`** : il tire `@safe-global/protocol-kit` qui casse en browser (require `buffer`). Utiliser les subpath exports ciblés.
 
-Docs racine : `README.md`, `ERC4337.md`, `DIGITALID.md`, `SYNTHESE-MVP-0.1.md`. Journal d'implémentation : `packages/VIT-MVP-0.1-JOURNAL.md`.
+Docs racine : `README.md`, `ERC4337.md`, `DIGITALID.md`, `SYNTHESE-MVP-0.1.md`, `pwa.md` (config/maintenance PWA : service worker, cache nginx, prompt d'installation). Journal d'implémentation : `packages/VIT-MVP-0.1-JOURNAL.md`.
 
 ## Conventions
 

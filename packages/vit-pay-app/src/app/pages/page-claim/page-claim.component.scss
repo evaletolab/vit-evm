@@ -57,7 +57,7 @@
   }
 
   .amount-hero {
-    font-family: 'Space Grotesk', sans-serif;
+    font-family: 'Inter', sans-serif;
     font-size: 2.8rem;
     font-weight: 700;
     letter-spacing: -1.5px;
@@ -67,7 +67,7 @@
     color: transparent;
 
     .unit {
-      font-family: 'Space Mono', monospace;
+      font-family: 'JetBrains Mono', monospace;
       font-size: 0.95rem;
       font-weight: 700;
       letter-spacing: 2px;
@@ -78,7 +78,7 @@
   }
 
   .sender {
-    font-family: 'Space Mono', monospace;
+    font-family: 'JetBrains Mono', monospace;
     font-size: 11px;
     letter-spacing: 1.5px;
     text-transform: uppercase;
@@ -94,7 +94,7 @@
     background: rgba(255,255,255,.04);
     border: 1px solid var(--hairline-soft);
     code {
-      font-family: 'Space Mono', monospace;
+      font-family: 'JetBrains Mono', monospace;
       font-size: 0.85rem;
       color: var(--text);
     }
@@ -102,7 +102,7 @@
   .warn {
     margin: 0;
     color: var(--warning);
-    font-family: 'Space Mono', monospace;
+    font-family: 'JetBrains Mono', monospace;
     font-size: 12px;
     letter-spacing: 1px;
     a { color: var(--cyan); margin-left: 6px; }
@@ -137,7 +137,7 @@
     filter: drop-shadow(0 0 22px rgba(74,222,155,.55));
   }
   .done-card code {
-    font-family: 'Space Mono', monospace;
+    font-family: 'JetBrains Mono', monospace;
     font-size: 0.7rem;
     background: rgba(0,0,0,.4);
     padding: 0.4rem 0.6rem;

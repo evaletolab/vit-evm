@@ -85,14 +85,14 @@
     }
     .address-label {
       margin: 0;
-      font-family: 'Space Mono', monospace;
+      font-family: 'JetBrains Mono', monospace;
       font-size: 11px;
       letter-spacing: 2px;
       text-transform: uppercase;
       color: var(--text-muted);
     }
     .address {
-      font-family: 'Space Mono', monospace;
+      font-family: 'JetBrains Mono', monospace;
       font-size: 0.95rem;
       letter-spacing: 1px;
       color: var(--text);
@@ -144,7 +144,7 @@
     backdrop-filter: blur(14px);
 
     .label {
-      font-family: 'Space Mono', monospace;
+      font-family: 'JetBrains Mono', monospace;
       font-size: 11px;
       letter-spacing: 2px;
       text-transform: uppercase;
@@ -156,7 +156,7 @@
       gap: 0.5rem;
 
       .label-text {
-        font-family: 'Space Mono', monospace;
+        font-family: 'JetBrains Mono', monospace;
         font-size: 10px;
         text-transform: uppercase;
         letter-spacing: 2px;
@@ -183,7 +183,7 @@
           background: transparent;
           border: none;
           color: var(--text);
-          font-family: 'Space Grotesk', sans-serif;
+          font-family: 'Inter', sans-serif;
           font-size: 2.4rem;
           font-weight: 700;
           letter-spacing: -1.5px;
@@ -201,7 +201,7 @@
           }
         }
         .unit {
-          font-family: 'Space Mono', monospace;
+          font-family: 'JetBrains Mono', monospace;
           font-size: 0.85rem;
           letter-spacing: 2px;
           font-weight: 700;
@@ -211,5 +211,118 @@
       }
     }
     .vit-chip { align-self: flex-start; }
+  }
+
+  .contact-cta {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    padding: 0.85rem 1.2rem;
+    border-radius: var(--r-tile);
+    background: var(--glass);
+    border: 1px solid var(--hairline);
+    color: var(--text);
+    font-family: 'Inter', sans-serif;
+    font-weight: 600;
+    font-size: 0.95rem;
+    cursor: pointer;
+    transition: background 0.15s, border-color 0.15s;
+
+    &:hover { background: rgba(255,255,255,.06); border-color: var(--violet); }
+    .material-symbols-outlined { font-size: 20px; color: var(--violet); }
+  }
+
+  .picker {
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,.55);
+    backdrop-filter: blur(4px);
+    z-index: 200;
+    display: flex;
+    align-items: flex-end;
+    justify-content: center;
+    padding: 0 1rem 1rem;
+    box-sizing: border-box;
+
+    &__sheet {
+      width: 100%;
+      max-width: calc(var(--vit-page-max) - 1rem);
+      max-height: 65vh;
+      overflow-y: auto;
+      background: var(--surface-1);
+      border: 1px solid var(--hairline);
+      border-radius: 24px;
+      padding: 1rem 1.1rem 1.4rem;
+      animation: sent-sheet-up .2s ease-out;
+
+      h3 {
+        margin: 0.25rem 0 0.85rem;
+        font-size: 1rem;
+        letter-spacing: -0.02em;
+      }
+    }
+    &__handle {
+      width: 38px;
+      height: 4px;
+      border-radius: 4px;
+      background: var(--hairline);
+      margin: 0 auto 0.75rem;
+    }
+    &__list {
+      list-style: none;
+      margin: 0;
+      padding: 0;
+      display: flex;
+      flex-direction: column;
+      gap: 0.5rem;
+    }
+    &__row {
+      display: grid;
+      grid-template-columns: auto 1fr;
+      align-items: center;
+      gap: 0.85rem;
+      padding: 0.6rem 0.75rem;
+      border-radius: var(--r-tile);
+      background: var(--glass);
+      border: 1px solid var(--hairline-soft);
+      cursor: pointer;
+
+      &:hover { background: rgba(255,255,255,.08); }
+    }
+    &__avatar {
+      width: 38px;
+      height: 38px;
+      border-radius: 12px;
+      background: var(--grad);
+      color: #fff;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-family: 'Inter', sans-serif;
+      font-weight: 700;
+    }
+    &__name {
+      font-family: 'Inter', sans-serif;
+      font-weight: 600;
+      font-size: 0.9rem;
+      color: var(--text);
+    }
+    &__addr {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 11px;
+      color: var(--text-muted);
+    }
+    &__empty {
+      text-align: center;
+      color: var(--text-muted);
+      margin: 1.5rem 0;
+      a { color: var(--violet); margin-left: 6px; }
+    }
+  }
+
+  @keyframes sent-sheet-up {
+    from { transform: translateY(100%); }
+    to   { transform: translateY(0); }
   }
 }

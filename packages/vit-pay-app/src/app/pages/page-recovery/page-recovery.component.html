@@ -1,0 +1,128 @@
+<section class="recovery-page">
+  <header class="recovery-head">
+    <a class="back" [routerLink]="['/account']" aria-label="Retour">
+      <span class="material-symbols-outlined">arrow_back</span>
+    </a>
+    <h1>Recovery</h1>
+    <span class="status-pill"
+          [class.success]="state?.recoveryEnabled"
+          [class.warning]="!state?.recoveryEnabled">
+      <span class="material-symbols-outlined">{{ state?.recoveryEnabled ? 'check_circle' : 'warning' }}</span>
+      {{ state?.recoveryEnabled ? 'Activé' : 'À configurer' }}
+    </span>
+  </header>
+
+  <p class="error" *ngIf="error">{{ error }}</p>
+
+  <!-- Card 1 : configuration des guardians -->
+  <div class="vit-card">
+    <div class="card-head">
+      <span class="card-head__icon">
+        <span class="material-symbols-outlined">shield_lock</span>
+      </span>
+      <div>
+        <h3>Guardians</h3>
+        <p class="lead" *ngIf="!state?.recoveryEnabled">
+          Configure des guardians (adresses EOA de confiance) qui pourront
+          rotater l'owner de ton Safe si tu perds ta passkey.
+        </p>
+        <p class="lead" *ngIf="state?.recoveryEnabled">
+          ✅ <strong>SocialRecoveryModule actif.</strong> Tu peux mettre à jour
+          la liste des guardians ou le threshold.
+        </p>
+      </div>
+    </div>
+
+    <label class="field">
+      <span class="vit-label">Adresses guardians (virgule ou espace)</span>
+      <textarea [(ngModel)]="guardiansInput" rows="3" [disabled]="busy"
+                placeholder="0xabc…, 0xdef…"></textarea>
+    </label>
+
+    <label class="field">
+      <span class="vit-label">Threshold (nombre d'approbations requises)</span>
+      <input type="number" min="1" [(ngModel)]="guardianThreshold" [disabled]="busy">
+    </label>
+
+    <button class="vit-btn vit-btn--primary cta" type="button"
+            (click)="enableRecovery()" [disabled]="busy || !guardiansInput.trim()">
+      <span class="material-symbols-outlined">save</span>
+      {{ busy ? 'Sauvegarde…' : (state?.recoveryEnabled ? 'Mettre à jour' : 'Activer la recovery') }}
+    </button>
+  </div>
+
+  <!-- Card 2 : demande de recovery en cours -->
+  <div class="vit-card pending-card" *ngIf="recoveryRequest">
+    <div class="card-head">
+      <span class="card-head__icon card-head__icon--warn">
+        <span class="material-symbols-outlined">pending_actions</span>
+      </span>
+      <div>
+        <h3>Demande de recovery en cours</h3>
+        <p class="lead">
+          Approbations <strong>{{ recoveryRequest.approvalsReceived }} /
+          {{ recoveryRequest.approvalsRequired }}</strong>
+          · Finalisable {{ canFinalizeRecovery ? 'maintenant' : 'après grace period' }}
+        </p>
+      </div>
+    </div>
+
+    <dl class="meta">
+      <div>
+        <dt>Nouveaux owners</dt>
+        <dd>
+          <code *ngFor="let o of recoveryRequest.newOwners">{{ o }}</code>
+        </dd>
+      </div>
+      <div>
+        <dt>Nouveau threshold</dt>
+        <dd>{{ recoveryRequest.newThreshold }}</dd>
+      </div>
+      <div>
+        <dt>executeAfter</dt>
+        <dd><code>{{ recoveryRequest.executeAfter }}</code></dd>
+      </div>
+    </dl>
+
+    <div class="actions">
+      <button class="vit-btn vit-btn--primary" type="button"
+              (click)="finalizeRecovery()" [disabled]="busy || !canFinalizeRecovery">
+        <span class="material-symbols-outlined">task_alt</span>
+        {{ busy ? 'Finalisation…' : (canFinalizeRecovery ? 'Finaliser' : 'Attendre la fin du grace period') }}
+      </button>
+      <button class="vit-btn vit-btn--danger" type="button"
+              (click)="cancelOnChainRecovery()" [disabled]="busy">
+        <span class="material-symbols-outlined">block</span>
+        Annuler cette recovery
+      </button>
+    </div>
+
+    <p class="warn">
+      ⚠️ Si cette demande n'est pas de toi, annule-la <strong>avant</strong>
+      la fin du grace period pour bloquer le changement d'owner.
+    </p>
+  </div>
+
+  <!-- Résultat dernière opération -->
+  <div class="vit-card result-card" *ngIf="lastRecoveryOp">
+    <div class="result-row" [class.success]="lastRecoveryOp.success" [class.error]="!lastRecoveryOp.success">
+      <span class="material-symbols-outlined result-icon">
+        {{ lastRecoveryOp.success ? 'check_circle' : 'error' }}
+      </span>
+      <div>
+        <h3>{{ lastRecoveryOp.success ? 'Opération réussie' : 'Échec' }}</h3>
+        <code *ngIf="lastRecoveryOp.success">{{ lastRecoveryOp.transactionHash }}</code>
+        <p *ngIf="!lastRecoveryOp.success" class="msg">{{ lastRecoveryOp.error }}</p>
+      </div>
+    </div>
+
+    <details *ngIf="devMode && lastRecoveryOp.debug" class="debug">
+      <summary>Debug UserOperation</summary>
+      <button class="vit-btn vit-btn--ghost" type="button" (click)="copyDebug(lastRecoveryOp.debug!)">
+        <span class="material-symbols-outlined">content_copy</span>
+        Copier JSON
+      </button>
+      <pre><code>{{ formatDebug(lastRecoveryOp.debug!) }}</code></pre>
+    </details>
+  </div>
+</section>

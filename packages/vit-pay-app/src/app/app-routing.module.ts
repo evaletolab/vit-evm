@@ -12,7 +12,9 @@ import { PageContactsComponent } from './pages/page-contacts/page-contacts.compo
 import { PageLinksComponent } from './pages/page-links/page-links.component';
 import { PageClaimComponent } from './pages/page-claim/page-claim.component';
 import { PageIbanComponent } from './pages/page-iban/page-iban.component';
-import { requireWalletGuard } from './wallet/wallet.guard';
+import { PageDevicesComponent } from './pages/page-devices/page-devices.component';
+import { PageRecoveryComponent } from './pages/page-recovery/page-recovery.component';
+import { requireWalletGuard, devOnlyGuard } from './wallet/wallet.guard';
 
 
 
@@ -22,10 +24,12 @@ const routes: Routes = [
   { path: 'buy', component: PageBuyComponent, canActivate: [requireWalletGuard] },
   { path: 'sent', component: PageSentComponent, canActivate: [requireWalletGuard] },
   { path: 'txs', component: PageTransactionsComponent, canActivate: [requireWalletGuard] },
-  { path: 'wallet', component: PageWalletComponent },
+  { path: 'wallet', component: PageWalletComponent, canActivate: [devOnlyGuard] },
   { path: 'contacts', component: PageContactsComponent, canActivate: [requireWalletGuard] },
   { path: 'links', component: PageLinksComponent, canActivate: [requireWalletGuard] },
   { path: 'iban', component: PageIbanComponent, canActivate: [requireWalletGuard] },
+  { path: 'devices', component: PageDevicesComponent, canActivate: [requireWalletGuard] },
+  { path: 'recovery', component: PageRecoveryComponent, canActivate: [requireWalletGuard] },
   { path: 'claim', component: PageClaimComponent },
 ];
 
