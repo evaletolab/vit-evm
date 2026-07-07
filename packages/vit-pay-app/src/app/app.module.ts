@@ -17,6 +17,8 @@ import { PageContactsComponent } from './pages/page-contacts/page-contacts.compo
 import { PageLinksComponent } from './pages/page-links/page-links.component';
 import { PageClaimComponent } from './pages/page-claim/page-claim.component';
 import { PageIbanComponent } from './pages/page-iban/page-iban.component';
+import { PageDevicesComponent } from './pages/page-devices/page-devices.component';
+import { PageRecoveryComponent } from './pages/page-recovery/page-recovery.component';
 import { VitMintComponent } from './vit-mint/vit-mint.component';
 import { VitPasskeyComponent } from './vit-passkey/vit-passkey.component';
 
@@ -34,6 +36,8 @@ import { VitPasskeyComponent } from './vit-passkey/vit-passkey.component';
     PageLinksComponent,
     PageClaimComponent,
     PageIbanComponent,
+    PageDevicesComponent,
+    PageRecoveryComponent,
     VitMintComponent,
     VitPasskeyComponent
   ],

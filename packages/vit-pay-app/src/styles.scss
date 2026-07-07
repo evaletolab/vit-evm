@@ -37,26 +37,26 @@
   --r-btn:   18px;
   --r-pill:  24px;
 
-  /* Ombres colorées */
-  --shadow-phone: 0 30px 60px -20px rgba(124,92,255,.45), 0 0 0 1px rgba(255,255,255,.04);
-  --shadow-cta:   0 12px 26px -8px rgba(124,92,255,.8);
-  --shadow-card:  0 22px 44px -16px rgba(124,92,255,.7);
-  --shadow-tile:  0 8px 18px -6px rgba(124,92,255,.45);
+  /* Ombres chaudes (canvas crème — dépôt d'ombre douce, coloration coral discrète) */
+  --shadow-phone: 0 30px 60px -22px rgba(20,20,19,.18), 0 0 0 1px rgba(20,20,19,.05);
+  --shadow-cta:   0 10px 22px -8px rgba(204,120,92,.5);
+  --shadow-card:  0 18px 40px -20px rgba(20,20,19,.20);
+  --shadow-tile:  0 8px 18px -8px rgba(20,20,19,.14);
 
   /* === Shoelace overrides (dark) === */
   --sl-color-neutral-0:    var(--bg);
-  --sl-color-neutral-50:   #0A0C16;
-  --sl-color-neutral-100:  #0F1120;
-  --sl-color-neutral-200:  #161826;
-  --sl-color-neutral-300:  #1F2233;
-  --sl-color-neutral-400:  #2A2E44;
-  --sl-color-neutral-500:  #3A3F58;
-  --sl-color-neutral-600:  #5B6082;
+  --sl-color-neutral-50:   #F5F0E8;
+  --sl-color-neutral-100:  #EFE9DE;
+  --sl-color-neutral-200:  #E8E0D2;
+  --sl-color-neutral-300:  #DFD6C8;
+  --sl-color-neutral-400:  #CBC3B5;
+  --sl-color-neutral-500:  #8E8B82;
+  --sl-color-neutral-600:  #6C6A64;
   --sl-color-neutral-700:  var(--text-muted);
   --sl-color-neutral-800:  var(--text-2);
   --sl-color-neutral-900:  var(--text);
-  --sl-color-neutral-950:  #FFFFFF;
-  --sl-color-neutral-1000: #FFFFFF;
+  --sl-color-neutral-950:  #141413;
+  --sl-color-neutral-1000: #141413;
 
   --sl-color-primary-500: var(--violet);
   --sl-color-primary-50:  color-mix(in srgb, var(--bg) 90%, var(--violet) 10%);
@@ -93,7 +93,8 @@ html, body {
   min-height: 100%;
   background: var(--bg);
   color: var(--text);
-  font-family: 'Space Grotesk', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  /* Sans humaniste (StyreneB → Inter) pour body / UI */
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
   font-size: 15px;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
@@ -108,21 +109,22 @@ html, body {
 @media (min-width: 768px) {
   body {
     background:
-      radial-gradient(ellipse 40% 30% at 50% 0%, rgba(124,92,255,.08), transparent 70%),
+      radial-gradient(ellipse 45% 30% at 50% 0%, rgba(204,120,92,.07), transparent 70%),
       var(--bg);
   }
 }
 
+/* Serif éditorial (Copernicus/Tiempos → Fraunces) — poids 400, tracking négatif */
 h1, h2, h3, h4 {
-  font-family: 'Space Grotesk', sans-serif;
-  font-weight: 700;
+  font-family: 'Fraunces', 'Tiempos Headline', Garamond, 'Times New Roman', serif;
+  font-weight: 400;
   letter-spacing: -0.02em;
   color: var(--text);
   margin: 0;
 }
-h1 { font-size: 28px; }
-h2 { font-size: 20px; }
-h3 { font-size: 17px; }
+h1 { font-size: 30px; letter-spacing: -0.03em; }
+h2 { font-size: 22px; }
+h3 { font-size: 18px; }
 
 p { color: var(--text-2); margin: 0; }
 
@@ -161,7 +163,7 @@ a:hover { color: var(--cyan); }
 /* === Labels mono === */
 .vit-mono,
 .vit-label {
-  font-family: 'Space Mono', ui-monospace, SFMono-Regular, monospace;
+  font-family: 'JetBrains Mono', ui-monospace, SFMono-Regular, monospace;
 }
 .vit-label {
   font-size: 11px;
@@ -177,7 +179,7 @@ a:hover { color: var(--cyan); }
   gap: 6px;
   padding: 4px 10px;
   border-radius: var(--r-pill);
-  font-family: 'Space Mono', monospace;
+  font-family: 'JetBrains Mono', monospace;
   font-size: 11px;
   letter-spacing: 1px;
   background: var(--glass);
@@ -209,7 +211,7 @@ a:hover { color: var(--cyan); }
   height: 54px;
   padding: 0 22px;
   border-radius: var(--r-btn);
-  font-family: 'Space Grotesk', sans-serif;
+  font-family: 'Inter', sans-serif;
   font-weight: 600;
   font-size: 16px;
   cursor: pointer;
@@ -234,12 +236,12 @@ a:hover { color: var(--cyan); }
 .vit-glow {
   position: absolute;
   border-radius: 50%;
-  filter: blur(40px);
+  filter: blur(44px);
   pointer-events: none;
-  background: radial-gradient(circle, rgba(124,92,255,.40), transparent 65%);
+  background: radial-gradient(circle, rgba(204,120,92,.22), transparent 65%);
 }
 .vit-glow--cyan {
-  background: radial-gradient(circle, rgba(63,208,240,.30), transparent 65%);
+  background: radial-gradient(circle, rgba(93,184,166,.18), transparent 65%);
 }
 
 /* === Grille de fond === */
@@ -247,8 +249,8 @@ a:hover { color: var(--cyan); }
   position: absolute;
   inset: 0;
   background-image:
-    linear-gradient(rgba(255,255,255,.035) 1px, transparent 1px),
-    linear-gradient(90deg, rgba(255,255,255,.035) 1px, transparent 1px);
+    linear-gradient(rgba(20,20,19,.04) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(20,20,19,.04) 1px, transparent 1px);
   background-size: 48px 48px;
   mask-image: radial-gradient(ellipse 80% 60% at 50% 30%, #000 30%, transparent 80%);
   -webkit-mask-image: radial-gradient(ellipse 80% 60% at 50% 30%, #000 30%, transparent 80%);

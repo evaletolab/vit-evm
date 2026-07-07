@@ -1,6 +1,8 @@
 import { AfterViewInit, Component, ElementRef, OnInit, ViewChild } from '@angular/core';
+import { Router } from '@angular/router';
 import * as QRCode from 'qrcode';
 import { WalletService } from '../../wallet/wallet.service';
+import { ContactsService, Contact } from '../../contacts/contacts.service';
 import { parseZchfAmount, shortAddress } from '../../wallet/wallet.utils';
 
 @Component({
@@ -18,7 +20,14 @@ export class PageSentComponent implements OnInit, AfterViewInit {
   loading = true;
   error?: string;
 
-  constructor(private wallet: WalletService) {}
+  contacts: Contact[] = [];
+  contactsOpen = false;
+
+  constructor(
+    private wallet: WalletService,
+    private contactsSvc: ContactsService,
+    private router: Router,
+  ) {}
 
   async ngOnInit(): Promise<void> {
     try {
@@ -28,6 +37,7 @@ export class PageSentComponent implements OnInit, AfterViewInit {
       } else {
         this.address = state.accountAddress;
         this.shortAddr = shortAddress(state.accountAddress);
+        this.contacts = this.contactsSvc.list(state.accountAddress);
       }
     } catch (err) {
       this.error = err instanceof Error ? err.message : String(err);
@@ -81,5 +91,19 @@ export class PageSentComponent implements OnInit, AfterViewInit {
     } catch {
       window.prompt('Copier l\'adresse :', this.address);
     }
+  }
+
+  openContacts(): void {
+    if (this.address) this.contacts = this.contactsSvc.list(this.address);
+    this.contactsOpen = true;
+  }
+
+  closeContacts(): void { this.contactsOpen = false; }
+
+  pickContact(c: Contact): void {
+    this.contactsOpen = false;
+    this.router.navigate(['/buy'], {
+      queryParams: { to: c.address, amount: this.amount || undefined },
+    });
   }
 }

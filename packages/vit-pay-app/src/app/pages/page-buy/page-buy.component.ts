@@ -6,6 +6,7 @@ import {
   OnDestroy,
   ViewChild,
 } from '@angular/core';
+import { ActivatedRoute } from '@angular/router';
 import { ethers } from 'ethers';
 import jsQR from 'jsqr';
 import { WalletService } from '../../wallet/wallet.service';
@@ -17,8 +18,10 @@ import {
 } from '../../wallet/wallet.utils';
 import { UserOperationResult } from '../../wallet/wallet.types';
 import { ContactsService, Contact } from '../../contacts/contacts.service';
+import { ClaimLinkService } from '../../claimlink/claimlink.service';
 
-type Step = 'idle' | 'scanning' | 'confirm' | 'sending' | 'done' | 'error';
+type Step = 'scanning' | 'confirm' | 'sending' | 'done' | 'error';
+type RecipientKind = 'address' | 'email' | 'phone' | 'unknown';
 
 @Component({
   selector: 'vit-page-buy',
@@ -28,11 +31,18 @@ type Step = 'idle' | 'scanning' | 'confirm' | 'sending' | 'done' | 'error';
 export class PageBuyComponent implements AfterViewInit, OnDestroy {
   @ViewChild('video') videoRef?: ElementRef<HTMLVideoElement>;
 
-  step: Step = 'idle';
+  step: Step = 'confirm';
   to = '';
   amount = '';
   errorMessage = '';
   lastResult?: UserOperationResult;
+
+  // Envoi par lien (claim link) quand le destinataire est un e-mail ou un téléphone
+  sentViaLink = false;
+  claimUrl = '';
+  claimKind: RecipientKind = 'unknown';
+  claimRecipient = '';
+  copied = false;
 
   contactsOpen = false;
   contacts: Contact[] = [];
@@ -48,6 +58,8 @@ export class PageBuyComponent implements AfterViewInit, OnDestroy {
     private wallet: WalletService,
     private zone: NgZone,
     private contactsSvc: ContactsService,
+    private route: ActivatedRoute,
+    private claimLink: ClaimLinkService,
   ) {}
 
   async ngAfterViewInit(): Promise<void> {
@@ -59,6 +71,16 @@ export class PageBuyComponent implements AfterViewInit, OnDestroy {
       }
     } catch {
       /* no wallet — fine, contact picker stays empty */
+    }
+
+    const params = this.route.snapshot.queryParamMap;
+    const to = params.get('to');
+    const amount = params.get('amount');
+    if (to && isValidEvmAddress(to)) {
+      this.to = ethers.getAddress(to);
+      this.onToChange();
+      if (amount) this.amount = amount;
+      this.step = 'confirm';
     }
   }
 
@@ -74,11 +96,17 @@ export class PageBuyComponent implements AfterViewInit, OnDestroy {
     this.to = c.address;
     this.matchedContact = c;
     this.contactsOpen = false;
+    this.step = 'confirm';
   }
 
   onToChange(): void {
     if (!this.ownerAddress || !this.to) { this.matchedContact = undefined; return; }
     this.matchedContact = this.contactsSvc.findByAddress(this.ownerAddress, this.to);
+  }
+
+  /** Type de destinataire saisi, pour adapter le libellé du bouton / les indices. */
+  get recipientMode(): RecipientKind {
+    return recipientKind(this.to);
   }
 
   ngOnDestroy(): void {
@@ -197,14 +225,12 @@ export class PageBuyComponent implements AfterViewInit, OnDestroy {
     if (video) video.srcObject = null;
   }
 
-  manualEntry(): void {
-    this.step = 'confirm';
-  }
-
   async send(): Promise<void> {
     this.errorMessage = '';
-    if (!isValidEvmAddress(this.to)) {
-      this.errorMessage = 'Adresse destinataire invalide.';
+    const recipient = this.to.trim();
+    const kind = recipientKind(recipient);
+    if (kind === 'unknown') {
+      this.errorMessage = 'Entrez une adresse 0x…, un e-mail ou un numéro de téléphone.';
       return;
     }
     let amountWei: bigint;
@@ -215,9 +241,17 @@ export class PageBuyComponent implements AfterViewInit, OnDestroy {
       this.errorMessage = err instanceof Error ? err.message : 'Montant invalide';
       return;
     }
+
+    if (kind === 'email' || kind === 'phone') {
+      await this.sendViaClaimLink(recipient, kind, amountWei);
+      return;
+    }
+
+    // Adresse EVM → paiement direct on-chain
+    this.sentViaLink = false;
     this.step = 'sending';
     try {
-      const result = await this.wallet.sendZchfPayment(this.to, amountWei);
+      const result = await this.wallet.sendZchfPayment(recipient, amountWei);
       this.lastResult = result;
       if (result.success) {
         this.step = 'done';
@@ -231,14 +265,91 @@ export class PageBuyComponent implements AfterViewInit, OnDestroy {
     }
   }
 
+  /**
+   * Destinataire e-mail / téléphone : on bloque les fonds dans un claim link,
+   * puis on ouvre un brouillon e-mail (mailto:) ou SMS (sms:) contenant le lien.
+   */
+  private async sendViaClaimLink(recipient: string, kind: 'email' | 'phone', amountWei: bigint): Promise<void> {
+    if (!this.claimLink.contractAddress()) {
+      this.errorMessage = 'Envoi par lien indisponible : contrat claim link non configuré.';
+      this.step = 'error';
+      return;
+    }
+    this.step = 'sending';
+    try {
+      // Pas d'expiration : le lien reste réclamable, annulable depuis « Liens ».
+      const { url } = await this.claimLink.create(amountWei, 0n);
+      this.sentViaLink = true;
+      this.claimUrl = url;
+      this.claimKind = kind;
+      this.claimRecipient = recipient;
+      this.openDraft(recipient, kind, url);
+      this.step = 'done';
+    } catch (err) {
+      this.errorMessage = err instanceof Error ? err.message : String(err);
+      this.step = 'error';
+    }
+  }
+
+  /** (Re)ouvre le brouillon e-mail / SMS pré-rempli avec le claim link. */
+  openDraft(recipient = this.claimRecipient, kind = this.claimKind, url = this.claimUrl): void {
+    if (!url) return;
+    const body = `Je t'envoie ${this.amount} xCHF via ViTpay. Récupère-les avec ce lien : ${url}`;
+    if (kind === 'email') {
+      const subject = 'Tu as reçu des xCHF';
+      window.location.href =
+        `mailto:${encodeURIComponent(recipient)}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
+    } else if (kind === 'phone') {
+      // Numéro nettoyé (l'utilisateur peut saisir espaces / () / - qui cassent l'URI sms:).
+      const number = recipient.replace(/[^\d+]/g, '');
+      // iOS attend le séparateur « & » pour le corps du SMS ; Android (et les autres)
+      // attendent « ? ». Sans ce distinguo, le message pré-rempli est perdu sur l'un des deux.
+      const sep = isIOS() ? '&' : '?';
+      window.location.href = `sms:${number}${sep}body=${encodeURIComponent(body)}`;
+    }
+  }
+
+  async copyClaimUrl(): Promise<void> {
+    if (!this.claimUrl) return;
+    try {
+      await navigator.clipboard.writeText(this.claimUrl);
+      this.copied = true;
+      setTimeout(() => { this.copied = false; }, 1500);
+    } catch {
+      /* ignore */
+    }
+  }
+
   reset(): void {
     this.stopScan();
-    this.step = 'idle';
+    this.step = 'confirm';
     this.to = '';
     this.amount = '';
     this.errorMessage = '';
     this.lastResult = undefined;
+    this.sentViaLink = false;
+    this.claimUrl = '';
+    this.claimKind = 'unknown';
+    this.claimRecipient = '';
+    this.copied = false;
   }
+}
+
+/** Détecte iOS/iPadOS (l'iPad récent se présente comme « MacIntel » tactile). */
+function isIOS(): boolean {
+  const ua = navigator.userAgent || '';
+  if (/iPad|iPhone|iPod/.test(ua)) return true;
+  return navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1;
+}
+
+function recipientKind(value: string): RecipientKind {
+  const v = value.trim();
+  if (!v) return 'unknown';
+  if (isValidEvmAddress(v)) return 'address';
+  if (/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v)) return 'email';
+  const digits = v.replace(/[\s().-]/g, '');
+  if (/^\+?[0-9]{6,15}$/.test(digits)) return 'phone';
+  return 'unknown';
 }
 
 function parseEip681(raw: string): { address?: string; amountWei?: bigint } {
