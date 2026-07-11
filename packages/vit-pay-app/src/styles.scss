@@ -1,15 +1,15 @@
-/* Lumen — design system tokens */
+/* ViT Pay — design system (minimal, contrastes clairs, peu d'ombres) */
 :root {
   /* Fonds */
   --bg:            #06070D;
   --surface-1:     #0C0E1A;
   --surface-2:     #08090F;
 
-  /* Verre dépoli */
+  /* Surfaces plates (bordure > ombre) */
   --glass:         rgba(255,255,255,.06);
-  --glass-strong:  rgba(18,20,32,.72);
-  --hairline:      rgba(255,255,255,.12);
-  --hairline-soft: rgba(255,255,255,.08);
+  --glass-strong:  rgba(18,20,32,.88);
+  --hairline:      rgba(255,255,255,.16);
+  --hairline-soft: rgba(255,255,255,.10);
 
   /* Texte */
   --text:          #ECEDF5;
@@ -17,7 +17,7 @@
   --text-muted:    #8A8FA6;
   --text-dim:      #6E7392;
 
-  /* Accents néon */
+  /* Accents */
   --violet:        #7C5CFF;
   --violet-deep:   #5B3FE0;
   --cyan:          #3FD0F0;
@@ -32,16 +32,16 @@
 
   /* Rayons */
   --r-phone: 39px;
-  --r-card:  22px;
-  --r-tile:  18px;
-  --r-btn:   18px;
-  --r-pill:  24px;
+  --r-card:  16px;
+  --r-tile:  12px;
+  --r-btn:   12px;
+  --r-pill:  20px;
 
-  /* Ombres chaudes (canvas crème — dépôt d'ombre douce, coloration coral discrète) */
-  --shadow-phone: 0 30px 60px -22px rgba(20,20,19,.18), 0 0 0 1px rgba(20,20,19,.05);
-  --shadow-cta:   0 10px 22px -8px rgba(204,120,92,.5);
-  --shadow-card:  0 18px 40px -20px rgba(20,20,19,.20);
-  --shadow-tile:  0 8px 18px -8px rgba(20,20,19,.14);
+  /* Ombres minimales — contraste via bordures */
+  --shadow-phone: none;
+  --shadow-cta:   none;
+  --shadow-card:  none;
+  --shadow-tile:  none;
 
   /* === Shoelace overrides (dark) === */
   --sl-color-neutral-0:    var(--bg);
@@ -131,13 +131,11 @@ p { color: var(--text-2); margin: 0; }
 a { color: var(--violet); text-decoration: none; }
 a:hover { color: var(--cyan); }
 
-/* === Surfaces verre === */
+/* === Surfaces plates === */
 .vit-glass {
   background: var(--glass);
   border: 1px solid var(--hairline);
   border-radius: var(--r-tile);
-  backdrop-filter: blur(14px);
-  -webkit-backdrop-filter: blur(14px);
 }
 
 .vit-card {
@@ -146,8 +144,6 @@ a:hover { color: var(--cyan); }
   border-radius: var(--r-card);
   color: var(--text);
   padding: 18px;
-  backdrop-filter: blur(14px);
-  -webkit-backdrop-filter: blur(14px);
 }
 
 /* === Texte lumineux (gros chiffres) === */
@@ -216,20 +212,19 @@ a:hover { color: var(--cyan); }
   font-size: 16px;
   cursor: pointer;
   border: none;
-  transition: transform .12s ease, box-shadow .2s ease;
+  transition: opacity .15s ease, transform .12s ease;
 }
 .vit-btn:active { transform: translateY(1px); }
+.vit-btn:disabled { opacity: 0.45; cursor: not-allowed; }
 
 .vit-btn--primary {
   background: var(--grad);
   color: #fff;
-  box-shadow: var(--shadow-cta);
 }
 .vit-btn--ghost {
   background: var(--glass);
   border: 1px solid var(--hairline);
   color: var(--text);
-  backdrop-filter: blur(10px);
 }
 
 /* === Halo d'ambiance === */
@@ -283,7 +278,6 @@ sl-textarea::part(base) {
   border: 1px solid var(--hairline);
   border-radius: var(--r-tile);
   color: var(--text);
-  backdrop-filter: blur(10px);
 }
 sl-button::part(base) {
   border-radius: var(--r-btn);
@@ -292,7 +286,6 @@ sl-button[variant="primary"]::part(base) {
   background: var(--grad);
   border: none;
   color: #fff;
-  box-shadow: var(--shadow-cta);
 }
 sl-dialog::part(panel) {
   background: var(--surface-1);
