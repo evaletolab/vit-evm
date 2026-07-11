@@ -1,0 +1,50 @@
+<div class="desktop">
+  <div class="header ">
+    <div class="info">
+
+    </div>
+    <div class="title">
+      <b>{{currentDescription}}</b>
+    </div>
+    <div class="usage">
+
+      <kng-theme></kng-theme>
+    </div>
+
+  </div>
+
+  <div hidden  class="side grid-item">
+
+  </div>
+  <div class="center grid-item" #centerView [class.running]="isAssistantRuning">
+    <!-- Message de maintenance (erreur 504) -->
+    <div class="maintenance-alert" *ngIf="state.maintenanceMessage">
+      <sl-alert variant="warning" open>
+        <sl-icon slot="icon" name="exclamation-triangle"></sl-icon>
+        {{ state.maintenanceMessage }}
+      </sl-alert>
+    </div>
+
+    <div class="welcome" *ngIf="!isLoggedIn">
+      <h1>{{welcome}}</h1>
+      <p>{{welcomeDescription}}</p>
+      <div class="action" (click)="login()" *ngIf="!state.maintenanceMessage">
+        <sl-icon slot="prefix" name="box-arrow-in-right"></sl-icon>
+        Veuillez vous identifier
+      </div>
+    </div>
+
+  </div>
+
+  <div hidden  class="right grid-item">
+
+  </div>
+
+  <div  class="footer ">
+    ViT Pay
+  </div>
+
+</div>
+
+
+
