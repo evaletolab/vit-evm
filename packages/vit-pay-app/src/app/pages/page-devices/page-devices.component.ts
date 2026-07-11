@@ -2,7 +2,7 @@ import { Component, OnInit } from '@angular/core';
 import { WalletService } from '../../wallet/wallet.service';
 import { ThemeService } from '../../theme/theme.service';
 import { UserOperationDebug, UserOperationResult } from '../../wallet/wallet.types';
-import { isValidEvmAddress, mapPaymasterError } from '../../wallet/wallet.utils';
+import { isValidEvmAddress, mapPasskeyError, mapPaymasterError } from '../../wallet/wallet.utils';
 
 @Component({
   selector: 'vit-page-devices',
@@ -37,7 +37,7 @@ export class PageDevicesComponent implements OnInit {
         this.error = mapPaymasterError(new Error(out.operation.error));
       }
     } catch (err) {
-      this.error = err instanceof Error ? err.message : String(err);
+      this.error = mapPasskeyError(err);
     } finally {
       this.busy = false;
     }

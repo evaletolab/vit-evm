@@ -183,7 +183,7 @@ export class WalletService {
 
   async createWalletWithPasskey(): Promise<WalletState> {
     if (typeof navigator === 'undefined' || !navigator.credentials) {
-      throw new Error('WebAuthn is not available in this browser');
+      throw new Error('WebAuthn is not available in this browser'); // mapped by mapPasskeyError
     }
 
     const credential = await createPasskey();

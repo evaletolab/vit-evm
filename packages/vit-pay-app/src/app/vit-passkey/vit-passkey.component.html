@@ -23,6 +23,11 @@
       <p class="address">{{ accountAddress }}</p>
     </section>
 
+    <section *ngSwitchCase="'unsupported'" class="error">
+      <span class="material-symbols-outlined">fingerprint_off</span>
+      <p>{{ errorMessage }}</p>
+    </section>
+
     <section *ngSwitchCase="'error'" class="error">
       <p>{{ errorMessage }}</p>
       <button type="button" class="primary" (click)="hasStoredPasskey ? onUnlock() : onCreate()">

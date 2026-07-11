@@ -8,8 +8,9 @@ import {
 } from '../../lib/passkeys';
 import { getItem, setItem } from '../../lib/storage';
 import { hexStringToUint8Array } from '../../utils';
+import { isWebAuthnAvailable, mapPasskeyError } from '../wallet/wallet.utils';
 
-type Status = 'idle' | 'loading' | 'authenticated' | 'error';
+type Status = 'idle' | 'loading' | 'authenticated' | 'error' | 'unsupported';
 
 @Component({
   selector: 'vit-passkey',
@@ -25,6 +26,12 @@ export class VitPasskeyComponent implements OnInit {
   accountAddress?: string;
 
   ngOnInit() {
+    if (!isWebAuthnAvailable()) {
+      this.status = 'unsupported';
+      this.errorMessage = mapPasskeyError(new Error('WebAuthn is not available in this browser'));
+      return;
+    }
+
     const stored = getItem('passkey');
     if (!stored) return;
     try {
@@ -46,6 +53,11 @@ export class VitPasskeyComponent implements OnInit {
   }
 
   async onCreate(): Promise<void> {
+    if (!isWebAuthnAvailable()) {
+      this.status = 'unsupported';
+      this.errorMessage = mapPasskeyError(new Error('WebAuthn is not available in this browser'));
+      return;
+    }
     this.status = 'loading';
     this.errorMessage = undefined;
     try {
@@ -55,7 +67,7 @@ export class VitPasskeyComponent implements OnInit {
       this.adopt(stored);
     } catch (error) {
       this.status = 'error';
-      this.errorMessage = error instanceof Error ? error.message : 'Unknown error';
+      this.errorMessage = mapPasskeyError(error);
     }
   }
 
@@ -81,7 +93,7 @@ export class VitPasskeyComponent implements OnInit {
       this.adopt(this.passkey);
     } catch (error) {
       this.status = 'error';
-      this.errorMessage = error instanceof Error ? error.message : 'Unknown error';
+      this.errorMessage = mapPasskeyError(error);
     }
   }
 

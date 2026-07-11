@@ -2,6 +2,7 @@ import {
   ZCHF_DECIMALS,
   formatZchfAmount,
   isValidEvmAddress,
+  mapPasskeyError,
   mapPaymasterError,
   parseZchfAmount,
   shortAddress,
@@ -84,6 +85,24 @@ describe('wallet.utils', () => {
       expect(mapPaymasterError(new Error('weird unknown error'))).toMatch(
         /sponsorisée/i,
       );
+    });
+  });
+
+  describe('mapPasskeyError', () => {
+    it('maps NotSupportedError', () => {
+      const err = new DOMException('x', 'NotSupportedError');
+      expect(mapPasskeyError(err)).toMatch(/biométrique|prise en charge/i);
+    });
+
+    it('maps NotAllowedError / cancel', () => {
+      const err = new DOMException('The operation was aborted.', 'NotAllowedError');
+      expect(mapPasskeyError(err)).toMatch(/annulée|expirée/i);
+    });
+
+    it('never returns raw technical English for unknown errors', () => {
+      const msg = mapPasskeyError(new Error('Failed to generate passkey. Received null as a credential'));
+      expect(msg).not.toMatch(/Failed to generate/i);
+      expect(msg).toMatch(/clé d'accès|Face ID|empreinte/i);
     });
   });
 });
