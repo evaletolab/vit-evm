@@ -1,5 +1,7 @@
 export const environment = {
   production: true,
+  // HashLocationStrategy (#/route) — requis pour GitHub Pages (pas de rewrite serveur).
+  hashRoute: true,
   // Sepolia testnet — config publique pour la PWA déployée sur GH Pages.
   // Pour OP mainnet, voir la section Option 2 dans la doc env.
   chainId: 11155111n,

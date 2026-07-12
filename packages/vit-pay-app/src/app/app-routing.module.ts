@@ -1,5 +1,6 @@
 import { NgModule } from '@angular/core';
 import { RouterModule, Routes } from '@angular/router';
+import { environment } from '../environments/environment';
 
 // Pages
 import { PageHomeComponent } from './pages/page-home/page-home.component';
@@ -15,8 +16,6 @@ import { PageIbanComponent } from './pages/page-iban/page-iban.component';
 import { PageDevicesComponent } from './pages/page-devices/page-devices.component';
 import { PageRecoveryComponent } from './pages/page-recovery/page-recovery.component';
 import { requireWalletGuard, devOnlyGuard } from './wallet/wallet.guard';
-
-
 
 const routes: Routes = [
   { path: '', component: PageHomeComponent, pathMatch: 'full', canActivate: [requireWalletGuard] },
@@ -34,7 +33,7 @@ const routes: Routes = [
 ];
 
 @NgModule({
-  imports: [RouterModule.forRoot(routes)],
+  imports: [RouterModule.forRoot(routes, { useHash: environment.hashRoute })],
   exports: [RouterModule]
 })
 export class AppRoutingModule { }

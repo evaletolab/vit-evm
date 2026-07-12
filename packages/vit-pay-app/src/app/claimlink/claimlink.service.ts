@@ -39,9 +39,16 @@ export class ClaimLinkService {
   }
 
   buildShareUrl(id: string, secret: string): string {
-    const base = window.location.origin;
     const params = new URLSearchParams({ id, s: secret });
-    return `${base}/claim?${params.toString()}`;
+    // Respecte <base href> (ex. /vit-evm/ sur GH Pages).
+    const root = new URL(
+      document.querySelector('base')?.getAttribute('href') || '/',
+      window.location.origin,
+    ).href.replace(/\/$/, '');
+    if (environment.hashRoute) {
+      return `${root}/#/claim?${params.toString()}`;
+    }
+    return `${root}/claim?${params.toString()}`;
   }
 
   async create(amountWei: bigint, expiry: bigint): Promise<{

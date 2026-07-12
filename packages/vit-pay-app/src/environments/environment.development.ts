@@ -1,5 +1,7 @@
 export const environment = {
   production: false,
+  // Path routing en local (ng serve). Mettre à true pour simuler GH Pages.
+  hashRoute: false,
   // Sepolia (Ethereum testnet) — switch depuis OP Sepolia pour tester si l'AA24
   // était spécifique à OP Sepolia ou à abstractionkit's SafeWebAuthnSharedSigner.
   chainId: 11155111n,
