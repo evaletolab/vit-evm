@@ -2,6 +2,7 @@ import { ChangeDetectorRef, Component, OnDestroy, OnInit } from '@angular/core';
 import { SwUpdate, VersionReadyEvent } from '@angular/service-worker';
 import { Subject, filter, interval, takeUntil } from 'rxjs';
 import { ThemeService } from './theme/theme.service';
+import { WalletUnlockService } from './wallet/wallet-unlock.service';
 
 @Component({
   selector: 'app-root',
@@ -11,6 +12,9 @@ import { ThemeService } from './theme/theme.service';
 export class AppComponent implements OnInit, OnDestroy {
   title = 'ViTpay';
   showInstallPrompt = false;
+  showUnlock = false;
+  unlockBusy = false;
+  unlockError = '';
 
   private deferredPrompt: any = null;
   private destroy$ = new Subject<void>();
@@ -19,11 +23,13 @@ export class AppComponent implements OnInit, OnDestroy {
     public theme: ThemeService,
     private update: SwUpdate,
     private cdr: ChangeDetectorRef,
+    private unlock: WalletUnlockService,
   ) {
     theme.init();
   }
 
   ngOnInit(): void {
+    this.refreshUnlockGate();
     this.initServiceWorkerUpdates();
     this.setupPWAInstallPrompt();
   }
@@ -31,6 +37,20 @@ export class AppComponent implements OnInit, OnDestroy {
   ngOnDestroy(): void {
     this.destroy$.next();
     this.destroy$.complete();
+  }
+
+  async doUnlock(): Promise<void> {
+    this.unlockBusy = true;
+    this.unlockError = '';
+    try {
+      await this.unlock.unlock();
+      this.showUnlock = false;
+    } catch (err) {
+      this.unlockError = err instanceof Error ? err.message : String(err);
+    } finally {
+      this.unlockBusy = false;
+      this.cdr.markForCheck();
+    }
   }
 
   async installPWA(): Promise<void> {
@@ -48,10 +68,14 @@ export class AppComponent implements OnInit, OnDestroy {
     this.cdr.markForCheck();
   }
 
+  private refreshUnlockGate(): void {
+    this.showUnlock = this.unlock.needsUnlock();
+    this.cdr.markForCheck();
+  }
+
   private initServiceWorkerUpdates(): void {
     if (!this.update.isEnabled) return;
 
-    // Onglets inactifs throttle les timers — utilise Date.now() pour le delta réel
     const checkInterval = 5 * 60 * 1000;
     const updateInterval = 6 * 60 * 60 * 1000;
     let lastCheck = Date.now();

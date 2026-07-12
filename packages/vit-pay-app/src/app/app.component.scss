@@ -2,6 +2,50 @@
   display: block;
 }
 
+.vit-unlock {
+  min-height: 100vh;
+  max-width: var(--vit-page-max);
+  margin: 0 auto;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 1.5rem;
+  box-sizing: border-box;
+  background: linear-gradient(180deg, var(--surface-1), var(--bg));
+
+  &__card {
+    width: 100%;
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+    text-align: center;
+    padding: 1.75rem 1.25rem;
+    border-radius: var(--r-card);
+    border: 1px solid var(--hairline);
+    background: var(--glass);
+
+    h1 {
+      margin: 0;
+      font-size: 2rem;
+    }
+    p {
+      margin: 0;
+      color: var(--text-2);
+      line-height: 1.4;
+    }
+  }
+
+  &__error {
+    color: var(--negative) !important;
+    font-size: 0.9rem;
+    font-weight: 600;
+  }
+
+  .vit-btn {
+    width: 100%;
+  }
+}
+
 .vit-install-banner {
   position: fixed;
   left: 50%;
