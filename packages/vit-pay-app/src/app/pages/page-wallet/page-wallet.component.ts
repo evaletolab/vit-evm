@@ -10,6 +10,7 @@ import {
 } from '@angular/core';
 import { ActivatedRoute, Router } from '@angular/router';
 import { WalletService } from '../../wallet/wallet.service';
+import { WalletUnlockService } from '../../wallet/wallet-unlock.service';
 import { ThemeService } from '../../theme/theme.service';
 import {
   RecoveryRequest,
@@ -89,9 +90,12 @@ export class PageWalletComponent implements OnInit, AfterViewInit, OnDestroy {
   readonly shortAddress = shortAddress;
 
   iban: string | null = null;
+  /** Pseudo / prénom demandé à la création. */
+  displayName = '';
 
   constructor(
     private wallet: WalletService,
+    private unlock: WalletUnlockService,
     private theme: ThemeService,
     private route: ActivatedRoute,
     private router: Router,
@@ -185,12 +189,17 @@ export class PageWalletComponent implements OnInit, AfterViewInit, OnDestroy {
       if (!isWebAuthnAvailable()) {
         throw new Error('WebAuthn is not available in this browser');
       }
-      this.state = await this.wallet.createWalletWithPasskey();
+      if (this.displayName.trim().length < 2) {
+        throw new Error('Indiquez un pseudo d\'au moins 2 caractères');
+      }
+      this.state = await this.wallet.createWalletWithPasskey(this.displayName);
+      this.unlock.markUnlocked();
       this.view = 'ready';
       await this.refreshBalance();
       this.redirectAfterCreate();
     } catch (err) {
-      this.error = mapPasskeyError(err);
+      const msg = err instanceof Error ? err.message : String(err);
+      this.error = /pseudo|caractères/i.test(msg) ? msg : mapPasskeyError(err);
     } finally {
       this.busy = false;
     }

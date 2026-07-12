@@ -4,7 +4,7 @@
   <header class="topbar">
     <div class="greeting">
       <div class="greeting__hi">Bonsoir,</div>
-      <h1>{{ hasWallet ? (shortAddr || 'Wallet') : 'Visiteur' }}</h1>
+      <h1>{{ hasWallet ? (displayName || shortAddr || 'Wallet') : 'Visiteur' }}</h1>
     </div>
     <div class="avatar" [class.avatar--off]="!hasWallet" aria-hidden="true"></div>
   </header>

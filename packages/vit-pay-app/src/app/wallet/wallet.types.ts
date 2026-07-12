@@ -38,6 +38,8 @@ export interface StoredWallet {
   owners: string[];
   recoveryEnabled: boolean;
   zchfTokenAddress: string;
+  /** Pseudo / prénom connu des amis (optionnel pour wallets créés avant). */
+  displayName?: string;
   /** Last RecoveryRequest read on-chain — used for instant UX on page load. */
   recoveryRequestCache?: SerializedRecoveryRequest;
   /** Tracks ZCHF spent today against `maxDailyZchfAmount` in WalletConfig. */
@@ -52,6 +54,7 @@ export interface WalletState {
   zchfTokenAddress: string;
   passkey: PasskeyOwner;
   deployed: boolean;
+  displayName?: string;
 }
 
 export interface UserOperationDebug {

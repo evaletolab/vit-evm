@@ -10,10 +10,21 @@
   <article *ngIf="view === 'no-wallet'" class="card">
     <h2>Créer mon compte</h2>
     <p>
-      Protégez votre argent avec Face ID, Touch ID ou l'empreinte de cet appareil.
-      Aucun mot de passe à retenir.
+      Choisissez un pseudo connu de vos amis, puis protégez votre argent avec
+      Face ID, Touch ID ou l'empreinte de cet appareil.
     </p>
-    <button (click)="createWallet()" [disabled]="busy">
+    <label>
+      Pseudo / prénom
+      <input
+        type="text"
+        [(ngModel)]="displayName"
+        placeholder="ex. Delphine"
+        autocomplete="nickname"
+        maxlength="40"
+        [disabled]="busy"
+      />
+    </label>
+    <button (click)="createWallet()" [disabled]="busy || displayName.trim().length < 2">
       {{ busy ? 'Création…' : 'Créer mon compte' }}
     </button>
 

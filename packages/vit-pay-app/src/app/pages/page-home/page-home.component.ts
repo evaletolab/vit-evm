@@ -22,6 +22,7 @@ export class PageHomeComponent implements OnInit {
   balance = '—';
   hasWallet = false;
   shortAddr = '';
+  displayName = '';
   loadingTxs = false;
   recentTxs: RecentTx[] = [];
 
@@ -36,6 +37,7 @@ export class PageHomeComponent implements OnInit {
       }
       this.hasWallet = true;
       this.shortAddr = shortAddress(state.accountAddress);
+      this.displayName = state.displayName || '';
 
       this.wallet.getZchfBalance()
         .then((raw) => { this.balance = formatZchfAmount(raw); })

@@ -21,15 +21,15 @@ type PasskeyCredentialWithPubkeyCoordinates = PasskeyCredential & {
 
 /**
  * Creates a passkey for signing.
- *
- * @returns A promise that resolves to a PasskeyCredentialWithPubkeyCoordinates object, which includes the passkey credential information and its public key coordinates.
- * @throws Throws an error if the passkey generation fails or if the credential received is null.
+ * @param displayName - Pseudo shown in the password manager / OS prompt.
  */
-async function createPasskey(): Promise<PasskeyCredentialWithPubkeyCoordinates> {
-  // Generate a passkey credential using WebAuthn API
-  // authenticatorAttachment: 'platform' forces device biometrics
-  // (Face ID / Touch ID / Windows Hello / Android biometrics)
-  // and excludes roaming authenticators (USB security keys, BLE).
+async function createPasskey(
+  displayName = 'ViT Owner',
+): Promise<PasskeyCredentialWithPubkeyCoordinates> {
+  const label = displayName.trim() || 'ViT Owner';
+  // WebAuthn create — pas de hard `authenticatorAttachment: 'platform'` :
+  // on laisse le navigateur proposer plateforme / hybrid / clé selon dispo.
+  // `hints` oriente vers l'appareil local sans bloquer les autres options.
   const passkeyCredential = (await navigator.credentials.create({
     publicKey: {
       pubKeyCredParams: [
@@ -44,12 +44,12 @@ async function createPasskey(): Promise<PasskeyCredentialWithPubkeyCoordinates> 
         name: 'ViT Wallet',
       },
       user: {
-        displayName: 'ViT Owner',
+        displayName: label,
         id: crypto.getRandomValues(new Uint8Array(32)),
-        name: 'vit-owner',
+        name: label.toLowerCase().replace(/\s+/g, '-').slice(0, 64) || 'vit-owner',
       },
+      hints: ['client-device'],
       authenticatorSelection: {
-        authenticatorAttachment: 'platform',
         userVerification: 'required',
         residentKey: 'preferred',
       },

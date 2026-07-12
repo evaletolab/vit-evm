@@ -177,16 +177,26 @@ export class WalletService {
       zchfTokenAddress: stored.zchfTokenAddress,
       passkey,
       deployed,
+      displayName: stored.displayName,
     };
     return this.state;
   }
 
-  async createWalletWithPasskey(): Promise<WalletState> {
+  getDisplayName(): string | undefined {
+    return this.state?.displayName ?? this.storage.load()?.displayName;
+  }
+
+  async createWalletWithPasskey(displayName: string): Promise<WalletState> {
     if (typeof navigator === 'undefined' || !navigator.credentials) {
       throw new Error('WebAuthn is not available in this browser'); // mapped by mapPasskeyError
     }
 
-    const credential = await createPasskey();
+    const name = displayName.trim();
+    if (name.length < 2) {
+      throw new Error('Indiquez un pseudo d\'au moins 2 caractères');
+    }
+
+    const credential = await createPasskey(name);
     const passkey = toLocalStorageFormat(credential);
     const accountAddress = SafeAccount.createAccountAddress(
       [passkey.pubkeyCoordinates],
@@ -210,6 +220,7 @@ export class WalletService {
       owners: [ownerAddress],
       recoveryEnabled: false,
       zchfTokenAddress: this.config.zchfTokenAddress,
+      displayName: name,
     };
     this.storage.save(stored);
 
@@ -224,6 +235,7 @@ export class WalletService {
         pubkeyCoordinates: passkey.pubkeyCoordinates,
       },
       deployed: false,
+      displayName: name,
     };
     return this.state;
   }
@@ -240,10 +252,14 @@ export class WalletService {
     return (await token['balanceOf'](state.accountAddress)) as bigint;
   }
 
+  /**
+   * Recent ZCHF Transfer logs. Uses a short lookback so free RPCs (PublicNode)
+   * do not require archive access (`Archive requests require a personal token`).
+   */
   async getRecentZchfTransfers(
     limit = 10,
-    lookbackBlocks = 50_000,
-    chunkSize = 9_900,
+    lookbackBlocks = 2_000,
+    chunkSize = 500,
   ): Promise<RecentTransfer[]> {
     const state = this.requireState();
     assertConfigUsable(this.config);
@@ -262,19 +278,26 @@ export class WalletService {
 
     const collected: ethers.Log[] = [];
     for (const { from, to } of ranges) {
-      const [outLogs, inLogs] = await Promise.all([
-        provider.getLogs({
-          address: this.config.zchfTokenAddress,
-          fromBlock: from, toBlock: to,
-          topics: [transferTopic, paddedAccount, null],
-        }),
-        provider.getLogs({
-          address: this.config.zchfTokenAddress,
-          fromBlock: from, toBlock: to,
-          topics: [transferTopic, null, paddedAccount],
-        }),
-      ]);
-      collected.push(...outLogs, ...inLogs);
+      try {
+        const [outLogs, inLogs] = await Promise.all([
+          provider.getLogs({
+            address: this.config.zchfTokenAddress,
+            fromBlock: from, toBlock: to,
+            topics: [transferTopic, paddedAccount, null],
+          }),
+          provider.getLogs({
+            address: this.config.zchfTokenAddress,
+            fromBlock: from, toBlock: to,
+            topics: [transferTopic, null, paddedAccount],
+          }),
+        ]);
+        collected.push(...outLogs, ...inLogs);
+      } catch (err) {
+        const msg = err instanceof Error ? err.message : String(err);
+        // Free PublicNode rejects deep history — stop scanning older chunks.
+        if (/archive|personal token|allnodes/i.test(msg)) break;
+        throw err;
+      }
       if (collected.length >= limit * 2) break;
     }
 

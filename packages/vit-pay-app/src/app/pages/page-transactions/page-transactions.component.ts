@@ -34,7 +34,7 @@ export class PageTransactionsComponent implements OnInit {
       if (!state) return;
       this.hasWallet = true;
       this.loading = true;
-      const transfers = await this.wallet.getRecentZchfTransfers(50, 200_000);
+      const transfers = await this.wallet.getRecentZchfTransfers(50);
       this.all = transfers.map((t) => this.toRow(t));
     } catch (e: unknown) {
       this.error = e instanceof Error ? e.message : 'Erreur de chargement';
