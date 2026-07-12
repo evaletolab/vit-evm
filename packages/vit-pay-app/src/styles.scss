@@ -98,6 +98,8 @@ html, body {
   font-size: 15px;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+  /* Désactive le pinch-zoom (complète viewport user-scalable=no). */
+  touch-action: manipulation;
 }
 
 /* === Page container responsive === */
