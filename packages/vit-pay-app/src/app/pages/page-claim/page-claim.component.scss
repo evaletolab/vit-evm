@@ -92,13 +92,33 @@
   }
 
   .sender {
-    font-family: 'JetBrains Mono', monospace;
-    font-size: 11px;
-    letter-spacing: 1.5px;
-    text-transform: uppercase;
-    color: var(--text-muted);
+    font-family: 'Inter', sans-serif;
+    font-size: 0.95rem;
+    color: var(--text-2);
     margin: 0;
-    code { color: var(--text); font-family: inherit; }
+    code { color: var(--text); font-family: 'JetBrains Mono', monospace; font-size: 0.85rem; }
+    strong { color: var(--text); }
+    .sender-addr { color: var(--text-muted); font-size: 0.8rem; }
+  }
+
+  .contact-hint {
+    margin: 0;
+    font-size: 0.85rem;
+    color: var(--positive);
+  }
+
+  .secondary-cta {
+    display: inline-flex; align-items: center; justify-content: center;
+    gap: 8px;
+    padding: 0.7rem 1.2rem;
+    border-radius: var(--r-btn);
+    border: 1px solid var(--hairline);
+    background: var(--glass);
+    color: var(--text);
+    font: inherit; font-weight: 600; font-size: 0.95rem;
+    cursor: pointer;
+    text-decoration: none;
+    .material-symbols-outlined { font-size: 1.1rem; }
   }
 
   .wallet-block {

@@ -20,15 +20,29 @@
   <div class="claim-card" *ngIf="step === 'ready' || step === 'claiming'">
     <p class="eyebrow">Vous avez reçu</p>
     <div class="amount-hero">{{ amount }} <span class="unit">xCHF</span></div>
-    <p class="sender" *ngIf="senderShort">de <code>{{ senderShort }}</code></p>
+    <p class="sender" *ngIf="fromName || senderShort">
+      de <strong *ngIf="fromName">{{ fromName }}</strong>
+      <code *ngIf="!fromName">{{ senderShort }}</code>
+      <span *ngIf="fromName && senderShort" class="sender-addr"> · {{ senderShort }}</span>
+    </p>
 
     <p class="error" *ngIf="error">{{ error }}</p>
+    <p class="contact-hint" *ngIf="contactHint">{{ contactHint }}</p>
 
     <ng-container *ngIf="hasWallet; else noWallet">
       <div class="wallet-block">
         <span class="vit-label">Reçu sur</span>
         <code>{{ short(walletAddress) }}</code>
       </div>
+
+      <button
+        *ngIf="fromName && !contactSaved"
+        class="secondary-cta"
+        type="button"
+        (click)="saveSenderContact()">
+        <span class="material-symbols-outlined">person_add</span>
+        Ajouter {{ fromName }} au carnet
+      </button>
 
       <button class="cta" type="button" (click)="claim()" [disabled]="step === 'claiming'">
         <span class="material-symbols-outlined">redeem</span>
@@ -40,8 +54,9 @@
       <div class="onboard">
         <h2>Vous n'avez pas encore de compte</h2>
         <p>
-          Pour encaisser ces {{ amount }} xCHF, créez un compte ViT sur cet appareil.
-          C'est gratuit et protégé par Face ID ou empreinte.
+          Pour encaisser ces {{ amount }} xCHF
+          <span *ngIf="fromName"> de {{ fromName }}</span>,
+          créez un compte ViT sur cet appareil.
         </p>
         <a class="cta" [routerLink]="['/wallet']" [queryParams]="walletReturnParams">
           <span class="material-symbols-outlined">account_balance_wallet</span>
@@ -55,6 +70,7 @@
     <span class="material-symbols-outlined check">check_circle</span>
     <h2>Fonds reçus</h2>
     <p>{{ amount }} xCHF ont été crédités sur votre compte.</p>
+    <p class="contact-hint" *ngIf="contactHint">{{ contactHint }}</p>
     <code *ngIf="txHash">{{ txHash }}</code>
     <a class="cta" [routerLink]="['/']">Voir mon solde</a>
   </div>

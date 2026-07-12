@@ -38,8 +38,10 @@ export class ClaimLinkService {
     return { id, secret, secretHash };
   }
 
-  buildShareUrl(id: string, secret: string): string {
+  buildShareUrl(id: string, secret: string, fromName?: string): string {
     const params = new URLSearchParams({ id, s: secret });
+    const name = fromName?.trim();
+    if (name) params.set('from', name);
     // Respecte <base href> (ex. /vit-evm/ sur GH Pages).
     const root = new URL(
       document.querySelector('base')?.getAttribute('href') || '/',
@@ -75,7 +77,8 @@ export class ClaimLinkService {
       status: 'pending',
     };
     this.append(owner, link);
-    return { link, op, url: this.buildShareUrl(id, secret) };
+    const fromName = this.wallet.getDisplayName();
+    return { link, op, url: this.buildShareUrl(id, secret, fromName) };
   }
 
   async cancel(id: string): Promise<UserOperationResult> {

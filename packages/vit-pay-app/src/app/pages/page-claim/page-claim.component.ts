@@ -2,6 +2,7 @@ import { Component, OnInit } from '@angular/core';
 import { ActivatedRoute } from '@angular/router';
 import { ethers } from 'ethers';
 import { ClaimLinkService } from '../../claimlink/claimlink.service';
+import { ContactsService } from '../../contacts/contacts.service';
 import { WalletService } from '../../wallet/wallet.service';
 import { formatZchfAmount, shortAddress } from '../../wallet/wallet.utils';
 
@@ -17,8 +18,10 @@ export class PageClaimComponent implements OnInit {
   error = '';
   id = '';
   secret = '';
+  fromName = '';
 
   amount = '';
+  senderAddress = '';
   senderShort = '';
   expiry = 0;
   status = 0;
@@ -28,22 +31,27 @@ export class PageClaimComponent implements OnInit {
   txHash = '';
   short = shortAddress;
 
+  contactSaved = false;
+  contactHint = '';
+
   constructor(
     private route: ActivatedRoute,
     private cl: ClaimLinkService,
     private wallet: WalletService,
+    private contacts: ContactsService,
   ) {}
 
-  /** After wallet creation, return to this claim URL. */
+  /** After wallet creation, return to this claim URL (preserve optional from). */
   get walletReturnParams(): { returnUrl: string } {
-    return {
-      returnUrl: `/claim?id=${this.id}&s=${this.secret}`,
-    };
+    const params = new URLSearchParams({ id: this.id, s: this.secret });
+    if (this.fromName) params.set('from', this.fromName);
+    return { returnUrl: `/claim?${params.toString()}` };
   }
 
   async ngOnInit(): Promise<void> {
     this.id = this.route.snapshot.queryParamMap.get('id') || '';
     this.secret = this.route.snapshot.queryParamMap.get('s') || '';
+    this.fromName = (this.route.snapshot.queryParamMap.get('from') || '').trim();
 
     if (!this.id || !this.secret) {
       this.fail('Lien invalide (paramètres manquants)');
@@ -61,6 +69,7 @@ export class PageClaimComponent implements OnInit {
         return;
       }
       this.amount = formatZchfAmount(link.amount);
+      this.senderAddress = link.sender;
       this.senderShort = shortAddress(link.sender);
       this.expiry = Number(link.expiry);
       this.status = link.status;
@@ -71,7 +80,6 @@ export class PageClaimComponent implements OnInit {
         this.fail('Ce lien est expiré.'); return;
       }
 
-      // Vérifier le secret côté client avant d'appeler claim
       const expectedHash = ethers.keccak256(
         ethers.AbiCoder.defaultAbiCoder().encode(['bytes32'], [this.secret]),
       );
@@ -84,12 +92,29 @@ export class PageClaimComponent implements OnInit {
         if (state) {
           this.hasWallet = true;
           this.walletAddress = state.accountAddress;
+          this.maybeOfferContact(state.accountAddress);
         }
       } catch { /* no wallet yet */ }
 
       this.step = 'ready';
     } catch (e: unknown) {
       this.fail(e instanceof Error ? e.message : 'Erreur de lecture du lien');
+    }
+  }
+
+  saveSenderContact(): void {
+    if (!this.hasWallet || !this.fromName || !this.senderAddress) return;
+    try {
+      this.contacts.upsert(this.walletAddress, {
+        name: this.fromName,
+        address: this.senderAddress,
+        source: 'manual',
+        note: 'Via claim link',
+      });
+      this.contactSaved = true;
+      this.contactHint = `${this.fromName} ajouté au carnet.`;
+    } catch (e: unknown) {
+      this.contactHint = e instanceof Error ? e.message : 'Impossible d\'ajouter le contact';
     }
   }
 
@@ -104,10 +129,22 @@ export class PageClaimComponent implements OnInit {
       const op = await this.cl.claim(this.id, this.secret, this.walletAddress);
       if (!op.success) throw new Error(op.error || 'Échec du claim');
       this.txHash = op.transactionHash || '';
+      if (this.fromName && !this.contactSaved) {
+        this.saveSenderContact();
+      }
       this.step = 'done';
     } catch (e: unknown) {
       this.error = e instanceof Error ? e.message : 'Erreur';
       this.step = 'ready';
+    }
+  }
+
+  private maybeOfferContact(owner: string): void {
+    if (!this.fromName || !this.senderAddress) return;
+    const existing = this.contacts.findByAddress(owner, this.senderAddress);
+    if (existing) {
+      this.contactSaved = true;
+      this.contactHint = `Déjà dans le carnet : ${existing.name}`;
     }
   }
 

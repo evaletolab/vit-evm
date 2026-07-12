@@ -93,7 +93,7 @@ export class PageLinksComponent implements OnInit {
   }
 
   buildUrl(link: StoredLink): string {
-    return this.cl.buildShareUrl(link.id, link.secret);
+    return this.cl.buildShareUrl(link.id, link.secret, this.wallet.getDisplayName());
   }
 
   async share(link: StoredLink): Promise<void> {
