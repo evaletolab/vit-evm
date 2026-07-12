@@ -1,0 +1,29 @@
+:root{
+  --sl-border-radius-medium: calc(0.75rem * var(--size-factor, 0.85));
+
+}
+.code{
+  width: 100%;
+}
+
+kng-switch,
+kng-input,
+kng-menu-button{
+  margin-top:inherit!important;
+}
+kng-dock.floating:not(.custom){
+  border-radius: var(--sl-border-radius-medium);
+  box-shadow: var(--sl-shadow-l);
+  box-shadow: rgba(100, 100, 111, 0.2) 0px 0 16px 8px;
+
+  box-shadow: #64646f33 0 0 16px 8px;
+  position: fixed;
+  border: 1px solid var(--neutral-color-quiet);
+  background-color: var(--white);
+  height: fit-content;
+  bottom: 50px;
+  left: 50%;
+  transform: translate(-50%);
+  z-index: 2000000020;
+  width: max-content;
+}

@@ -99,7 +99,13 @@ export class PageLinksComponent implements OnInit {
   async share(link: StoredLink): Promise<void> {
     const url = this.buildUrl(link);
     if (navigator.share) {
-      try { await navigator.share({ url, title: 'Claim xCHF', text: 'Tu peux récupérer ces xCHF :' }); } catch { /* user cancel */ }
+      try {
+        await navigator.share({
+          url,
+          title: 'Vous avez reçu de l\'argent',
+          text: 'Vous avez reçu de l\'argent sur ViT. Ouvrez le lien pour le récupérer :',
+        });
+      } catch { /* user cancel */ }
     } else {
       await navigator.clipboard.writeText(url);
     }

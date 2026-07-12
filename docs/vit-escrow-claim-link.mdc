@@ -1,0 +1,375 @@
+# ViT Claim Link Protocol
+
+**Protocole pour envoyer des ZCHF à quelqu'un qui n'a pas encore de compte ViT, via un lien sécurisé (email, SMS, QR code).**
+
+---
+
+## 📋 Related Documentation
+
+- **[ViT Escrow Plan](vit-escrow-plan.mdc)** : Document central des architectures escrow
+- **[ViT Dispute & Escrow](vit-dispute-escrow.mdc)** : Système de dispute et résolution
+- **[ViT Business Protocol](../.cursor/rules/vit-business-protocol.mdc)** : Infrastructure marchands
+- **[ViT MVP Plan](../.cursor/rules/vit-plan-mvp.mdc)** : Architecture Safe + ERC-7579
+
+---
+
+## 🎯 Objectif
+
+Permettre d'envoyer des ZCHF à :
+- Un **numéro de téléphone** (sans connaître l'adresse blockchain)
+- Un **email** (sans connaître l'adresse blockchain)  
+- Un **contact** (via partage de lien)
+
+**Principes clés :**
+- ❌ **Pas de registry centralisé** téléphone/email → adresse (privacy + sécurité)
+- ✅ **Lien unique sécurisé** que le destinataire utilise pour claim
+- ✅ **Escrow on-chain** jusqu'au claim ou expiration
+- ✅ **Échange d'adresse peer-to-peer** via vCard/contact
+
+---
+
+## 🔐 Modèle de Sécurité
+
+### Pourquoi pas de Registry ?
+
+| Approche | Problème |
+|----------|----------|
+| Registry on-chain `phone → address` | Leak de données personnelles, spam ciblé, phishing |
+| Registry off-chain centralisé | Single point of failure, données sensibles |
+| Registry avec hash | Rainbow table attacks, corrélation possible |
+
+### Solution : Claim Link
+
+Le lien contient un **secret** qui prouve que le destinataire est légitime, sans révéler de mapping permanent.
+
+```
+https://vit.pay/claim/{claimId}#{secret}
+```
+
+- `claimId` : identifiant public de l'escrow (on-chain)
+- `secret` : clé de claim (dans le fragment URL, jamais envoyé au serveur)
+
+---
+
+## 🔄 Workflow Principal
+
+### 1) Création du Claim Link (Sender)
+
+```
+Sender → ClaimEscrow.createClaim(amount, expiresAt, recipientHint)
+       → returns (claimId, secret)
+       → generates link: vit.pay/claim/{claimId}#{secret}
+```
+
+**Paramètres :**
+- `amount` : Montant en ZCHF
+- `expiresAt` : Timestamp d'expiration (ex: 7 jours)
+- `recipientHint` : Hint optionnel (initiales, description) — **jamais** le téléphone/email
+
+**On-chain :**
+- Fonds transférés vers `ClaimEscrow` contract
+- État : `PENDING_CLAIM`
+- Hash du secret stocké : `secretHash = keccak256(secret)`
+
+### 2) Envoi du Lien (Off-chain)
+
+Le sender envoie le lien via :
+- **SMS** : "Tu as reçu 50 ZCHF ! Clique ici : vit.pay/claim/abc123#xyz789"
+- **Email** : Même format
+- **QR Code** : Généré par l'app
+- **Message app** : WhatsApp, Signal, etc.
+
+**Note :** Le lien contient le secret. Celui qui a le lien peut claim.
+
+### 3) Claim par le Destinataire
+
+```
+Recipient → ouvre le lien
+         → l'app extrait claimId et secret du fragment
+         → Recipient fournit son adresse (ou crée un compte)
+         → ClaimEscrow.claim(claimId, secret, recipientAddress)
+         → Fonds transférés à recipientAddress
+```
+
+**Vérification on-chain :**
+```solidity
+require(keccak256(secret) == claims[claimId].secretHash, "Invalid secret");
+require(block.timestamp < claims[claimId].expiresAt, "Expired");
+require(claims[claimId].status == PENDING_CLAIM, "Already claimed");
+```
+
+### 4) Expiration / Annulation
+
+Si non claimé avant `expiresAt` :
+```
+Keeper → ClaimEscrow.refundExpired(claimId)
+       → Fonds retournés au sender
+```
+
+Le sender peut aussi annuler avant claim :
+```
+Sender → ClaimEscrow.cancel(claimId)
+       → Fonds retournés (si pas encore claimé)
+```
+
+---
+
+## 📱 Cas d'Usage Détaillés
+
+### Use Case 1 : Envoi à un Ami (Téléphone)
+
+1. Alice veut envoyer 20 ZCHF à Bob
+2. Alice ne connaît pas l'adresse de Bob
+3. Alice entre le montant + numéro de Bob dans l'app
+4. L'app crée le claim link et l'envoie par SMS
+5. Bob reçoit le SMS, clique sur le lien
+6. Bob crée un compte ViT (ou connecte le sien)
+7. Bob claim les 20 ZCHF sur son adresse
+
+### Use Case 2 : Cadeau par Email
+
+1. Alice envoie 100 ZCHF à carol@example.com
+2. L'app génère le lien et l'envoie par email
+3. Carol ouvre l'email, clique sur le lien
+4. Carol claim vers son adresse
+
+### Use Case 3 : Partage QR Code (en personne)
+
+1. Alice génère un QR code de paiement
+2. Bob scanne le QR avec son téléphone
+3. Bob claim directement
+
+### Use Case 4 : Demande d'Adresse (vCard Exchange)
+
+Variante où on veut l'adresse **avant** d'envoyer :
+
+1. Alice veut l'adresse de Bob pour l'ajouter à ses contacts
+2. Alice envoie une **demande d'adresse** : `vit.pay/request/{requestId}`
+3. Bob clique, connecte son wallet, approuve le partage
+4. L'adresse de Bob est envoyée à Alice (via callback ou notification)
+5. Alice ajoute Bob à son carnet d'adresses (vCard-like)
+6. Alice peut maintenant envoyer directement (pas besoin de claim link)
+
+---
+
+## 🔗 Protocole d'Échange d'Adresse (vCard-like)
+
+### Objectif
+
+Permettre à un proche de **partager son adresse** pour être ajouté au carnet d'adresses ViT.
+
+### Flow : Address Request
+
+```
+Alice → AddressBook.createRequest(myAddress, hint)
+      → returns requestId
+      → génère lien : vit.pay/share/{requestId}
+
+Alice envoie le lien à Bob
+
+Bob → ouvre le lien
+    → voit "Alice veut ajouter ton adresse à ses contacts"
+    → Bob approuve et signe avec son wallet
+    → AddressBook.shareAddress(requestId, bobAddress, signature)
+
+Alice → reçoit notification "Bob a partagé son adresse"
+      → Ajoute Bob à son carnet local
+```
+
+### Stockage du Carnet d'Adresses
+
+| Option | Avantages | Inconvénients |
+|--------|-----------|---------------|
+| **Local (recommandé MVP)** | Privacy maximale, pas de leak | Perte si device perdu, pas de sync |
+| **Chiffré cloud** | Sync multi-device | Complexité, dépendance cloud |
+| **On-chain ENS-like** | Décentralisé | Public, coûteux |
+
+**Recommandation MVP :** Stockage local chiffré avec export/import.
+
+### Format vCard-like
+
+```json
+{
+  "contacts": [
+    {
+      "name": "Bob",
+      "address": "0x1234...abcd",
+      "addedAt": "2024-12-14T10:00:00Z",
+      "source": "address_request",
+      "verified": true
+    }
+  ]
+}
+```
+
+---
+
+## 🏗️ Architecture Technique
+
+### Smart Contract : `ClaimEscrow`
+
+```solidity
+struct Claim {
+    address sender;
+    uint256 amount;
+    bytes32 secretHash;
+    uint256 expiresAt;
+    ClaimStatus status;
+    string hint; // optional, public
+}
+
+enum ClaimStatus { PENDING, CLAIMED, CANCELLED, EXPIRED }
+
+function createClaim(
+    uint256 amount,
+    uint256 expiresAt,
+    bytes32 secretHash,
+    string calldata hint
+) external returns (uint256 claimId);
+
+function claim(
+    uint256 claimId,
+    bytes32 secret,
+    address recipient
+) external;
+
+function cancel(uint256 claimId) external;
+
+function refundExpired(uint256 claimId) external;
+```
+
+### Génération du Secret (Client-Side)
+
+```typescript
+// Génération côté client (jamais envoyé au serveur)
+const secret = crypto.getRandomValues(new Uint8Array(32));
+const secretHex = bytesToHex(secret);
+const secretHash = keccak256(secret);
+
+// Le secretHex va dans le fragment URL
+const link = `https://vit.pay/claim/${claimId}#${secretHex}`;
+```
+
+### Sécurité du Fragment URL
+
+Le fragment (`#secret`) n'est **jamais** envoyé au serveur HTTP :
+- Le serveur voit : `GET /claim/abc123`
+- Le serveur **ne voit pas** : `#xyz789secret`
+- Le secret reste dans le navigateur/app
+
+---
+
+## 🔒 Considérations de Sécurité
+
+### Risques et Mitigations
+
+| Risque | Impact | Mitigation |
+|--------|--------|------------|
+| **Lien intercepté** (MITM) | Vol des fonds | HTTPS obligatoire, expiration courte |
+| **Lien partagé publiquement** | N'importe qui peut claim | Warning UX, confirmation sender |
+| **Brute force du secret** | Vol des fonds | Secret 256 bits = infaisable |
+| **Phishing link** | Fausse app vole le secret | Domaine vérifié, app native |
+| **Replay attack** | Double claim | Statut on-chain `CLAIMED` |
+
+### Bonnes Pratiques
+
+1. **Secret fort** : 256 bits minimum
+2. **Expiration courte** : 7 jours max par défaut
+3. **Montant visible** : Afficher clairement avant claim
+4. **Confirmation sender** : Notification quand claimé
+5. **Annulation possible** : Sender peut annuler avant claim
+
+### Rate Limiting
+
+- Max claims créés par sender par jour : 10
+- Min montant par claim : 1 ZCHF (évite spam)
+- Cooldown après annulation : 1h
+
+---
+
+## 📊 États et Transitions
+
+```
+CREATED (off-chain, link generated)
+    │
+    ▼
+PENDING_CLAIM (on-chain, funded)
+    │
+    ├──[recipient.claim()]──→ CLAIMED ✅
+    │
+    ├──[sender.cancel()]───→ CANCELLED (refund)
+    │
+    └──[timeout expired]───→ EXPIRED (refund)
+```
+
+---
+
+## 📱 UX Flow (Mobile App)
+
+### Sender Flow
+
+```
+1. [Envoyer] → 2. [Montant: 50 ZCHF] → 3. [À: +41 79 xxx xx xx]
+                                              ou email
+                                              ou "Générer lien"
+    │
+    ▼
+4. [Confirmer] → 5. [Lien créé !]
+                    - Copier le lien
+                    - Envoyer par SMS
+                    - Partager via...
+                    - Afficher QR
+    │
+    ▼
+6. [En attente...] → [Notif: "Bob a claimé tes 50 ZCHF !"]
+```
+
+### Recipient Flow
+
+```
+1. [Reçoit SMS/Email avec lien]
+    │
+    ▼
+2. [Clique sur lien] → App ViT s'ouvre (ou web)
+    │
+    ▼
+3. [Affichage: "Alice t'envoie 50 ZCHF"]
+    │
+    ├── [A déjà un compte] → [Claim] → [Reçu !]
+    │
+    └── [Pas de compte] → [Créer compte] → [Claim] → [Reçu !]
+```
+
+---
+
+## 📋 Paramètres MVP
+
+| Paramètre | Valeur MVP | Description |
+|-----------|------------|-------------|
+| `MIN_AMOUNT` | 1 ZCHF | Montant minimum |
+| `MAX_AMOUNT` | 10,000 ZCHF | Montant maximum par claim |
+| `DEFAULT_EXPIRY` | 7 jours | Expiration par défaut |
+| `MAX_EXPIRY` | 30 jours | Expiration maximale |
+| `SECRET_LENGTH` | 32 bytes | Taille du secret |
+| `MAX_CLAIMS_PER_DAY` | 10 | Rate limit sender |
+
+---
+
+## 🚀 Prochaines Étapes
+
+1. **Smart Contract** : Implémenter `ClaimEscrow.sol`
+2. **Tests** : Scénarios claim, expiration, cancel, replay
+3. **UI Sender** : Flow de création de lien
+4. **UI Recipient** : Flow de claim
+5. **Address Request** : Protocole vCard-like
+6. **Notifications** : Push quand claimé/expiré
+
+---
+
+## 🔗 Intégration avec Dispute System
+
+Un claim link peut déclencher une dispute si :
+- Le sender conteste après claim (rare, car il a initié)
+- Le recipient conteste le montant affiché vs reçu
+
+Dans ce cas, le flow de dispute standard s'applique (voir [vit-dispute-escrow.mdc](vit-dispute-escrow.mdc)).

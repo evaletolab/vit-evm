@@ -1,0 +1,371 @@
+# ViT Dispute & Escrow System Specification
+
+**Système de règlement de désaccord optimistic avec pénalités fortes pour prévenir la fraude dans les paiements ViT.**
+
+---
+
+## 📋 Related Documentation
+
+- **[ViT Escrow Plan](vit-escrow-plan.mdc)** : Document central des architectures escrow
+- **[ViT Claim Link Protocol](vit-escrow-claim-link.mdc)** : Envoi de ZCHF sans compte destinataire
+- **[ViT Business Protocol](../.cursor/rules/vit-business-protocol.mdc)** : Infrastructure marchands
+- **[ViT MVP Plan](../.cursor/rules/vit-plan-mvp.mdc)** : Architecture Safe + ERC-7579
+
+---
+
+## 📋 Objectif
+
+- Implémenter un règlement de désaccord **optimistic avec pénalités fortes**
+- En cas de doute/dispute : **Escrow** du montant, **stake uniquement côté receveur** (payee) à hauteur de **X% du montant**
+- Le payeur (payer) **n'ajoute aucun stake**
+- Résolution par défaut (optimistic) : libération automatique si aucune dispute dans une fenêtre **T**
+- En cas de dispute : **revue humaine** facturée **r% du montant**, avec redistribution/pénalité conçue pour rendre la fraude irrationnelle
+
+---
+
+## 🎲 Théorie des Jeux
+
+### Variables
+
+| Variable | Description |
+|----------|-------------|
+| `A` | Montant de la transaction |
+| `S = X·A` | Stake du receveur (déposé/lock lors d'une transaction "à risque") |
+| `f = r·A` | Coût de revue humaine (service) |
+| `p` | Probabilité que la revue tranche en faveur du payeur en cas de dispute frauduleuse |
+| `q` | Probabilité que la revue tranche contre un receveur frauduleux (détection) |
+
+### Actions
+
+- **Payeur** : Dispute honnête vs Dispute frauduleuse
+- **Receveur** : Livraison honnête vs Non-livraison (fraude)
+
+### Matrice de Paiement 2×2
+
+|                                  | Receveur : Livraison honnête | Receveur : Non-livraison (fraude) |
+|----------------------------------|------------------------------|-----------------------------------|
+| **Payeur : Dispute honnête**     | Résolution : payeur perd, receveur gagne. Coûts : `f` payée par le perdant + friction. | Résolution : payeur gagne, receveur perd. Pénalité receveur : slashing stake `S` + perte `A` + `f`. |
+| **Payeur : Dispute frauduleuse** | Objectif : rendre l'espérance négative pour le payeur via (i) frais au perdant `f`, (ii) pénalité "abuse" (rate limits/réputation/ban), (iii) probabilité `1-p` de perdre et payer `f`. | Payeur a un motif de dispute (il a raison). Système doit maximiser `q` pour slash le receveur. |
+
+---
+
+## 🔄 Workflow
+
+### 1) Initiation de Paiement
+
+```
+payer -> escrow_contract.pay(A, payee, meta)
+```
+
+Le système assigne un `risk_score` (off-chain) :
+- **low risk** : pas de stake requis, fenêtre de dispute `T_low`
+- **high risk / doute** : transaction marquée **escrow + stake requis**
+
+### 2) Mode "Doute" (Escrow + Stake Receveur)
+
+Si `risk_score >= threshold` :
+- `payee` doit déposer `S = X·A` via `stakeFor(txId, S)` avant `deadline_stake`
+- Tant que `S` non déposé : `payer` peut annuler / timeout remboursé, `payee` ne reçoit rien
+
+### 3) Optimistic Settlement (Sans Dispute)
+
+Si aucune dispute avant `T` et (si requis) `S` déposé :
+- `releaseToPayee(txId)` automatiquement (keeper / cron)
+- Le stake `S` est **unlock** après `T_unlock`
+
+### 4) Déclenchement d'une Dispute
+
+```
+payer -> openDispute(txId, reason, evidence_hash)
+```
+
+Dans la fenêtre `T`, passage d'état : `PAID/ESCROWED -> DISPUTED`
+- Montant `A` reste en escrow
+- Stake `S` (si présent) reste lock
+- La revue humaine est engagée : `review_job_created`
+
+### 5) Revue Humaine (Service r%)
+
+Le service humain examine `evidence_hash` + signaux (logs, attestations, KYC si applicable).
+
+Facturation `f = r·A` selon règle :
+- **payer loses** ⇒ payer paie `f` (prélevé via solde/autorisation/compte)
+- **payee loses** ⇒ payee paie `f` (prélevé sur `S` ou balance) + slashing
+
+### 6) Règlement
+
+**Si verdict = payer wins :**
+- `refundPayer(A)`
+- `slashPayee(S, slash_rate)` (100% si fraude avérée, <100% si doute)
+
+**Si verdict = payee wins :**
+- `releaseToPayee(A)`
+- `payer pays f` (et pénalité d'abus si pattern)
+
+### 7) Anti-Abus (Essentiel car Payer sans Stake)
+
+Si dispute du payeur jugée abusive :
+- `abuse_score++`, limitations (cooldown, quota, hausse de `risk_score`, KYC step-up, ban)
+- Option : `non-refundable dispute fee` minimal fixe côté payeur (même si "stake=0")
+
+---
+
+## 📐 Formules d'Incitation
+
+### 1) Stake Receveur
+
+```
+S = X · A
+```
+
+### 2) Coût de Revue
+
+```
+f = r · A
+```
+
+### 3) Condition Côté Payeur (Dispute Frauduleuse)
+
+Sans stake payeur, il faut forcer :
+
+```
+E_fraud_payer = p·(+A) + (1-p)·(-f) + penalty_abuse < 0
+```
+
+Condition minimale (en supposant `penalty_abuse` mesurable en coût équivalent) :
+
+```
+penalty_abuse > p·A - (1-p)·f
+```
+
+Ou, si vous imposez un **frais fixe payeur** `d` à l'ouverture de dispute :
+
+```
+E_fraud_payer = p·A + (1-p)·(-(f+d)) - d < 0
+d > p·A - (1-p)·f
+```
+
+### 4) Condition Côté Receveur (Fraude "Non-Livraison")
+
+```
+E_fraud_payee = (1-q)·(+A) + q·(-(A + slash(S) + f)) < 0
+```
+
+Ce qui impose typiquement :
+
+```
+slash(S) + f > ((1-q)/q) · A
+```
+
+---
+
+## 🏗️ Architecture Technique
+
+### A) Smart Contracts
+
+#### `PaymentEscrow`
+- `pay(amount, payee, meta)` - Initie un paiement en escrow
+- `stakeFor(txId, amount)` - Payee dépose son stake
+- `releaseToPayee(txId)` - Libère les fonds au payee
+- `openDispute(txId, reason, evidenceHash)` - Ouvre une dispute
+- `resolveDispute(txId, verdict, slashRate)` - Résout la dispute
+
+**États** : `CREATED → FUNDED → (STAKED) → RELEASED | DISPUTED → RESOLVED`
+
+#### `StakeVault`
+- Lock/unlock des stakes
+- Slashing et distribution
+- Distribution des frais de revue et compensations
+
+#### `PolicyRegistry`
+- Paramètres `X, r, T, T_unlock, slash_rate`
+- Versionnés + gouvernance
+
+---
+
+## 💳 Escrow Use Cases (Business Protocol Integration)
+
+> Référence : [ViT Business Protocol](../.cursor/rules/vit-business-protocol.mdc)
+
+L'escrow est utilisé dans plusieurs contextes au-delà des disputes :
+
+### Use Case 1 : Dispute Resolution (ce document)
+- Escrow avec stake receveur
+- Fenêtre de dispute optimistic
+- Slashing et revue humaine
+
+### Use Case 2 : E-Commerce Pre-Authorization
+- **Contexte** : Marchand veut capturer le paiement après livraison
+- **Flow** : `authorize(A) → hold → capture(A) | cancel()`
+- **Escrow** : Fonds lockés jusqu'à capture/cancel/timeout
+- **Dispute** : Si capture sans livraison → dispute possible
+
+### Use Case 3 : Marketplace Multi-Party Escrow
+- **Contexte** : Acheteur → Plateforme → Vendeur (ex: Uber, Airbnb)
+- **Flow** : `pay(A) → escrow → [conditions met] → split(vendeur, plateforme_fee)`
+- **Conditions de release** : 
+  - Confirmation livraison (oracle/attestation)
+  - Timeout automatique
+  - Validation multi-sig
+- **Dispute** : Tripartite (acheteur, vendeur, plateforme comme arbitre)
+
+### Use Case 4 : Claim Link (destinataire sans compte)
+- **Contexte** : Envoyer ZCHF à quelqu'un via email/SMS sans connaître son adresse
+- **Flow** : `createClaimLink(A) → escrow → recipient.claim(address)`
+- **Voir** : [ViT Claim Link Protocol](vit-escrow-claim-link.mdc)
+
+### Use Case 5 : Subscription & Recurring Payments
+- **Contexte** : Paiements automatiques mensuels
+- **Flow** : `subscribe(A, interval) → [each interval] → autoDebit(A)`
+- **Escrow** : Pre-authorization du montant max
+- **Dispute** : Contestation d'un débit non autorisé
+
+### Use Case 6 : Refund & Chargeback
+- **Contexte** : Remboursement total ou partiel
+- **Flow** : `requestRefund(txId, reason) → [approval] → refund(A)`
+- **Escrow** : Optionnel si marchand a stake/garantie
+- **Dispute** : Si refund refusé → escalade
+
+---
+
+## 🔗 Advanced Escrow Features (from Business Protocol)
+
+### Multi-Condition Release Triggers
+```
+releaseConditions = {
+  AND: [
+    { type: "timeout", value: "7d" },
+    { type: "oracle", source: "delivery_confirmed" }
+  ],
+  OR: [
+    { type: "multisig", threshold: "2/3" },
+    { type: "arbitration", verdict: "payee_wins" }
+  ]
+}
+```
+
+### Escrow States Extended
+```
+CREATED → FUNDED → STAKED → 
+  ├─→ RELEASED (conditions met)
+  ├─→ DISPUTED → REVIEWING → RESOLVED
+  ├─→ CANCELLED (timeout/cancel)
+  ├─→ PARTIAL_RELEASE (split)
+  └─→ CLAIMED (claim link)
+```
+
+### Fees Structure
+| Fee Type | Payeur | Description |
+|----------|--------|-------------|
+| `escrow_fee` | Payer ou Payee | Frais de mise en escrow (0.1-0.5%) |
+| `dispute_fee` | Loser | Frais de revue humaine (r% du montant) |
+| `platform_fee` | Split | Commission marketplace |
+| `gas_fee` | Sponsor/Payer | Frais blockchain (via paymaster)
+
+### B) Services Off-Chain
+
+#### `Risk Engine`
+- Scoring des transactions
+- Thresholds et règles d'escalade
+- Détection de patterns d'abus
+
+#### `Human Review Service`
+- File de jobs de revue
+- Interface reviewers
+- SLA de traitement
+- Stockage des preuves (hash IPFS)
+- Audit log immuable
+
+#### `Keeper / Scheduler`
+- Exécute releases automatiques après timeout
+- Gère les unlocks de stakes
+- Déclenche les timeouts
+
+### C) Interfaces
+
+#### Portail Payeur
+- Ouvrir une dispute
+- Upload de preuves
+- Suivi du statut
+
+#### Portail Payee
+- Déposer son stake
+- Répondre aux disputes
+- Suivi des transactions
+
+#### Portail Review
+- Interface de verdict
+- Motifs de décision
+- Export audit
+
+---
+
+## 🔒 Sécurité & Conformité
+
+### Contrôles Anti-Abus
+- Rate-limit sur les disputes par compte
+- Contrôles anti-sybil
+- Système de réputation on-chain
+
+### Audit & Traçabilité
+- Journalisation immuable (hash chaîne)
+- Preuves horodatées
+- Export pour conformité
+
+### Tests Requis
+- Invariants escrow (jamais de double-spend)
+- Protection re-entrancy
+- Résistance au griefing
+- Tests timeout et edge cases
+- Tests de slashing
+
+---
+
+## 📊 Observabilité
+
+### Métriques Clés
+| Métrique | Description |
+|----------|-------------|
+| `dispute_rate` | % de transactions disputées |
+| `abuse_rate` | % de disputes jugées abusives |
+| `payer_win_rate` | % de disputes gagnées par le payeur |
+| `payee_win_rate` | % de disputes gagnées par le payee |
+| `avg_resolution_time` | Temps moyen de résolution |
+| `false_positive_rate` | Faux positifs du risk engine |
+
+### Alertes
+- Hausse anormale du taux de disputes
+- Backlog des reviewers
+- Patterns d'exploit détectés
+- Stake insuffisant dans le vault
+
+---
+
+## 📋 Paramètres Recommandés (MVP)
+
+| Paramètre | Valeur MVP | Description |
+|-----------|------------|-------------|
+| `X` | 10-20% | Stake receveur en % du montant |
+| `r` | 5-10% | Frais de revue humaine |
+| `T` | 7 jours | Fenêtre de dispute |
+| `T_unlock` | 14 jours | Délai unlock du stake après release |
+| `slash_rate` | 100% | Slashing en cas de fraude avérée |
+| `d` | 0.5-1 ZCHF | Frais fixe d'ouverture de dispute (optionnel) |
+
+---
+
+## 📚 Références
+
+- **[ViT MVP Plan](../cursor/rules/vit-plan-mvp.mdc)** : Architecture Safe + ERC-7579
+- **[ViT Business Protocol](../cursor/rules/vit-business-protocol.mdc)** : Infrastructure marchands
+- **[Kleros](https://kleros.io/)** : Inspiration pour dispute resolution décentralisée
+- **[UMA Optimistic Oracle](https://uma.xyz/)** : Pattern optimistic settlement
+
+---
+
+## 🚀 Prochaines Étapes
+
+1. **Types TS/ABI** : Définir les interfaces TypeScript et ABIs des smart contracts
+2. **Cheat Sheet Paramètres** : Règles de calcul de `X, r, T, slash_rate` + anti-abus
+3. **Fonction de Calcul** : TypeScript pour calculer `X` et `d` à partir de `p, q, r`
+4. **Revue Adversariale** : Audit des failles d'incitation par un reviewer externe

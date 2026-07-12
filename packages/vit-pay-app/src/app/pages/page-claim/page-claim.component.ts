@@ -34,6 +34,13 @@ export class PageClaimComponent implements OnInit {
     private wallet: WalletService,
   ) {}
 
+  /** After wallet creation, return to this claim URL. */
+  get walletReturnParams(): { returnUrl: string } {
+    return {
+      returnUrl: `/claim?id=${this.id}&s=${this.secret}`,
+    };
+  }
+
   async ngOnInit(): Promise<void> {
     this.id = this.route.snapshot.queryParamMap.get('id') || '';
     this.secret = this.route.snapshot.queryParamMap.get('s') || '';
@@ -88,7 +95,7 @@ export class PageClaimComponent implements OnInit {
 
   async claim(): Promise<void> {
     if (!this.hasWallet || !this.walletAddress) {
-      this.error = 'Crée d\'abord un wallet pour recevoir les fonds.';
+      this.error = 'Créez d\'abord un compte pour recevoir les fonds.';
       return;
     }
     this.step = 'claiming';

@@ -3,7 +3,7 @@
     <a class="back" [routerLink]="['/']" aria-label="Accueil">
       <span class="material-symbols-outlined">home</span>
     </a>
-    <h1>Récupérer des xCHF</h1>
+    <h1>Argent reçu</h1>
   </header>
 
   <div class="loading-card" *ngIf="step === 'loading'">
@@ -18,32 +18,43 @@
   </div>
 
   <div class="claim-card" *ngIf="step === 'ready' || step === 'claiming'">
+    <p class="eyebrow">Vous avez reçu</p>
     <div class="amount-hero">{{ amount }} <span class="unit">xCHF</span></div>
-    <p class="sender">de <code>{{ senderShort }}</code></p>
+    <p class="sender" *ngIf="senderShort">de <code>{{ senderShort }}</code></p>
 
     <p class="error" *ngIf="error">{{ error }}</p>
 
-    <div class="wallet-block" *ngIf="hasWallet; else noWallet">
-      <span class="vit-label">Reçu sur</span>
-      <code>{{ short(walletAddress) }}</code>
-    </div>
-    <ng-template #noWallet>
-      <p class="warn">
-        Crée d'abord un wallet sur l'accueil pour pouvoir réclamer.
-        <a [routerLink]="['/wallet']">Aller au wallet →</a>
-      </p>
-    </ng-template>
+    <ng-container *ngIf="hasWallet; else noWallet">
+      <div class="wallet-block">
+        <span class="vit-label">Reçu sur</span>
+        <code>{{ short(walletAddress) }}</code>
+      </div>
 
-    <button class="cta" type="button" (click)="claim()" [disabled]="!hasWallet || step === 'claiming'">
-      <span class="material-symbols-outlined">redeem</span>
-      {{ step === 'claiming' ? 'Réception…' : 'Réclamer' }}
-    </button>
+      <button class="cta" type="button" (click)="claim()" [disabled]="step === 'claiming'">
+        <span class="material-symbols-outlined">redeem</span>
+        {{ step === 'claiming' ? 'Réception…' : 'Récupérer l\'argent' }}
+      </button>
+    </ng-container>
+
+    <ng-template #noWallet>
+      <div class="onboard">
+        <h2>Vous n'avez pas encore de compte</h2>
+        <p>
+          Pour encaisser ces {{ amount }} xCHF, créez un compte ViT sur cet appareil.
+          C'est gratuit et protégé par Face ID ou empreinte.
+        </p>
+        <a class="cta" [routerLink]="['/wallet']" [queryParams]="walletReturnParams">
+          <span class="material-symbols-outlined">account_balance_wallet</span>
+          Créer mon compte
+        </a>
+      </div>
+    </ng-template>
   </div>
 
   <div class="done-card" *ngIf="step === 'done'">
     <span class="material-symbols-outlined check">check_circle</span>
     <h2>Fonds reçus</h2>
-    <p>{{ amount }} xCHF crédités sur ton wallet.</p>
+    <p>{{ amount }} xCHF ont été crédités sur votre compte.</p>
     <code *ngIf="txHash">{{ txHash }}</code>
     <a class="cta" [routerLink]="['/']">Voir mon solde</a>
   </div>

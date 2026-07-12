@@ -1,28 +1,28 @@
 <section class="wallet-page">
   <header>
-    <h1>ViT Wallet</h1>
-    <p class="subtitle">Safe Account + passkey + ZCHF sponsorisé</p>
+    <h1>ViT</h1>
+    <p class="subtitle">Paiements sécurisés · sans frais</p>
   </header>
 
   <p *ngIf="error" class="error" role="alert">{{ error }}</p>
 
   <!-- F1 : créer un wallet -->
   <article *ngIf="view === 'no-wallet'" class="card">
-    <h2>Créer mon wallet</h2>
+    <h2>Créer mon compte</h2>
     <p>
-      Un Safe Account est dérivé d'une passkey de cet appareil (FaceID / TouchID /
-      Windows Hello). Aucune seed phrase n'est créée.
+      Protégez votre argent avec Face ID, Touch ID ou l'empreinte de cet appareil.
+      Aucun mot de passe à retenir.
     </p>
     <button (click)="createWallet()" [disabled]="busy">
-      {{ busy ? 'Création…' : 'Créer mon wallet' }}
+      {{ busy ? 'Création…' : 'Créer mon compte' }}
     </button>
 
     <hr />
 
     <h2>Déjà un compte ?</h2>
     <p>
-      Si vous avez perdu l'accès à votre passkey mais que des guardians sont
-      configurés, vous pouvez récupérer votre Safe sur cet appareil.
+      Si vous avez perdu l'accès à cet appareil mais que des personnes de confiance
+      sont configurées, vous pouvez récupérer votre compte ici.
     </p>
     <button class="secondary" (click)="openRecover()" [disabled]="busy">
       Récupérer mon compte

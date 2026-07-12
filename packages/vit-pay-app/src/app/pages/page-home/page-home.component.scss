@@ -61,11 +61,8 @@
       width: 2.6rem;
       height: 2.6rem;
       border-radius: 50%;
-      background: var(--grad-neon);
-      box-shadow:
-        0 0 0 2px var(--bg),
-        0 0 0 3px rgba(204,120,92,.45),
-        0 6px 16px -6px rgba(204,120,92,.4);
+      background: var(--grad);
+      border: 2px solid var(--hairline);
       position: relative;
 
       &::after {
@@ -73,12 +70,12 @@
         position: absolute;
         inset: 4px;
         border-radius: 50%;
-        background: linear-gradient(135deg, #E8E0D2, #EFE9DE);
+        background: var(--surface-1);
       }
 
       &--off {
-        background: linear-gradient(135deg, #E8E0D2, #DFD6C8);
-        box-shadow: 0 0 0 2px var(--bg), 0 0 0 3px var(--hairline);
+        background: var(--glass);
+        border-color: var(--hairline);
         &::after { display: none; }
       }
     }
@@ -172,8 +169,7 @@
         border-radius: 16px;
         background: var(--glass);
         border: 1px solid var(--hairline);
-        backdrop-filter: blur(10px);
-        transition: transform .12s ease, box-shadow .2s ease;
+        transition: transform .12s ease, opacity .15s ease;
 
         .material-symbols-outlined {
           font-size: 22px;
@@ -195,7 +191,6 @@
         .qa__tile {
           background: var(--grad);
           border: none;
-          box-shadow: 0 10px 22px -8px rgba(204,120,92,.6);
 
           .material-symbols-outlined { color: #fff; }
         }
@@ -245,7 +240,6 @@
         border-radius: var(--r-tile);
         background: var(--glass);
         border: 1px dashed var(--hairline);
-        backdrop-filter: blur(10px);
       }
 
       .tx {
@@ -257,7 +251,6 @@
         border-radius: var(--r-tile);
         background: var(--glass);
         border: 1px solid var(--hairline-soft);
-        backdrop-filter: blur(10px);
 
         &__icon {
           width: 38px;

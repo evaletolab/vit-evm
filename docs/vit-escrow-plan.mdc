@@ -1,0 +1,493 @@
+# ViT Escrow Plan
+
+**Document central définissant les spécifications et architectures du système d'escrow ViT.**
+
+---
+
+## 📋 Related Documentation
+
+- **[ViT Dispute & Escrow](vit-dispute-escrow.mdc)** : Système de dispute et résolution
+- **[ViT Claim Link Protocol](vit-escrow-claim-link.mdc)** : Envoi sans compte destinataire
+- **[ViT Business Protocol](../.cursor/rules/vit-business-protocol.mdc)** : Infrastructure marchands
+- **[ViT MVP Plan](../.cursor/rules/vit-plan-mvp.mdc)** : Architecture Safe + ERC-7579
+
+---
+
+## 🎯 Objectif
+
+Créer un système d'escrow modulaire et sécurisé pour ViT supportant :
+
+1. **Dispute Resolution** : Arbitrage des conflits payer/payee
+2. **Claim Links** : Paiements à destinataire inconnu
+3. **Pre-Authorization** : Capture différée pour e-commerce
+4. **Conditional Release** : Multi-conditions de libération
+5. **Marketplace Escrow** : Split multi-parties
+
+---
+
+## 📊 Use Cases Escrow
+
+| Use Case | Priority | Complexity | Document |
+|----------|----------|------------|----------|
+| Claim Link (sans compte) | HIGH | Medium | [vit-escrow-claim-link.mdc](vit-escrow-claim-link.mdc) |
+| Dispute Resolution | HIGH | High | [vit-dispute-escrow.mdc](vit-dispute-escrow.mdc) |
+| Pre-Authorization | MEDIUM | Low | Ce document |
+| Marketplace Split | LOW | High | Phase 2 |
+| Subscription Escrow | LOW | Medium | Phase 2 |
+
+---
+
+## 🏗️ Architectures Potentielles
+
+### Architecture A : "Standalone Escrow" (Contrat Indépendant)
+
+```
+┌─────────────────────────────────────────────────────┐
+│                   VitEscrow.sol                     │
+│  ┌───────────────┐  ┌───────────────┐              │
+│  │ ClaimEscrow   │  │ DisputeEscrow │              │
+│  │ - createClaim │  │ - openDispute │              │
+│  │ - claim       │  │ - resolve     │              │
+│  │ - cancel      │  │ - slash       │              │
+│  └───────────────┘  └───────────────┘              │
+│           ▼                  ▼                      │
+│  ┌─────────────────────────────────────┐           │
+│  │         StakeVault.sol              │           │
+│  │  - lock/unlock stakes               │           │
+│  │  - slashing distribution            │           │
+│  └─────────────────────────────────────┘           │
+└─────────────────────────────────────────────────────┘
+         │                    │
+         ▼                    ▼
+    [Safe Wallet]        [EOA Wallet]
+```
+
+**Pros:**
+- ✅ Simple à développer et auditer
+- ✅ Indépendant de l'architecture wallet
+- ✅ Compatible EOA et Safe
+- ✅ Upgradeable via proxy pattern
+- ✅ Gas optimisé (pas de module overhead)
+
+**Cons:**
+- ❌ Pas d'intégration native avec Safe guards
+- ❌ Nécessite approve() pour chaque escrow
+- ❌ Pas de transaction batching avec wallet
+
+**Pertinence MVP:** ⭐⭐⭐⭐⭐ (Recommandé pour MVP)
+
+---
+
+### Architecture B : "Safe Module Escrow" (ERC-7579)
+
+```
+┌─────────────────────────────────────────────────────┐
+│                  Safe Account                        │
+│  ┌───────────────────────────────────────────────┐  │
+│  │              Safe7579 Adapter                  │  │
+│  │  ┌─────────────────┐  ┌─────────────────────┐ │  │
+│  │  │ EscrowExecutor  │  │ ClaimValidator      │ │  │
+│  │  │ (Module)        │  │ (Module)            │ │  │
+│  │  └─────────────────┘  └─────────────────────┘ │  │
+│  └───────────────────────────────────────────────┘  │
+│                        │                             │
+│  ┌─────────────────────────────────────────────┐    │
+│  │           EscrowGuard.sol                    │    │
+│  │  - validateTransaction before exec           │    │
+│  │  - spending limits per escrow                │    │
+│  └─────────────────────────────────────────────┘    │
+└─────────────────────────────────────────────────────┘
+```
+
+**Pros:**
+- ✅ Intégration native Safe (guards, modules)
+- ✅ Transaction batching possible
+- ✅ Pas de approve() externe nécessaire
+- ✅ Cohérent avec architecture ViT (ERC-7579)
+- ✅ Peut utiliser le paymaster Safe
+
+**Cons:**
+- ❌ Plus complexe à développer
+- ❌ Couplé à Safe (pas compatible EOA)
+- ❌ Overhead gas des modules
+- ❌ Nécessite audit spécifique modules
+
+**Pertinence MVP:** ⭐⭐⭐ (Phase 2 - après validation du flow)
+
+---
+
+### Architecture C : "Hybrid Escrow" (Standalone + Module Bridge)
+
+```
+┌─────────────────────────────────────────────────────┐
+│                 VitEscrowCore.sol                   │
+│          (Logique métier centralisée)               │
+│  - createEscrow, release, dispute, claim            │
+│  - Compatible EOA et Safe                           │
+└──────────────────────┬──────────────────────────────┘
+                       │
+        ┌──────────────┼──────────────┐
+        ▼              ▼              ▼
+┌───────────────┐ ┌───────────┐ ┌───────────────┐
+│ Direct Call   │ │ SafeModule│ │ Relayer/Meta  │
+│ (EOA/Safe)    │ │ Bridge    │ │ Transactions  │
+└───────────────┘ └───────────┘ └───────────────┘
+                       │
+                       ▼
+              ┌───────────────┐
+              │ Safe Account  │
+              │ (ERC-7579)    │
+              └───────────────┘
+```
+
+**Pros:**
+- ✅ Flexibilité maximale
+- ✅ Logique centralisée (un seul audit)
+- ✅ Compatible tous types de wallets
+- ✅ Migration progressive possible
+- ✅ Module bridge optionnel
+
+**Cons:**
+- ❌ Complexité accrue
+- ❌ Deux points d'entrée à sécuriser
+- ❌ Maintenance de la compatibilité
+
+**Pertinence MVP:** ⭐⭐⭐⭐ (Bon compromis long terme)
+
+---
+
+### Architecture D : "Kleros-Inspired" (Arbitration Standard)
+
+```
+┌─────────────────────────────────────────────────────┐
+│              ArbitrableEscrow.sol                   │
+│         (Conforme ERC-792 Arbitration)              │
+│  ┌─────────────────────────────────────────────┐   │
+│  │ IArbitrable interface                        │   │
+│  │  - rule(disputeId, ruling)                   │   │
+│  │  - submitEvidence(evidenceURI)               │   │
+│  └─────────────────────────────────────────────┘   │
+└──────────────────────┬──────────────────────────────┘
+                       │
+        ┌──────────────┼──────────────┐
+        ▼              ▼              ▼
+┌───────────────┐ ┌───────────┐ ┌───────────────┐
+│ Kleros Court  │ │ ViT Admin │ │ DAO Arbiters  │
+│ (Decentralized)│ │ (Centralized)│ │ (Hybrid)   │
+└───────────────┘ └───────────┘ └───────────────┘
+```
+
+**Pros:**
+- ✅ Standard ERC-792 (interopérabilité)
+- ✅ Peut utiliser Kleros ou arbitre custom
+- ✅ Evidence on-chain (ERC-1497)
+- ✅ Battle-tested pattern
+- ✅ Appeals mechanism built-in
+
+**Cons:**
+- ❌ Overhead pour cas simples (claim link)
+- ❌ Dépendance potentielle à Kleros
+- ❌ Complexité pour MVP
+- ❌ Frais Kleros si utilisé
+
+**Pertinence MVP:** ⭐⭐⭐ (Bon pour disputes, overkill pour claim link)
+
+---
+
+## 📋 Comparatif Architectures
+
+| Critère | A: Standalone | B: Safe Module | C: Hybrid | D: Kleros |
+|---------|---------------|----------------|-----------|-----------|
+| **Complexité dev** | Low | High | Medium | Medium |
+| **Compatibilité EOA** | ✅ | ❌ | ✅ | ✅ |
+| **Intégration Safe** | Externe | Native | Bridge | Externe |
+| **Gas cost** | Low | Medium | Low | Medium |
+| **Auditabilité** | Easy | Complex | Medium | Standard |
+| **Extensibilité** | Medium | High | High | High |
+| **Time to MVP** | Fast | Slow | Medium | Medium |
+| **Dispute support** | Custom | Custom | Custom | Built-in |
+
+---
+
+## 🎯 Recommandation Architecture
+
+### Phase MVP : Architecture A (Standalone)
+
+**Justification:**
+- Fastest path to demo
+- Simple audit scope
+- Compatible avec tous les wallets
+- Pas de dépendance Safe modules
+
+**Contrats MVP:**
+1. `ClaimEscrow.sol` - Claim links
+2. `DisputeEscrow.sol` - Disputes avec stake
+3. `PolicyRegistry.sol` - Paramètres configurables
+
+### Phase 2 : Migration vers C (Hybrid)
+
+**Justification:**
+- Ajoute le module bridge pour Safe
+- Conserve la compatibilité EOA
+- Permet les features avancées (guards, batching)
+
+### Phase 3 : Intégration D (Kleros-style)
+
+**Justification:**
+- Dispute resolution scalable
+- Option Kleros pour décentralisation
+- Evidence standard (IPFS)
+
+---
+
+## 🏗️ Spécifications Techniques
+
+### États Escrow Unifiés
+
+```solidity
+enum EscrowStatus {
+    CREATED,        // Escrow créé, en attente de funding
+    FUNDED,         // Fonds déposés
+    STAKED,         // Stake payee déposé (si requis)
+    PENDING_CLAIM,  // Claim link en attente
+    CLAIMED,        // Claim link réclamé
+    RELEASED,       // Fonds libérés au payee
+    DISPUTED,       // Dispute ouverte
+    RESOLVED,       // Dispute résolue
+    CANCELLED,      // Annulé par sender
+    EXPIRED,        // Timeout expiré
+    REFUNDED        // Remboursé au payer
+}
+```
+
+### Transitions d'État
+
+```
+CREATED ──[fund()]──► FUNDED
+    │                    │
+    │                    ├──[stake()]──► STAKED
+    │                    │                  │
+    │                    │                  ├──[release()]──► RELEASED
+    │                    │                  │
+    │                    │                  ├──[dispute()]──► DISPUTED
+    │                    │                  │                    │
+    │                    │                  │                    └──[resolve()]──► RESOLVED
+    │                    │                  │
+    │                    │                  └──[timeout]──► EXPIRED ──► REFUNDED
+    │                    │
+    │                    ├──[createClaim()]──► PENDING_CLAIM
+    │                    │                         │
+    │                    │                         ├──[claim()]──► CLAIMED
+    │                    │                         │
+    │                    │                         └──[timeout/cancel]──► CANCELLED
+    │                    │
+    │                    └──[cancel()]──► CANCELLED ──► REFUNDED
+    │
+    └──[timeout]──► EXPIRED
+```
+
+### Interface Commune
+
+```solidity
+interface IVitEscrow {
+    // Core
+    function createEscrow(
+        address payee,
+        uint256 amount,
+        uint256 expiresAt,
+        EscrowType escrowType,
+        bytes calldata params
+    ) external payable returns (uint256 escrowId);
+    
+    function fund(uint256 escrowId) external payable;
+    function cancel(uint256 escrowId) external;
+    function release(uint256 escrowId) external;
+    
+    // Claim Link specific
+    function createClaimLink(
+        uint256 amount,
+        uint256 expiresAt,
+        bytes32 secretHash
+    ) external payable returns (uint256 claimId);
+    
+    function claim(
+        uint256 claimId,
+        bytes32 secret,
+        address recipient
+    ) external;
+    
+    // Dispute specific
+    function stake(uint256 escrowId, uint256 amount) external;
+    function openDispute(uint256 escrowId, bytes32 evidenceHash) external;
+    function resolveDispute(uint256 escrowId, Verdict verdict) external;
+    
+    // Views
+    function getEscrow(uint256 escrowId) external view returns (Escrow memory);
+    function getStatus(uint256 escrowId) external view returns (EscrowStatus);
+}
+```
+
+### Structures de Données
+
+```solidity
+struct Escrow {
+    address payer;
+    address payee;
+    uint256 amount;
+    uint256 stakeAmount;
+    uint256 createdAt;
+    uint256 expiresAt;
+    EscrowStatus status;
+    EscrowType escrowType;
+    bytes32 secretHash;     // Pour claim links
+    bytes32 evidenceHash;   // Pour disputes
+    bytes params;           // Paramètres additionnels
+}
+
+enum EscrowType {
+    SIMPLE,         // Release directe
+    CLAIM_LINK,     // Secret-based claim
+    DISPUTE,        // Avec stake et dispute possible
+    PRE_AUTH,       // Capture différée
+    CONDITIONAL     // Multi-conditions
+}
+
+enum Verdict {
+    PENDING,
+    PAYER_WINS,
+    PAYEE_WINS,
+    SPLIT
+}
+```
+
+---
+
+## 🔗 Contrats de Référence (Audités)
+
+### Pour Claim Link
+
+| Contrat | Source | Pertinence |
+|---------|--------|------------|
+| `ConditionalEscrow` | OpenZeppelin | Base pattern |
+| HTLC Pattern | Lightning/Atomic Swaps | Secret hash |
+| `RefundEscrow` | OpenZeppelin | Expiration/refund |
+
+### Pour Disputes
+
+| Contrat | Source | Pertinence |
+|---------|--------|------------|
+| `MultipleArbitrableTransaction` | Kleros | Full dispute flow |
+| ERC-792 | Ethereum | Arbitration standard |
+| ERC-1497 | Ethereum | Evidence standard |
+
+### Pour Safe Integration
+
+| Contrat | Source | Pertinence |
+|---------|--------|------------|
+| Safe7579 Adapter | Safe + Rhinestone | Module bridge |
+| Rhinestone Modules | Rhinestone | Module patterns |
+| Safe Guards | Safe | Transaction validation |
+
+---
+
+## 📊 Paramètres Configurables
+
+### PolicyRegistry
+
+```solidity
+struct EscrowPolicy {
+    // Claim Link
+    uint256 minClaimAmount;         // 1 ZCHF
+    uint256 maxClaimAmount;         // 10,000 ZCHF
+    uint256 defaultClaimExpiry;     // 7 days
+    uint256 maxClaimExpiry;         // 30 days
+    uint256 claimRateLimit;         // 10 per day
+    
+    // Dispute
+    uint256 stakePercentage;        // 10-20% of amount
+    uint256 disputeWindow;          // 7 days
+    uint256 reviewFeePercentage;    // 5-10%
+    uint256 slashRate;              // 100% for fraud
+    uint256 stakeUnlockDelay;       // 14 days
+    
+    // Pre-Auth
+    uint256 maxAuthDuration;        // 7 days
+    uint256 partialCaptureAllowed;  // true/false
+    
+    // General
+    uint256 platformFeePercentage;  // 0.1-0.5%
+    address feeRecipient;
+    address arbitrator;
+}
+```
+
+---
+
+## 🔒 Sécurité
+
+### Invariants Critiques
+
+1. **No double-spend** : Un escrow ne peut être libéré qu'une fois
+2. **No reentrancy** : Utiliser ReentrancyGuard sur toutes les fonctions payables
+3. **Proper access control** : Seul le payer peut cancel, seul l'arbitre peut resolve
+4. **Timeout safety** : Les fonds sont toujours récupérables après timeout
+5. **Secret protection** : Le secret ne doit jamais être stocké on-chain (seulement le hash)
+
+### Checks à Implémenter
+
+```solidity
+// Reentrancy
+modifier nonReentrant() { ... }
+
+// Access control
+modifier onlyPayer(uint256 escrowId) { ... }
+modifier onlyPayee(uint256 escrowId) { ... }
+modifier onlyArbitrator() { ... }
+
+// State checks
+modifier inStatus(uint256 escrowId, EscrowStatus status) { ... }
+modifier notExpired(uint256 escrowId) { ... }
+```
+
+### Tests Requis
+
+- [ ] Fuzz testing sur claim avec secrets aléatoires
+- [ ] Test reentrancy sur release/claim
+- [ ] Test timeout boundaries
+- [ ] Test slashing calculations
+- [ ] Test concurrent disputes
+- [ ] Test gas limits sur batch operations
+
+---
+
+## 🚀 Roadmap Implémentation
+
+### Sprint 1 : ClaimEscrow (2 semaines)
+- [ ] `ClaimEscrow.sol` avec secret hash
+- [ ] Tests unitaires (>80% coverage)
+- [ ] Integration tests avec Safe
+
+### Sprint 2 : DisputeEscrow (2 semaines)
+- [ ] `DisputeEscrow.sol` avec stake
+- [ ] `StakeVault.sol`
+- [ ] Arbitrator interface
+
+### Sprint 3 : PolicyRegistry + Integration (1 semaine)
+- [ ] `PolicyRegistry.sol`
+- [ ] Scripts de déploiement
+- [ ] Documentation API
+
+### Sprint 4 : Audit Prep (1 semaine)
+- [ ] Security review interne
+- [ ] Fix issues
+- [ ] Préparation audit externe
+
+---
+
+## 📚 Références
+
+- **[OpenZeppelin Escrow](https://docs.openzeppelin.com/contracts/3.x/api/payment)** : Base contracts
+- **[Kleros Arbitration](https://github.com/kleros/kleros-v2)** : ERC-792/1497
+- **[Rhinestone Modules](https://github.com/rhinestonewtf)** : ERC-7579 patterns
+- **[Safe7579](https://docs.safe.global/advanced/erc-7579/7579-safe)** : Module integration
+- **[HTLC](https://en.bitcoin.it/wiki/Hash_Time_Locked_Contracts)** : Secret hash pattern

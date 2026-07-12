@@ -1,0 +1,167 @@
+
+/**
+ * KARIBOU RESPONSIVE SYSTEM V2.0
+ * ================================
+ *
+ * BREAKPOINTS HARMONISÉS :
+ * - Mobile XXS : ≤400px (très petits mobiles + DPR)
+ * - Mobile : ≤599px (principal mobile)
+ * - Tablet : 600px-1199px
+ * - Desktop : ≥1200px
+ * - Desktop XXL : ≥1920px (limitation affichage)
+ */
+
+/* ==========================================================================
+   VARIABLES CSS POUR LES BREAKPOINTS (usage dans propriétés CSS uniquement)
+   ========================================================================== */
+   :root {
+    --mobile-xxs-max: 400px;   /* Très petits mobiles + DPR consideration */
+    --mobile-max: 599px;       /* Mobile principal */
+    --tablet-min: 600px;       /* Début tablet */
+    --tablet-max: 1199px;      /* Fin tablet (corrigé depuis 1023px) */
+    --desktop-min: 1200px;     /* Desktop (corrigé depuis 1024px) */
+    --desktop-xxl-max: 1920px; /* Pour limiter l’affichage */
+
+    /* 🏗️ SYSTÈME UNIFIÉ - Toutes les largeurs adaptatives */
+    --theme-container-width: 420px;          /* Containers généraux */
+    --theme-dlg-width: 100vw;               /* Dialogues backdrop */
+    --theme-dlg-container-width: 100%;      /* Dialogues container */
+
+    /* 🎯 SYSTÈME GLOBAL (conservée) */
+    --theme-top-bar: 70px;                  /* Hauteur navbar */
+    --theme-toolbox-width: 225px;           /* Dialog menu width */
+  }
+
+  /* ATTENTION : var() ne fonctionne PAS dans @media queries !
+     Utiliser les valeurs en dur dans les media queries :
+     - Mobile: @media (max-width: 599px)
+     - Tablet: @media (min-width: 600px) and (max-width: 1199px)
+     - Desktop: @media (min-width: 1200px)
+  */
+
+  /* 📱 MOBILE XXS (≤400px) - Très petits écrans */
+  @media (max-width: 400px) {
+    :root {
+      --theme-container-width: 100%;         /* Containers: plein écran */
+      --theme-dlg-width: 100%;             /* Dialogues: plein écran */
+      --theme-dlg-container-width: 98%;    /* Dialogues: sans marge */
+    }
+  }
+
+  /* 📱 MOBILE (401px - 599px) - Mobiles standards */
+  @media (min-width: 401px) and (max-width: 599px) {
+    :root {
+      --theme-container-width: 100%;         /* Containers: plein écran */
+      --theme-dlg-width: 100%;             /* Dialogues: plein écran */
+      --theme-dlg-container-width: 95%;    /* Dialogues: marge 5% */
+    }
+  }
+
+  /* TABLET STANDARD (600px - 899px) - Tablettes classiques */
+  @media (min-width: 600px) and (max-width: 899px) {
+    :root {
+      --theme-dlg-width: 100%;
+      --theme-container-width: 100%;        /* ✅ CONSERVER pour vraies tablettes */
+      --theme-dlg-container-width: 95%;    /* ✅ CONSERVER pour vraies tablettes */
+    }
+  }
+
+  /* TABLET LARGE (900px - 1199px) - iPad Pro et similaires */
+  @media (min-width: 900px) and (max-width: 1199px) {
+    :root {
+      --theme-container-width: 950px;        /* ✅ MIEUX ADAPTÉ */
+      --theme-dlg-container-width: 850px;    /* ✅ UTILISE MIEUX L'ESPACE */
+    }
+  }
+
+
+  /* 💻 DESKTOP SMALL (1200px - 1440px) - Petits desktops */
+  @media (min-width: 1200px) and (max-width: 1440px) {
+    :root {
+      --theme-container-width: 930px;        /* Containers: standard 930px */
+      --theme-dlg-width: 1200px;            /* Dialogues: ✅ comme demandé */
+      --theme-dlg-container-width: 900px;   /* Dialogues: ✅ comme demandé */
+    }
+  }
+
+  /* 🖥️ DESKTOP LARGE (1441px - 1599px) - Grands écrans */
+  @media (min-width: 1441px) and (max-width: 1599px) {
+    :root {
+      --theme-container-width: 930px;        /* Containers: standard 930px */
+      --theme-dlg-width: 1170px;            /* Dialogues: backdrop étendu */
+      --theme-dlg-container-width: 930px;   /* Dialogues: container standard */
+    }
+  }
+
+  /* 🖥️ WIDE DESKTOP (1600px - 1849px) - Écrans ultrawide */
+  @media (min-width: 1600px) and (max-width: 1950px) {
+    :root {
+      --theme-container-width: 970px;       /* Containers: étendu 1170px */
+      --theme-dlg-width: 1170px;            /* Dialogues: backdrop large */
+      --theme-dlg-container-width: 970px;  /* Dialogues: container étendu */
+    }
+  }
+
+  /* 🖥️ ULTRA-WIDE (1950px+) - Très grands écrans */
+  @media (min-width: 1950px) {
+    :root {
+      --theme-container-width: 1170px;       /* Containers: étendu 1170px */
+      --theme-dlg-width: 1220px;            /* Dialogues: backdrop large */
+      --theme-dlg-container-width: 1170px;  /* Dialogues: container étendu */
+    }
+  }
+
+
+  /* ==========================================================================
+     CLASSES EXISTANTES (CONSERVÉES POUR COMPATIBILITÉ)
+     ========================================================================== */
+
+  .show-sm     {display: none!important;}
+
+  @media only screen and (max-width: 599px) {
+    .hide-sm    {display: none!important;}
+    .show-sm     {display: block!important;}
+    .inline-show-sm     {display: inline-block!important;}
+  }
+
+  @media only screen and (min-width: 600px) and (max-width: 1199px) {
+    .hide-md    {display: none!important;}
+  }
+  @media only screen and (min-width: 1200px) {
+    .show-lg    {display: block;}
+    .hide-lg    {display: none!important;}
+  }
+
+  /* ==========================================================================
+     NOUVELLES CLASSES HARMONISÉES (AJOUTS)
+     ========================================================================== */
+
+  /* Mobile XXS (≤400px) - Très petits mobiles + DPR */
+  .show-mobile-xxs { display: none !important; }
+  @media only screen and (max-width: 400px) {
+    .hide-mobile-xxs { display: none !important; }
+    .show-mobile-xxs { display: block !important; }
+    .inline-show-mobile-xxs { display: inline-block !important; }
+  }
+
+  /* Tablet corrigé (600px - 1199px) au lieu de 1023px */
+  @media only screen and (min-width: 600px) and (max-width: 1199px) {
+    .hide-tablet { display: none !important; }
+    .show-tablet { display: block !important; }
+    .inline-show-tablet { display: inline-block !important; }
+  }
+
+  /* Desktop corrigé (≥1200px) au lieu de 1024px */
+  @media only screen and (min-width: 1200px) {
+    .hide-desktop { display: none !important; }
+    .show-desktop { display: block !important; }
+    .inline-show-desktop { display: inline-block !important; }
+  }
+
+  /* Desktop XXL Limitation (≥1920px) - POUR LIMITER L'AFFICHAGE */
+  @media only screen and (min-width: 1920px) {
+    .content-max-width {
+      max-width: 1920px !important;
+      margin: 0 auto !important;
+    }
+  }

@@ -43,3 +43,77 @@ export function mapPaymasterError(err: unknown): string {
   }
   return 'Transaction non sponsorisée.';
 }
+
+/** True when the browser exposes WebAuthn credentials API. */
+export function isWebAuthnAvailable(): boolean {
+  return (
+    typeof window !== 'undefined' &&
+    typeof window.PublicKeyCredential !== 'undefined' &&
+    typeof navigator !== 'undefined' &&
+    !!navigator.credentials
+  );
+}
+
+/**
+ * Maps WebAuthn / passkey errors to short French messages for end users.
+ * Avoids raw DOMException names (NotAllowedError, etc.).
+ */
+export function mapPasskeyError(err: unknown): string {
+  if (!isWebAuthnAvailable()) {
+    return 'La sécurité biométrique n\'est pas disponible sur cet appareil ou ce navigateur. Essayez un téléphone récent (Face ID, empreinte) ou un autre navigateur.';
+  }
+
+  const name =
+    err && typeof err === 'object' && 'name' in err
+      ? String((err as { name: unknown }).name)
+      : '';
+  const message = err instanceof Error ? err.message : String(err ?? '');
+  const lower = `${name} ${message}`.toLowerCase();
+
+  if (
+    lower.includes('notsupported') ||
+    lower.includes('not supported') ||
+    lower.includes('webauthn is not available') ||
+    lower.includes('webauthn indisponible') ||
+    lower.includes('publickeycredential')
+  ) {
+    return 'La sécurité biométrique n\'est pas prise en charge sur cet appareil. Utilisez un téléphone avec Face ID, empreinte digitale ou Windows Hello.';
+  }
+
+  if (
+    lower.includes('invalidstate') ||
+    lower.includes('already exists') ||
+    lower.includes('credentialexclusion')
+  ) {
+    return 'Une clé d\'accès existe déjà sur cet appareil. Essayez de déverrouiller votre compte ou utilisez un autre appareil.';
+  }
+
+  if (
+    lower.includes('notallowed') ||
+    lower.includes('abort') ||
+    lower.includes('cancelled') ||
+    lower.includes('canceled') ||
+    lower.includes('timed out') ||
+    lower.includes('timeout')
+  ) {
+    return 'Authentification annulée ou expirée. Réessayez avec Face ID, Touch ID ou le code de votre appareil.';
+  }
+
+  if (
+    lower.includes('security') ||
+    lower.includes('insecure') ||
+    lower.includes('https')
+  ) {
+    return 'La sécurité biométrique nécessite une connexion sécurisée (HTTPS).';
+  }
+
+  if (
+    lower.includes('failed to generate passkey') ||
+    lower.includes('received null')
+  ) {
+    return 'Impossible de créer la clé d\'accès. Vérifiez que Face ID / empreinte est activé sur cet appareil.';
+  }
+
+  // Fallback: never surface raw technical exception text to end users.
+  return 'Impossible d\'utiliser la biométrie pour le moment. Vérifiez que Face ID ou l\'empreinte est activé, puis réessayez.';
+}

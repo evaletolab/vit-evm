@@ -8,6 +8,7 @@ import {
   ViewChild,
   ViewChildren,
 } from '@angular/core';
+import { ActivatedRoute, Router } from '@angular/router';
 import { WalletService } from '../../wallet/wallet.service';
 import { ThemeService } from '../../theme/theme.service';
 import {
@@ -19,6 +20,8 @@ import {
 import {
   formatZchfAmount,
   isValidEvmAddress,
+  isWebAuthnAvailable,
+  mapPasskeyError,
   mapPaymasterError,
   parseZchfAmount,
   shortAddress,
@@ -87,7 +90,12 @@ export class PageWalletComponent implements OnInit, AfterViewInit, OnDestroy {
 
   iban: string | null = null;
 
-  constructor(private wallet: WalletService, private theme: ThemeService) {
+  constructor(
+    private wallet: WalletService,
+    private theme: ThemeService,
+    private route: ActivatedRoute,
+    private router: Router,
+  ) {
     try {
       this.iban = localStorage.getItem('vit-iban');
     } catch {
@@ -111,8 +119,12 @@ export class PageWalletComponent implements OnInit, AfterViewInit, OnDestroy {
         this.view = 'ready';
         await this.refreshBalance();
         await this.refreshRecoveryRequest();
+        this.redirectAfterCreate();
       } else {
         this.view = 'no-wallet';
+        if (!isWebAuthnAvailable()) {
+          this.error = mapPasskeyError(new Error('WebAuthn is not available in this browser'));
+        }
       }
     } catch (err) {
       this.error = err instanceof Error ? err.message : String(err);
@@ -143,7 +155,7 @@ export class PageWalletComponent implements OnInit, AfterViewInit, OnDestroy {
       const out = await this.wallet.startNewDeviceRecovery(this.recoverSafeAddress);
       this.recoverNewOwnerAddress = out.newOwnerAddress;
     } catch (err) {
-      this.error = err instanceof Error ? err.message : String(err);
+      this.error = mapPasskeyError(err);
     } finally {
       this.busy = false;
     }
@@ -170,11 +182,15 @@ export class PageWalletComponent implements OnInit, AfterViewInit, OnDestroy {
     this.busy = true;
     this.error = undefined;
     try {
+      if (!isWebAuthnAvailable()) {
+        throw new Error('WebAuthn is not available in this browser');
+      }
       this.state = await this.wallet.createWalletWithPasskey();
       this.view = 'ready';
       await this.refreshBalance();
+      this.redirectAfterCreate();
     } catch (err) {
-      this.error = err instanceof Error ? err.message : String(err);
+      this.error = mapPasskeyError(err);
     } finally {
       this.busy = false;
     }
@@ -253,7 +269,7 @@ export class PageWalletComponent implements OnInit, AfterViewInit, OnDestroy {
         this.error = mapPaymasterError(new Error(out.operation.error));
       }
     } catch (err) {
-      this.error = err instanceof Error ? err.message : String(err);
+      this.error = mapPasskeyError(err);
     } finally {
       this.busy = false;
     }
@@ -406,5 +422,12 @@ export class PageWalletComponent implements OnInit, AfterViewInit, OnDestroy {
   get canFinalizeRecovery(): boolean {
     if (!this.recoveryRequest) return false;
     return BigInt(Math.floor(Date.now() / 1000)) >= BigInt(this.recoveryRequest.executeAfter);
+  }
+
+  /** After onboarding, return to claim (or other) URL if present. */
+  private redirectAfterCreate(): void {
+    const returnUrl = this.route.snapshot.queryParamMap.get('returnUrl');
+    if (!returnUrl || !returnUrl.startsWith('/')) return;
+    void this.router.navigateByUrl(returnUrl);
   }
 }
