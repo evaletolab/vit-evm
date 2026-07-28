@@ -1,4 +1,4 @@
-
+/** @deprecated V1 — SSS unused; recovery = BIP39 mnemonic off-chain. Kept for tests only. */
 // replace SSS with https://github.com/jwerle/shamirs-secret-sharing
 import { Buffer, combine, split } from 'shamirs-secret-sharing'
 
