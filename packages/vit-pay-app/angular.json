@@ -47,16 +47,16 @@
             ],
             "styles": [
               "@shoelace-style/shoelace/dist/themes/light.css",
+              "intl-tel-input/dist/css/intlTelInput.css",
               "src/styles.scss"
             ],
-            "allowedCommonJsDependencies":[
+            "allowedCommonJsDependencies": [
               "@shoelace-style/shoelace",
               "jsqr",
               "qrcode",
               "buffer"
             ],
-            "scripts": [
-            ],
+            "scripts": [],
             "serviceWorker": "ngsw-config.json"
           },
           "configurations": {
@@ -93,7 +93,9 @@
           "builder": "@angular-devkit/build-angular:dev-server",
           "options": {
             "host": "0.0.0.0",
-            "allowedHosts": ["all"]
+            "allowedHosts": [
+              "all"
+            ]
           },
           "configurations": {
             "production": {
@@ -117,6 +119,9 @@
               "src/polyfills-test.ts"
             ],
             "tsConfig": "tsconfig.spec.json",
+            "exclude": [
+              "src/app/pages/vit-welcome/**"
+            ],
             "inlineStyleLanguage": "scss",
             "assets": [
               {
@@ -128,7 +133,8 @@
               "@shoelace-style/shoelace/dist/themes/light.css",
               "src/styles.scss"
             ],
-            "scripts": []
+            "scripts": [],
+            "karmaConfig": "karma.conf.js"
           }
         }
       }

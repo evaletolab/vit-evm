@@ -2,6 +2,7 @@ import { APP_INITIALIZER, CUSTOM_ELEMENTS_SCHEMA, NgModule, isDevMode } from '@a
 import { BrowserModule } from '@angular/platform-browser';
 import { FormsModule } from '@angular/forms';
 import { ServiceWorkerModule } from '@angular/service-worker';
+import { IntlTelDirective } from './shared/intl-tel.directive';
 import { WalletStorageService } from './wallet/wallet-storage.service';
 
 import { AppRoutingModule } from './app-routing.module';
@@ -19,8 +20,12 @@ import { PageClaimComponent } from './pages/page-claim/page-claim.component';
 import { PageIbanComponent } from './pages/page-iban/page-iban.component';
 import { PageDevicesComponent } from './pages/page-devices/page-devices.component';
 import { PageRecoveryComponent } from './pages/page-recovery/page-recovery.component';
+import { PageRequestComponent } from './pages/page-request/page-request.component';
+import { PageVaultComponent } from './pages/page-vault/page-vault.component';
+import { PageRestoreComponent } from './pages/page-restore/page-restore.component';
 import { VitMintComponent } from './vit-mint/vit-mint.component';
 import { VitPasskeyComponent } from './vit-passkey/vit-passkey.component';
+import { TxOverlayComponent } from './wallet/tx-overlay.component';
 
 
 @NgModule({
@@ -38,13 +43,18 @@ import { VitPasskeyComponent } from './vit-passkey/vit-passkey.component';
     PageIbanComponent,
     PageDevicesComponent,
     PageRecoveryComponent,
+    PageRequestComponent,
+    PageVaultComponent,
+    PageRestoreComponent,
     VitMintComponent,
-    VitPasskeyComponent
+    VitPasskeyComponent,
+    TxOverlayComponent,
   ],
   imports: [
     BrowserModule,
     FormsModule,
     AppRoutingModule,
+    IntlTelDirective,
     ServiceWorkerModule.register('ngsw-worker.js', {
       enabled: !isDevMode(),
       registrationStrategy: 'registerWhenStable:30000'
