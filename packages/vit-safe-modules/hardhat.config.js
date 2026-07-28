@@ -1,3 +1,7 @@
+const path = require("node:path");
+
+// Chemin absolu : hardhat peut être lancé depuis la racine du monorepo.
+require("dotenv").config({ path: path.join(__dirname, ".env"), quiet: true });
 require("@nomicfoundation/hardhat-toolbox");
 require("@openzeppelin/hardhat-upgrades");
 
