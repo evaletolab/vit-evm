@@ -11,6 +11,7 @@
 </section>
 
 <ng-container *ngIf="!showUnlock">
+  <vit-tx-overlay />
   <router-outlet />
 
   <div class="vit-install-banner" *ngIf="showInstallPrompt" role="dialog" aria-label="Installer ViTpay">
@@ -26,24 +27,18 @@
     </button>
   </div>
 
-  <nav class="vit-nav" aria-label="Navigation principale">
+  <nav class="vit-nav" *ngIf="hasWallet" aria-label="Navigation principale">
     <a class="vit-nav__item" routerLink="/" routerLinkActive="vit-nav__item--active" [routerLinkActiveOptions]="{exact: true}">
       <span class="material-symbols-outlined vit-nav__icon">home</span>
       <span class="vit-nav__label">Accueil</span>
     </a>
-    <a class="vit-nav__item" routerLink="/wallet" routerLinkActive="vit-nav__item--active" *ngIf="theme.isDevMode(); else navContacts">
-      <span class="material-symbols-outlined vit-nav__icon">credit_card</span>
-      <span class="vit-nav__label">Compte</span>
+    <a class="vit-nav__item" routerLink="/contacts" routerLinkActive="vit-nav__item--active">
+      <span class="material-symbols-outlined vit-nav__icon">contacts</span>
+      <span class="vit-nav__label">Carnet</span>
     </a>
-    <ng-template #navContacts>
-      <a class="vit-nav__item" routerLink="/contacts" routerLinkActive="vit-nav__item--active">
-        <span class="material-symbols-outlined vit-nav__icon">contacts</span>
-        <span class="vit-nav__label">Carnet</span>
-      </a>
-    </ng-template>
     <a class="vit-nav__item vit-nav__item--center" routerLink="/buy" routerLinkActive="vit-nav__item--active">
       <span class="vit-nav__fab">
-        <span class="material-symbols-outlined">qr_code_scanner</span>
+        <span class="material-symbols-outlined">send</span>
       </span>
     </a>
     <a class="vit-nav__item" routerLink="/txs" routerLinkActive="vit-nav__item--active">

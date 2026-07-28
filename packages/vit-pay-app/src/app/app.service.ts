@@ -469,7 +469,11 @@ export class AppService {
       return div.innerHTML;
     };
 
-    const alert = Object.assign(document.createElement('sl-alert'), {
+    // <sl-alert> is a custom element: the DOM lib types it as a plain
+    // HTMLElement, so its Shoelace methods must be declared here.
+    type SlAlert = HTMLElement & { hide(): void; toast(): Promise<void> };
+
+    const alert = Object.assign(document.createElement('sl-alert') as SlAlert, {
       variant: notification.variant,
       closable: notification.closable,
       duration: notification.duration,

@@ -32,29 +32,29 @@
       </span>
       <span class="qa__label">Envoyer</span>
     </a>
+    <a class="qa" [routerLink]="['/request']" role="button">
+      <span class="qa__tile">
+        <span class="material-symbols-outlined">request_quote</span>
+      </span>
+      <span class="qa__label">Demander</span>
+    </a>
     <a class="qa" [routerLink]="['/sent']" role="button">
       <span class="qa__tile">
         <span class="material-symbols-outlined">south_west</span>
       </span>
       <span class="qa__label">Recevoir</span>
     </a>
-    <a class="qa" [routerLink]="['/buy']" role="button">
-      <span class="qa__tile">
-        <span class="material-symbols-outlined">qr_code_scanner</span>
-      </span>
-      <span class="qa__label">Scanner</span>
-    </a>
     <a class="qa" [routerLink]="['/links']" role="button">
       <span class="qa__tile">
         <span class="material-symbols-outlined">link</span>
       </span>
-      <span class="qa__label">Liens</span>
+      <span class="qa__label">Envois</span>
     </a>
   </nav>
 
   <section class="txs">
     <div class="txs__head">
-      <span class="vit-label">Transactions</span>
+      <span class="vit-label">Activité</span>
       <a class="txs__more" [routerLink]="['/txs']">Tout voir</a>
     </div>
 
@@ -66,6 +66,13 @@
         <div class="tx__info">
           <div class="tx__title">{{ tx.title }}</div>
           <div class="tx__meta">{{ tx.meta }}</div>
+          <button
+            *ngIf="tx.addContactAddress"
+            type="button"
+            class="tx__add"
+            (click)="addUnknown(tx.addContactAddress)">
+            + Ajouter au carnet
+          </button>
         </div>
         <div class="tx__amount">{{ tx.amount }} xCHF</div>
       </li>

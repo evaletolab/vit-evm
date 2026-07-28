@@ -31,23 +31,32 @@
     </button>
 
     <ul class="link-list" *ngIf="links.length; else empty">
-      <li class="link" *ngFor="let l of links" [class.link--claimed]="l.status === 'claimed'" [class.link--cancelled]="l.status === 'cancelled'">
+      <li class="link" *ngFor="let l of links"
+          [class.link--claimed]="l.status === 'claimed'"
+          [class.link--cancelled]="l.status === 'cancelled' || l.status === 'expired'">
         <div class="link__amount">{{ l.amount }} xCHF</div>
         <div class="link__meta">
-          <span class="vit-chip" [class.vit-chip--success]="l.status === 'pending'" [class.vit-chip--warning]="l.status === 'cancelled'" [class.vit-chip--danger]="l.status === 'claimed'">
-            {{ l.status === 'pending' ? 'En attente' : l.status === 'claimed' ? 'Réclamé' : 'Annulé' }}
+          <span class="vit-chip"
+            [class.vit-chip--success]="l.status === 'pending'"
+            [class.vit-chip--warning]="l.status === 'cancelled' || l.status === 'expired'"
+            [class.vit-chip--danger]="l.status === 'claimed'">
+            {{ l.status === 'pending' ? 'En attente'
+              : l.status === 'claimed' ? 'Réclamé'
+              : l.status === 'expired' ? 'Expiré'
+              : 'Annulé' }}
           </span>
           <span class="link__exp">{{ formatExpiry(l.expiry) }}</span>
         </div>
-        <div class="link__actions" *ngIf="l.status === 'pending'">
-          <button class="icon-btn" (click)="share(l)" aria-label="Partager">
+        <div class="link__actions" *ngIf="l.status === 'pending' || l.status === 'expired'">
+          <button *ngIf="l.status === 'pending'" class="icon-btn" (click)="share(l)" aria-label="Partager">
             <span class="material-symbols-outlined">share</span>
           </button>
-          <button class="icon-btn" (click)="copyLinkUrl(l)" aria-label="Copier">
+          <button *ngIf="l.status === 'pending'" class="icon-btn" (click)="copyLinkUrl(l)" aria-label="Copier">
             <span class="material-symbols-outlined">content_copy</span>
           </button>
-          <button class="icon-btn icon-btn--danger" (click)="cancelLink(l)" [disabled]="busy" aria-label="Annuler">
-            <span class="material-symbols-outlined">cancel</span>
+          <button class="icon-btn icon-btn--danger" (click)="cancelLink(l)" [disabled]="busy"
+            [attr.aria-label]="l.status === 'expired' ? 'Récupérer les fonds' : 'Annuler'">
+            <span class="material-symbols-outlined">{{ l.status === 'expired' ? 'undo' : 'cancel' }}</span>
           </button>
         </div>
       </li>
