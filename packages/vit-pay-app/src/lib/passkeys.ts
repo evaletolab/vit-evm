@@ -48,14 +48,15 @@ async function createPasskey(
         id: crypto.getRandomValues(new Uint8Array(32)),
         name: label.toLowerCase().replace(/\s+/g, '-').slice(0, 64) || 'vit-owner',
       },
-      hints: ['client-device'],
+      // hints (WebAuthn L3) — cast: DOM lib may lag behind the spec
+      ...( { hints: ['client-device'] } as object ),
       authenticatorSelection: {
         userVerification: 'required',
         residentKey: 'preferred',
       },
       timeout: 60000,
       attestation: 'none',
-    },
+    } as PublicKeyCredentialCreationOptions,
   })) as PasskeyCredential | null
 
   if (!passkeyCredential) {

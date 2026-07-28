@@ -40,6 +40,23 @@ export interface StoredWallet {
   zchfTokenAddress: string;
   /** Pseudo / prénom connu des amis (optionnel pour wallets créés avant). */
   displayName?: string;
+  /**
+   * Identité locale <nom>@vit.app (V1 — pas de registre).
+   * Sert d'URL (/nom/vault) et d'username du coffre.
+   */
+  walletName?: string;
+  /** Optional contact profile for claim-link embedding (local only). */
+  profileTel?: string;
+  profileEmail?: string;
+  /** Default ON when profile has at least a displayName. */
+  attachContactToClaims?: boolean;
+  /**
+   * True once recovery codes were confirmed saved (vault / QR) OR user skipped.
+   * Skip leaves recoveryEnabled=false and shows a persistent banner.
+   */
+  backupKitConfirmed?: boolean;
+  /** @deprecated V1 mnemonic-owner path — ignored; kept for migration reads. */
+  recoveryOwnerAddress?: string;
   /** Last RecoveryRequest read on-chain — used for instant UX on page load. */
   recoveryRequestCache?: SerializedRecoveryRequest;
   /** Tracks ZCHF spent today against `maxDailyZchfAmount` in WalletConfig. */
@@ -55,6 +72,13 @@ export interface WalletState {
   passkey: PasskeyOwner;
   deployed: boolean;
   displayName?: string;
+  walletName?: string;
+  profileTel?: string;
+  profileEmail?: string;
+  attachContactToClaims?: boolean;
+  backupKitConfirmed?: boolean;
+  /** @deprecated */
+  recoveryOwnerAddress?: string;
 }
 
 export interface UserOperationDebug {

@@ -23,12 +23,13 @@
       <div>
         <h3>Guardians</h3>
         <p class="lead" *ngIf="!state?.recoveryEnabled">
-          Configure des guardians (adresses EOA de confiance) qui pourront
-          rotater l'owner de ton Safe si tu perds ta passkey.
+          Les codes de secours ViT (3 codes, seuil 2/3) s’activent via
+          <a [routerLink]="['/', state?.walletName || 'wallet', 'vault']">le coffre</a>.
+          Ici : guardians humains avancés (adresses EOA).
         </p>
         <p class="lead" *ngIf="state?.recoveryEnabled">
-          ✅ <strong>SocialRecoveryModule actif.</strong> Tu peux mettre à jour
-          la liste des guardians ou le threshold.
+          ✅ <strong>SocialRecoveryModule actif.</strong>
+          Une recovery hostile en cours peut être annulée ci-dessous pendant le délai de grâce.
         </p>
       </div>
     </div>

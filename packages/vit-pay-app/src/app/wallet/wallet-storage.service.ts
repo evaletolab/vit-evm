@@ -182,6 +182,10 @@ export class WalletStorageService {
   private isStoredWallet(value: unknown): value is StoredWallet {
     if (typeof value !== 'object' || value === null) return false;
     const v = value as Record<string, unknown>;
+    // Never accept blobs that look like they contain secrets
+    if ('privateKey' in v || 'mnemonic' in v || 'seed' in v || 'shares' in v) {
+      return false;
+    }
     return (
       v['version'] === 1 &&
       typeof v['accountAddress'] === 'string' &&
