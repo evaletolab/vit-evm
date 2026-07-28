@@ -1,8 +1,22 @@
 # 10 — Audit sécurité
 
-Snapshot 2026-06-19. Réagrège l'audit du `CLAUDE.md` (2026-06-11) + nouvelles trouvailles iter 0.4. **Mise à jour : les 2 P0 sont corrigés.**
+Snapshot 2026-06-19, complété le 2026-07-27 (V1.1 : codes guardians). Réagrège l'audit du `CLAUDE.md` (2026-06-11) + trouvailles iter 0.4 + V1/V1.1.
 
 ## 🔴 P0 — bloquant / risque grave
+
+### P0-4 · `VitClaimLink` est devenu upgradeable
+
+- **Depuis** : V1 (2026-07-26), passage en proxy UUPS pour pouvoir livrer `metaHash` + `cancelExpired` sans casser les liens existants.
+- **Symptôme** : `_authorizeUpgrade` est `onlyOwner`, et `initialize(deployer.address)` fait du **compte de déploiement** l'owner. Une clé compromise permet de remplacer l'implémentation, donc de vider tous les escrows en cours.
+- **Régression documentaire** : la doc annonçait « pas d'owner, pas d'upgrade — contrat immuable et neutre ». Ce n'est plus vrai, l'argument trustless du claim link tombe tant que l'owner est un EOA.
+- **Mitigations** (mêmes que P0-3, à appliquer avant mainnet) : owner = Safe multisig, timelock 24-48 h sur `_authorizeUpgrade`, `UPGRADER_ROLE` distinct, plan de renoncement (`renounceOwnership()`) une fois le format des liens stabilisé.
+- **En dev (Sepolia)** : acceptable avec un EOA, à condition de traiter la clé de déploiement comme un secret durable — c'est elle, et elle seule, qui pourra upgrader.
+
+### P0-5 · Délai de grâce recovery à 3 minutes (dev) — ~~mnémonique owner~~ corrigé
+
+- **Corrigé en V1.1** : le chemin mnémonique / second owner EOA (`threshold: 1`) a été **supprimé**. Les codes de secours sont des **guardians** SocialRecoveryModule (seuil 2/3) : un code volé ne permet pas de dépenser.
+- **Nouveau risque P0 avant prod** : l'adresse module configurée est `After3Minutes` (`0x949d01d4…`). Avec 2 codes, un attaquant finalise en ~3 minutes — fenêtre d'annulation théorique. **Basculer vers `After3Days`** (ou 7/14) avant mainnet, et ajouter une notification owner pendant le délai (sinon `cancelRecovery` est décoratif).
+- **Entropie codes** : 75 bits + scrypt 64 MiB salé par Safe — marge confortable contre force brute GPU (voir banc `bench-recovery-codes.mjs`).
 
 ### P0-3 · Contract `VitPayment` — surface admin upgradeable + pausable
 
@@ -27,7 +41,7 @@ contract VitPayment is
 | `PausableUpgradeable` | `pause()` bloque toute interaction utilisateur. | Censure-by-design — vit-evm peut geler n'importe quel paiement. |
 | `ReentrancyGuardUpgradeable` | Protection technique standard. | ✅ OK (sain). |
 
-**Pourquoi P0** : cette architecture est l'**opposé** du contrat trustless `VitClaimLink` (immuable, neutre, sans owner, cf. [03 — Contracts](03-contracts.md)). Une seule clé compromise (multisig mal configuré, fuite de seed, employé hostile) permet le pillage de tous les utilisateurs. C'est le mode de défaillance #1 des protocoles Solidity en 2023-2025 (Ronin, Multichain, Euler avec key compromise, etc.).
+**Pourquoi P0** : une seule clé compromise (multisig mal configuré, fuite de seed, employé hostile) permet le pillage de tous les utilisateurs. C'est le mode de défaillance #1 des protocoles Solidity en 2023-2025 (Ronin, Multichain, Euler avec key compromise, etc.). Depuis la V1, `VitClaimLink` partage cette surface — voir P0-4 ci-dessus : les mitigations 1, 2, 3 et 9 valent pour les deux contrats.
 
 **Mitigations obligatoires avant tout déploiement mainnet** :
 
@@ -132,7 +146,11 @@ Entre `core.safe.4337.ts` et `core.safe.preflight.ts`. Extraire en helper commun
 
 ### P2-4 · Test coverage faible
 
-27 specs vs ~8k fichiers (0.3 %). Couvrent utils + storage. Pas de test UserOp, preflight, recovery, claim link côté frontend.
+39 specs Karma vertes (V1.1 : +10 sur les codes de secours, le nom `<nom>@vit.app` et le payload contact). Couvrent utils, storage, encodage/KDF. Toujours aucun test UserOp, preflight, armement/restore on-chain ou claim link côté frontend.
+
+### P2-10 · Suites de tests contrats en échec permanent (V1)
+
+`npx hardhat test` sort 32 passants / **19 échecs**, tous dans des suites legacy (`Vit.ClaimLink.js` sur l'ABI v1, `Vit.Escrow.js` calé sur les messages OZ v4, `Vit.SafeModule.Withdrawal.js`). Un rouge permanent rend invisible toute vraie régression, et la CI ne peut pas bloquer sur les tests contrats. Voir [08 — Dead code](08-dead-code.md#vit-safe-modules).
 
 ### P2-5 · Budgets Angular augmentés
 
@@ -181,11 +199,16 @@ Bundler + paymaster côté un seul vendor. Si Candide down → wallet inutilisab
 - **Subvention obligatoire** : pas de fallback ETH (erreur explicite).
 - **Validation mod-97 IBAN** côté front avant save (iter 0.4) — empêche de stocker un IBAN bidon.
 - **Preflight on-chain claim link cancel** (iter 0.4) — évite UserOp envoyé vers un revert.
+- **Contact des claim links intègre** (V1) — `metaHash` on-chain sur le payload encodé ; un `c=` altéré en transit fait échouer le claim (`MetaMismatch`) au lieu de tromper le destinataire. Le contact voyage dans le **fragment**, donc jamais envoyé au serveur.
+- **URL de partage construite avant le lock des fonds** (V1) — une URL invalide ne peut plus laisser des ZCHF bloqués dans un escrow dont le lien n'a jamais été affiché.
+- **Secrets de déploiement hors repo** (V1) — `packages/vit-safe-modules/.env` (gabarit `.env.example`), chargé par `hardhat.config.js`, couvert par le `.gitignore` racine.
 
 ## Roadmap sécurité suggérée
 
 | Priorité | Action | État | Effort |
 |---|---|---|---|
+| P0 | Owner du proxy `VitClaimLink` = multisig + timelock (P0-4) | ouvert · EOA acceptable en dev seulement | M |
+| P0 | Délai grâce After3Days + notification (P0-5) | ouvert · After3Minutes en dev | M |
 | ~~P0~~ | ~~Purger PK hardcodée + add `.env`~~ | ✅ fait (2026-06-11) | S |
 | ~~P0~~ | ~~Chiffrer blob `localStorage['vit-wallet']`~~ | ✅ fait (2026-06-19, IDB + AES-GCM non-extractable) | M |
 | ~~P1~~ | ~~CSP stricte dans `index.html`~~ | ✅ fait (2026-06-19) | S |

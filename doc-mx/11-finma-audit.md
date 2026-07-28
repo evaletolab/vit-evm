@@ -1,6 +1,6 @@
 # 11 — Audit réglementaire FINMA
 
-Snapshot 2026-06-19. **Cet audit n'est pas un avis juridique** — il s'appuie sur les publications publiques de la FINMA (Guidance 02/2019 « Travel Rule », Position Paper DLT, Circulaires) et le droit suisse en vigueur (LBA, LSFin, DLT Act, nLPD). Une revue par un cabinet suisse (Lenz & Staehelin, Niederer Kraft Frey, Bär & Karrer, MME) reste indispensable avant tout déploiement commercial.
+Snapshot 2026-06-19, révisé le 2026-07-26 (impact V1 : claim link upgradeable, contact joint aux liens). **Cet audit n'est pas un avis juridique** — il s'appuie sur les publications publiques de la FINMA (Guidance 02/2019 « Travel Rule », Position Paper DLT, Circulaires) et le droit suisse en vigueur (LBA, LSFin, DLT Act, nLPD). Une revue par un cabinet suisse (Lenz & Staehelin, Niederer Kraft Frey, Bär & Karrer, MME) reste indispensable avant tout déploiement commercial.
 
 ## Cadre réglementaire potentiellement applicable
 
@@ -63,7 +63,7 @@ Selon le **Guide pratique FINMA pour les ICOs (2018)** et sa mise à jour 2019 s
 - **Mt Pelerin SA** est régulée FINMA (membre OAR-G n° 1011, depuis 2018) et opère sous l'art. 2 al. 3 LBA.
 - **KYC** : Mt Pelerin identifie l'user, vérifie l'origine des fonds CHF, signale les opérations suspectes au MROS.
 - **Travel Rule** (FINMA Guidance 02/2019) : Mt Pelerin doit collecter et transmettre les infos sender/recipient pour les transferts crypto > 1'000 CHF. Pour les achats xCHF vers le Safe vit-evm, Mt Pelerin identifie le bénéficiaire comme **l'utilisateur lui-même** (pas une 3rd party).
-- **Vit-evm** n'a aucune obligation Travel Rule tant qu'on ne route pas des fonds d'un user vers un autre via un service nous. ⚠️ Les **claim links** sont à surveiller : si on les présente comme un « service de transfert peer-to-peer », on pourrait basculer sous LBA. La position actuelle (contrat ERC-20 immuable, vit-evm ne touche pas aux fonds, ne facture rien) est défendable comme infrastructure neutre.
+- **Vit-evm** n'a aucune obligation Travel Rule tant qu'on ne route pas des fonds d'un user vers un autre via un service nous. ⚠️ Les **claim links** sont à surveiller : si on les présente comme un « service de transfert peer-to-peer », on pourrait basculer sous LBA. La position « infrastructure neutre » (vit-evm ne touche pas aux fonds, ne facture rien) reste défendable, mais **l'argument d'immuabilité n'est plus disponible depuis le passage du claim link en UUPS** (cf. §7 Claim links).
 
 ## 4. Protection des données — nLPD
 
@@ -78,8 +78,14 @@ Loi suisse révisée sur la protection des données, entrée en vigueur **1 sept
 | Liens de paiement (`vit-claimlinks:*`) | localStorage chiffré | Personnelle |
 | IBAN saisi manuellement | `localStorage['vit-iban']` (clair) | **Personnelle** (numéro de compte) |
 | Préférences thème / mode dev | `localStorage['vit-settings']` | Non-sensible |
+| Profil émetteur + carnet de contacts (V1) | localStorage | **Personnelle** (pseudo, tél, e-mail — y compris ceux de tiers) |
+| `metaHash` d'un claim link (V1) | **on-chain**, public et permanent | Pseudonyme dérivé de données personnelles |
 
-**Toutes ces données restent sur le device user, jamais transmises à un serveur vit-evm** (aucun backend déployé à ce jour). Conséquence : **pas de transfert transfrontalier**, pas d'obligation `RoT` (Registre des activités de Traitement) tant que la SPA reste statique et que nous n'enregistrons aucune télémétrie.
+**Ces données restent sur le device user, jamais transmises à un serveur vit-evm** (aucun backend déployé à ce jour). Conséquence : **pas de transfert transfrontalier**, pas d'obligation `RoT` (Registre des activités de Traitement) tant que la SPA reste statique et que nous n'enregistrons aucune télémétrie.
+
+⚠️ **Deux nouveautés V1 à surveiller** :
+- Le contact joint à un claim link voyage dans le **fragment** de l'URL (`#…&c=`), donc hors requête HTTP — mais il transite en clair par le canal de partage choisi par l'user (WhatsApp, SMS). À rappeler dans l'UI.
+- Le `metaHash` publié on-chain est un keccak256 de ce contact : **irréversible mais aussi ineffaçable**, et vérifiable par force brute si l'attaquant devine le payload (un nom + un numéro de téléphone forment un espace de recherche modeste). Le droit à l'effacement (art. 32) ne peut pas s'exercer sur cette donnée — à documenter dans la politique de confidentialité, et à considérer comme le prix de l'intégrité anti-phishing.
 
 ### Points à vérifier
 
@@ -87,9 +93,9 @@ Loi suisse révisée sur la protection des données, entrée en vigueur **1 sept
 |---|---|
 | Base légale (art. 31) | ✅ Exécution du contrat (l'user crée son wallet) |
 | Minimisation (art. 6 al. 3) | ✅ Seule l'IBAN est saisie manuellement, optionnelle |
-| Sécurité (art. 8) | ✅ Chiffrement IDB + AES-GCM (cf. [10 — Audit sécurité](10-security-audit.md#p0-2-localstorage-non-chiffré--corrigé)) |
+| Sécurité (art. 8) | ✅ Chiffrement IDB + AES-GCM (cf. [10 — Audit sécurité](10-security-audit.md#p0-2--localstorage-non-chiffré--corrigé)) |
 | Transparence (art. 19) | ⚠️ Aucune politique de confidentialité publiée |
-| Droit d'accès / effacement (art. 25-32) | ✅ `localStorage.clear()` accessible à l'user |
+| Droit d'accès / effacement (art. 25-32) | ⚠️ `localStorage.clear()` couvre le device, mais le `metaHash` on-chain d'un claim link est ineffaçable (V1) |
 | RoT (art. 12) | ✅ Pas requis (pas de traitement automatisé à risque) |
 | AIPD (art. 22) | ⚠️ À évaluer si on ajoute des fonctionnalités impactantes |
 | DPO | ⚠️ Pas requis tant que pas d'employés et pas de profilage |
@@ -126,6 +132,12 @@ La modification du droit suisse (CO, LBA, LIMF) entrée en vigueur en août 2021
 - **Risque réglementaire** : **aucun**, tant que vit-evm n'agit pas comme guardian (jamais).
 - **Garde-fou** : ne **jamais** proposer une option « vit-evm comme guardian de secours » — ce serait une custody partielle.
 
+### Kit de secours off-chain (V1)
+
+- **Statut** : le mnémonique BIP39 est généré **dans le navigateur** et n'est jamais transmis ni persisté par vit-evm ; c'est l'utilisateur qui choisit son support de sauvegarde (gestionnaire de mots de passe, QR, papier).
+- **Risque réglementaire** : nul du point de vue custody — vit-evm n'a à aucun moment connaissance de la clé, ce qui confirme le positionnement self-custody.
+- **Garde-fou** : ne jamais introduire de sauvegarde « assistée » côté serveur (backup chiffré hébergé, escrow de la phrase), même chiffrée de bout en bout : la seule détention du matériel de clé suffit à ouvrir le débat custody.
+
 ### `VitPayment` upgradeable + pausable
 
 - **Statut** : contrat `UUPSUpgradeable + OwnableUpgradeable + AccessControlUpgradeable + PausableUpgradeable` touchant les paiements utilisateurs. Voir analyse technique : [10 — Audit sécurité §P0-3](10-security-audit.md#p0-3--contract-vitpayment--surface-admin-upgradeable--pausable).
@@ -141,8 +153,9 @@ La modification du droit suisse (CO, LBA, LIMF) entrée en vigueur en août 2021
 
 ### Claim links (envoi par URL)
 
-- **Statut** : contrat ERC-20 immuable. Vit-evm publie un front qui aide à formuler la transaction. L'user signe, le contrat séquestre, n'importe qui avec le secret réclame.
-- **Risque** : si présenté comme « payment service », FINMA pourrait y voir une **plateforme de transferts**. Position défendable car (a) pas de fee, (b) pas de routing par nous, (c) contrat immuable.
+- **Statut** : ⚠️ **changé en V1 (2026-07-26)** — le contrat est passé en **proxy UUPS**, il n'est plus immuable. Vit-evm publie un front qui aide à formuler la transaction ; l'user signe, le contrat séquestre, n'importe qui avec le secret réclame — mais l'owner du proxy peut désormais remplacer la logique.
+- **Risque** : si présenté comme « payment service », FINMA pourrait y voir une **plateforme de transferts**. Restent défendables : (a) pas de fee, (b) pas de routing par nous. En revanche l'argument « contrat immuable » **tombe** : le pouvoir d'upgrade sur un contrat qui séquestre des fonds utilisateurs relève de la même analyse que `VitPayment` (§ ci-dessus) et peut être qualifié de **custody effective**.
+- **À faire avant mainnet** : mêmes mitigations que `VitPayment` — owner = multisig, timelock, plan de renoncement publié — sinon retirer l'upgradeabilité du claim link (redéployer une version figée une fois le format des liens stabilisé).
 - **Garde-fou** : éviter dans le marketing tout terme suggérant « service de virement », « transfer service », « payment processor ». Préférer « lien hash-locked », « escrow on-chain », « tooling ».
 
 ### Intégration IBAN Mt Pelerin
@@ -167,4 +180,4 @@ La modification du droit suisse (CO, LBA, LIMF) entrée en vigueur en août 2021
 
 - [10 — Audit sécurité](10-security-audit.md) — surface technique
 - [05 — Intégration Mt Pelerin](05-integrations-mtpelerin.md) — délégation de la conformité financière
-- [03 — Contracts](03-contracts.md) — détail `VitClaimLink` (preuve d'immutabilité)
+- [03 — Contracts](03-contracts.md) — détail `VitClaimLink` v2 (proxy UUPS : l'immutabilité n'est plus acquise)

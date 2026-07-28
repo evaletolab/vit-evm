@@ -28,7 +28,7 @@ Bugs résolus avec la méthode skill `debug` (5-Whys + hypothèses rankées + co
 
 **Diagnostic** — décodage du selector :
 
-Le bundler remonte un revert brut `0x7dc6505a` (les 4 octets `7d c6 50 5a` que l'UTF-8 essaie de rendre en `}\xc6PZ`). Computation des selectors des 6 errors de `VitClaimLink.sol` via `keccak256(toUtf8Bytes('Name()')).slice(0,10)` :
+Le bundler remonte un revert brut `0x7dc6505a` (les 4 octets `7d c6 50 5a` que l'UTF-8 essaie de rendre en `}\xc6PZ`). Computation des selectors des errors de `VitClaimLink.sol` via `keccak256(toUtf8Bytes('Name()')).slice(0,10)` (table complétée en V1 avec les 2 errors v2) :
 
 | Selector | Error |
 |---|---|
@@ -36,8 +36,10 @@ Le bundler remonte un revert brut `0x7dc6505a` (les 4 octets `7d c6 50 5a` que l
 | **`0x7dc6505a`** | **`NotPending()`** ← match |
 | `0xb2c3aa6b` | `NotSender()` |
 | `0x203d82d8` | `Expired()` |
+| `0xd0404f85` | `NotExpired()` (v2) |
 | `0xf86c49bc` | `WrongSecret()` |
 | `0x1f2a2005` | `ZeroAmount()` |
+| `0x5ad37c19` | `MetaMismatch()` (v2) |
 
 `VitClaimLink.cancel()` revert `NotPending()` quand `links[id].status != Pending`. Vu l'enum `{ Pending, Claimed, Cancelled }`, ça veut dire que le lien était **déjà claimed ou cancelled on-chain**, mais le cache `localStorage['vit-claimlinks:<owner>']` le voyait encore `pending` → bouton « Annuler » actif → UserOp envoyé → revert au gas estimation → message bundler cryptique.
 
@@ -62,3 +64,28 @@ Le bundler remonte un revert brut `0x7dc6505a` (les 4 octets `7d c6 50 5a` que l
 - `ngOnInit` : `list()` immédiat → render cache, puis `refreshStatuses()` en background → re-render quand l'on-chain répond (UX instant, sans bloquer).
 - `cancelLink` catch : `this.links = this.cl.list(this.owner)` pour refléter la status updatée par le preflight.
 - Bouton **↻ refresh** ajouté dans la topbar de la liste pour resync manuel à la demande.
+- V1 : le refresh **n'annule plus automatiquement** les liens expirés au chargement de la page — ça déclenchait une demande de passkey non sollicitée. L'annulation reste une action explicite.
+
+## Compilation contrats — `HH404 ReentrancyGuardUpgradeable.sol not found` (V1)
+
+**Symptôme** : après un `npm install` dans `packages/vit-safe-modules`, plus rien ne compile :
+
+```
+Error HH404: File @openzeppelin/contracts-upgradeable/utils/ReentrancyGuardUpgradeable.sol,
+imported from contracts/VitClaimLink.sol, not found.
+```
+
+**Cause racine — deux effets combinés** :
+
+1. `vit-safe-modules` est un workspace npm de la racine, mais possède aussi son propre `package-lock.json`. Avec `"@openzeppelin/contracts-upgradeable": "^5.0.2"`, npm a jugé le 5.6.1 de la racine satisfaisant et a **vidé la copie locale** en 5.0.2 qui shadowait jusque-là.
+2. **OZ 5.5 a supprimé `ReentrancyGuardUpgradeable`** : le `ReentrancyGuard` standard utilise un slot ERC-7201 fixe, est annoté `@custom:stateless` et devient donc proxy-safe. Dernière version qui embarque encore le variant upgradeable : **5.4.0**.
+
+**Fausse piste** : migrer vers le `ReentrancyGuard` standard. `@openzeppelin/hardhat-upgrades` 3.9.1 (upgrades-core 1.46.0) ne connaît pas l'annotation `@custom:stateless` — aucune occurrence de « stateless » dans son code — et rejette le déploiement : *« Contract ReentrancyGuard has a constructor / Define an initializer instead »*.
+
+**Fix** : pin **exact** `"5.4.0"` sur `@openzeppelin/contracts` et `@openzeppelin/contracts-upgradeable` dans `packages/vit-safe-modules/package.json`. Un pin exact ne peut pas être dédupliqué vers le 5.6.1 de la racine, ce qui force l'installation locale et rend le build reproductible.
+
+**À retenir** : dans ce monorepo, une plage `^` sur une dépendance de contrats est un piège — le prochain `npm install` à la racine peut changer la version effective sans toucher au package.
+
+## Déploiement — pas de `.env` chargé par Hardhat (V1)
+
+`hardhat.config.js` lisait `process.env.PRIVATE_KEY` sans jamais charger de fichier. Contrairement aux scripts Node du repo (qui utilisent `node --env-file=.env`), Hardhat n'a pas d'équivalent natif. Ajout de `require('dotenv').config({ path: path.join(__dirname, '.env'), quiet: true })` en tête de config — chemin absolu pour que ça marche aussi quand hardhat est lancé depuis la racine du monorepo.
