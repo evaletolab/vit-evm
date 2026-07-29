@@ -2,8 +2,11 @@ import { Component, OnInit } from '@angular/core';
 import { ActivatedRoute } from '@angular/router';
 import { ethers } from 'ethers';
 import { ClaimLinkService } from '../../claimlink/claimlink.service';
+import { enqueuePendingClaim, removePendingClaim } from '../../claimlink/pending-claims';
 import { ContactsService } from '../../contacts/contacts.service';
+import { TxOverlayService } from '../../wallet/tx-overlay.service';
 import { WalletService } from '../../wallet/wallet.service';
+import { WalletState } from '../../wallet/wallet.types';
 import { formatZchfAmount, shortAddress } from '../../wallet/wallet.utils';
 
 type Step = 'loading' | 'ready' | 'claiming' | 'done' | 'error';
@@ -19,6 +22,9 @@ export class PageClaimComponent implements OnInit {
   id = '';
   secret = '';
   fromName = '';
+  contactEncoded = '';
+  contactTel = '';
+  contactEmail = '';
 
   amount = '';
   senderAddress = '';
@@ -39,19 +45,29 @@ export class PageClaimComponent implements OnInit {
     private cl: ClaimLinkService,
     private wallet: WalletService,
     private contacts: ContactsService,
+    private txOverlay: TxOverlayService,
   ) {}
 
-  /** After wallet creation, return to this claim URL (preserve optional from). */
+  /** After wallet creation, return to this claim URL (preserve contact). */
   get walletReturnParams(): { returnUrl: string } {
     const params = new URLSearchParams({ id: this.id, s: this.secret });
-    if (this.fromName) params.set('from', this.fromName);
+    if (this.contactEncoded) params.set('c', this.contactEncoded);
+    else if (this.fromName) params.set('from', this.fromName);
     return { returnUrl: `/claim?${params.toString()}` };
   }
 
   async ngOnInit(): Promise<void> {
     this.id = this.route.snapshot.queryParamMap.get('id') || '';
     this.secret = this.route.snapshot.queryParamMap.get('s') || '';
-    this.fromName = (this.route.snapshot.queryParamMap.get('from') || '').trim();
+    this.contactEncoded = this.route.snapshot.queryParamMap.get('c') || '';
+    const legacyFrom = (this.route.snapshot.queryParamMap.get('from') || '').trim();
+    const contact = this.cl.parseContactFromQuery(
+      this.contactEncoded || null,
+      legacyFrom || null,
+    );
+    this.fromName = contact?.n || '';
+    this.contactTel = contact?.t || '';
+    this.contactEmail = contact?.e || '';
 
     if (!this.id || !this.secret) {
       this.fail('Lien invalide (paramètres manquants)');
@@ -60,6 +76,22 @@ export class PageClaimComponent implements OnInit {
     if (!this.cl.contractAddress()) {
       this.fail('Contrat ClaimLink non configuré');
       return;
+    }
+
+    // No wallet yet: queue the claim so onboarding can resume it (several links
+    // may be opened before the first wallet exists).
+    let state: WalletState | null = null;
+    try {
+      state = await this.wallet.loadWallet();
+    } catch { /* storage unavailable — treated as "no wallet" */ }
+    if (!state) {
+      enqueuePendingClaim({
+        id: this.id,
+        secret: this.secret,
+        fromName: this.fromName || undefined,
+        contactEncoded: this.contactEncoded || undefined,
+        returnQuery: this.walletReturnParams.returnUrl.replace(/^\/claim\?/, ''),
+      });
     }
 
     try {
@@ -87,14 +119,11 @@ export class PageClaimComponent implements OnInit {
         this.fail('Secret invalide pour ce lien.'); return;
       }
 
-      try {
-        const state = await this.wallet.loadWallet();
-        if (state) {
-          this.hasWallet = true;
-          this.walletAddress = state.accountAddress;
-          this.maybeOfferContact(state.accountAddress);
-        }
-      } catch { /* no wallet yet */ }
+      if (state) {
+        this.hasWallet = true;
+        this.walletAddress = state.accountAddress;
+        this.maybeOfferContact(state.accountAddress);
+      }
 
       this.step = 'ready';
     } catch (e: unknown) {
@@ -108,11 +137,14 @@ export class PageClaimComponent implements OnInit {
       this.contacts.upsert(this.walletAddress, {
         name: this.fromName,
         address: this.senderAddress,
-        source: 'manual',
-        note: 'Via claim link',
+        tel: this.contactTel || undefined,
+        email: this.contactEmail || undefined,
+        source: 'claim',
+        status: 'unconfirmed',
+        note: 'Via claim link — à confirmer',
       });
       this.contactSaved = true;
-      this.contactHint = `${this.fromName} ajouté au carnet.`;
+      this.contactHint = `${this.fromName} ajouté au carnet (à confirmer).`;
     } catch (e: unknown) {
       this.contactHint = e instanceof Error ? e.message : 'Impossible d\'ajouter le contact';
     }
@@ -125,16 +157,25 @@ export class PageClaimComponent implements OnInit {
     }
     this.step = 'claiming';
     this.error = '';
+    this.txOverlay.show(`Récupération de ${this.amount} xCHF…`);
     try {
-      const op = await this.cl.claim(this.id, this.secret, this.walletAddress);
-      if (!op.success) throw new Error(op.error || 'Échec du claim');
+      const op = await this.cl.claim(
+        this.id,
+        this.secret,
+        this.walletAddress,
+        this.contactEncoded || null,
+      );
+      if (!op.success) throw new Error(this.cl.mapClaimError(op.error || 'Échec du claim'));
       this.txHash = op.transactionHash || '';
       if (this.fromName && !this.contactSaved) {
         this.saveSenderContact();
       }
+      removePendingClaim(this.id);
+      this.txOverlay.succeed('Argent reçu');
       this.step = 'done';
     } catch (e: unknown) {
-      this.error = e instanceof Error ? e.message : 'Erreur';
+      this.error = this.cl.mapClaimError(e);
+      this.txOverlay.fail('Récupération impossible', this.error);
       this.step = 'ready';
     }
   }

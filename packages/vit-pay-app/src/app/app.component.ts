@@ -1,7 +1,9 @@
 import { ChangeDetectorRef, Component, OnDestroy, OnInit } from '@angular/core';
+import { NavigationEnd, Router } from '@angular/router';
 import { SwUpdate, VersionReadyEvent } from '@angular/service-worker';
 import { Subject, filter, interval, takeUntil } from 'rxjs';
 import { ThemeService } from './theme/theme.service';
+import { WalletStorageService } from './wallet/wallet-storage.service';
 import { WalletUnlockService } from './wallet/wallet-unlock.service';
 
 @Component({
@@ -15,6 +17,8 @@ export class AppComponent implements OnInit, OnDestroy {
   showUnlock = false;
   unlockBusy = false;
   unlockError = '';
+  /** Barre de navigation masquée tant qu'aucun wallet n'existe (onboarding). */
+  hasWallet = false;
 
   private deferredPrompt: any = null;
   private destroy$ = new Subject<void>();
@@ -24,12 +28,19 @@ export class AppComponent implements OnInit, OnDestroy {
     private update: SwUpdate,
     private cdr: ChangeDetectorRef,
     private unlock: WalletUnlockService,
+    private storage: WalletStorageService,
+    private router: Router,
   ) {
     theme.init();
   }
 
   ngOnInit(): void {
     this.refreshUnlockGate();
+    this.refreshWalletGate();
+    this.router.events.pipe(
+      filter((e): e is NavigationEnd => e instanceof NavigationEnd),
+      takeUntil(this.destroy$)
+    ).subscribe(() => this.refreshWalletGate());
     this.initServiceWorkerUpdates();
     this.setupPWAInstallPrompt();
   }
@@ -65,6 +76,11 @@ export class AppComponent implements OnInit, OnDestroy {
   dismissInstallPrompt(): void {
     this.showInstallPrompt = false;
     try { sessionStorage.setItem('vit-install-dismissed', '1'); } catch {}
+    this.cdr.markForCheck();
+  }
+
+  private refreshWalletGate(): void {
+    this.hasWallet = !!this.storage.load();
     this.cdr.markForCheck();
   }
 

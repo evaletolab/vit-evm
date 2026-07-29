@@ -5,9 +5,12 @@ async function main() {
   console.log('Deployer:', deployer.address);
 
   const ClaimLink = await hre.ethers.getContractFactory('VitClaimLink');
-  const cl = await ClaimLink.deploy();
+  const cl = await hre.upgrades.deployProxy(ClaimLink, [deployer.address], {
+    initializer: 'initialize',
+    kind: 'uups',
+  });
   await cl.waitForDeployment();
-  console.log('VitClaimLink:', await cl.getAddress());
+  console.log('VitClaimLink (proxy):', await cl.getAddress());
 }
 
 main().catch((e) => {

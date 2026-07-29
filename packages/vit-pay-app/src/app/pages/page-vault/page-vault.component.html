@@ -1,0 +1,108 @@
+<section class="vault-page">
+  <header>
+    <h1>Coffre de secours</h1>
+    <p class="handle">{{ handle }}</p>
+  </header>
+
+  <p *ngIf="error" class="error" role="alert">{{ error }}</p>
+  <p *ngIf="progress" class="hint">{{ progress }}</p>
+
+  <article *ngIf="armed && !rotateMode" class="card">
+    <p>Les codes de secours sont déjà activés pour ce compte.</p>
+    <button type="button" (click)="rotateMode = true">Faire tourner les codes</button>
+    <button type="button" class="secondary" routerLink="/">Retour</button>
+  </article>
+
+  <article *ngIf="rotateMode && slots.length === 0" class="card">
+    <p>
+      Après une restauration, les anciens codes restent valables.
+      Générez-en trois nouveaux et sauvegardez-les (les anciens seront révoqués on-chain).
+    </p>
+    <button type="button" (click)="rotateCodes()" [disabled]="busy">
+      {{ generating ? 'Rotation…' : 'Générer de nouveaux codes' }}
+    </button>
+    <button type="button" class="secondary" routerLink="/" [disabled]="busy">Plus tard</button>
+  </article>
+
+  <article *ngIf="!armed && !rotateMode && slots.length === 0" class="card">
+    <p>
+      Trois codes indépendants protègent votre compte (seuil <strong>2 sur 3</strong>).
+      Un code volé ne suffit pas — mais perdre les deux QR rend le compte irrécupérable.
+    </p>
+    <p class="hint">
+      Délai de sécurité actuel : <strong>3 minutes</strong> (configuration de développement).
+    </p>
+    <button type="button" (click)="generate()" [disabled]="busy">
+      {{ generating ? 'Génération…' : 'Générer mes 3 codes' }}
+    </button>
+    <button type="button" class="secondary" (click)="skip()" [disabled]="busy">
+      Passer (sans recovery)
+    </button>
+    <button type="button" class="secondary" (click)="abort()" [disabled]="busy">Annuler</button>
+  </article>
+
+  <ng-container *ngIf="slots.length">
+    <article *ngFor="let slot of slots" class="card code-card">
+      <header class="code-head">
+        <h2>{{ handle }} · code-{{ slot.material.index }}</h2>
+        <span class="vit-chip" *ngIf="slot.saved">✓</span>
+      </header>
+      <p class="code"><code>{{ slot.material.code }}</code></p>
+
+      <div class="dest-row">
+        <button
+          type="button"
+          [class.active]="slot.dest === 'vault'"
+          (click)="setDest(slot, 'vault')"
+          [disabled]="busy">
+          Coffre
+        </button>
+        <button
+          type="button"
+          [class.active]="slot.dest === 'qr'"
+          (click)="setDest(slot, 'qr')"
+          [disabled]="busy">
+          QR papier
+        </button>
+      </div>
+
+      <ng-container *ngIf="slot.dest === 'vault'">
+        <button type="button" (click)="saveVault(slot)" [disabled]="busy">
+          {{ slot.saved ? '✓ Enregistré dans le coffre' : 'Enregistrer dans le coffre' }}
+        </button>
+      </ng-container>
+
+      <ng-container *ngIf="slot.dest === 'qr'">
+        <img *ngIf="slot.qrDataUrl" [src]="slot.qrDataUrl" alt="QR code de secours" class="qr" />
+        <button type="button" class="secondary" (click)="copyCode(slot)" [disabled]="busy">
+          Copier le code
+        </button>
+        <button type="button" (click)="markQrSaved(slot)" [disabled]="busy || slot.saved">
+          {{ slot.saved ? '✓ QR sauvegardé' : 'J’ai imprimé / photographié' }}
+        </button>
+      </ng-container>
+    </article>
+
+    <p class="hint">
+      Destinations distinctes confirmées : {{ distinctDestCount }} / 2 minimum.
+    </p>
+
+    <button
+      *ngIf="!rotateMode"
+      type="button"
+      (click)="continueArm()"
+      [disabled]="busy || !canContinue">
+      {{ busy ? 'Activation…' : 'Activer les codes on-chain' }}
+    </button>
+    <button
+      *ngIf="rotateMode"
+      type="button"
+      (click)="confirmRotated()"
+      [disabled]="busy || !canContinue">
+      {{ busy ? '…' : 'J’ai sauvegardé les nouveaux codes' }}
+    </button>
+    <button *ngIf="!rotateMode" type="button" class="secondary" (click)="skip()" [disabled]="busy">
+      Passer (sans activer)
+    </button>
+  </ng-container>
+</section>

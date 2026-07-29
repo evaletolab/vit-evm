@@ -1,0 +1,65 @@
+<section class="restore-page">
+  <header>
+    <h1>Récupérer mon compte</h1>
+    <p class="handle">{{ handle }}</p>
+  </header>
+
+  <p *ngIf="error" class="error" role="alert">{{ error }}</p>
+  <p *ngIf="progress" class="hint">{{ progress }}</p>
+
+  <!-- Formulaire visible : déclenche autofill du coffre (username = nom@vit.app) -->
+  <form class="card autofill-form" autocomplete="on" (submit)="$event.preventDefault(); onVaultAutofill()">
+    <label>
+      Identifiant
+      <input
+        #userField
+        type="text"
+        name="username"
+        autocomplete="username"
+        [value]="handle"
+        readonly
+      />
+    </label>
+    <label>
+      Code depuis le coffre
+      <input
+        #passField
+        type="password"
+        name="password"
+        autocomplete="current-password"
+        [(ngModel)]="code1"
+        (change)="onVaultAutofill()"
+        placeholder="Collé automatiquement ou saisi"
+      />
+    </label>
+    <button type="submit" class="secondary">Utiliser le coffre</button>
+  </form>
+
+  <article class="card">
+    <h2>Soft restore</h2>
+    <p class="hint">Passkey encore sur cet appareil + code 1 (métadonnées).</p>
+    <button type="button" (click)="softRestore()" [disabled]="busy || !code1 || !softOk">
+      Restaurer sans transaction
+    </button>
+  </article>
+
+  <article class="card">
+    <h2>Hard restore (2 codes)</h2>
+    <label>
+      Code 1
+      <textarea [(ngModel)]="code1" rows="2" [disabled]="busy" placeholder="Charge utile ou collage coffre"></textarea>
+    </label>
+    <label>
+      Code 2
+      <textarea [(ngModel)]="code2" rows="2" [disabled]="busy" placeholder="Second code (QR ou saisie)"></textarea>
+    </label>
+    <button
+      type="button"
+      (click)="hardRestore()"
+      [disabled]="busy || !code1 || !code2">
+      {{ busy ? 'Restauration…' : 'Restaurer avec 2 codes' }}
+    </button>
+  </article>
+
+  <button type="button" class="secondary" routerLink="/wallet" [disabled]="busy">Annuler</button>
+</section>

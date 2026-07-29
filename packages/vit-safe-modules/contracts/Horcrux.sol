@@ -1,6 +1,9 @@
 pragma solidity ^0.8.0;
 // SPDX-License-Identifier: MIT
 
+// DEPRECATED (V1): do not deploy or integrate. Off-chain BIP39 backup kit replaces Horcrux.
+// Score ~2/10 — public mapping, XOR, broken recover. Historical reference only.
+
 // FIXME use upgrade contracts
 // https://docs.openzeppelin.com/learn/upgrading-smart-contracts
 // https://medium.com/coinmonks/upgrading-smart-contracts-with-openzeppelin-upgrades-plugins-in-typescript-hardhat-dd5ca6d01585

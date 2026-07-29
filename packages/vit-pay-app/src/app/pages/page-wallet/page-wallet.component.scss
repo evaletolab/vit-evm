@@ -25,20 +25,21 @@
       -webkit-background-clip: text;
       background-clip: text;
       color: transparent;
+      opacity: 0;
     }
-    .subtitle {
+    .tagline {
       margin: 0;
+      max-width: 26rem;
       color: var(--text-muted);
-      font-family: 'JetBrains Mono', monospace;
-      font-size: 11px;
-      letter-spacing: 2px;
-      text-transform: uppercase;
+      font-size: 1.5rem;
+      line-height: 1.45;
+      text-align: center;
     }
   }
 
   .card {
-    background: var(--glass);
-    border: 1px solid var(--hairline);
+    -background: var(--glass);
+    -border: 1px solid var(--hairline);
     color: var(--text);
     border-radius: var(--r-card);
     padding: 1.1rem 1.15rem;
@@ -400,22 +401,6 @@
       .warn { color: var(--warning); }
     }
 
-    .daily-limit {
-      display: inline-flex;
-      align-items: center;
-      gap: 6px;
-      background: rgba(124,92,255,.14);
-      border: 1px solid rgba(124,92,255,.32);
-      color: var(--text);
-      padding: 0.4rem 0.85rem;
-      border-radius: var(--r-pill);
-      font-family: 'JetBrains Mono', monospace;
-      font-size: 0.8rem;
-      letter-spacing: 1px;
-      align-self: flex-start;
-      strong { font-weight: 700; color: var(--violet); }
-    }
-
     details.debug {
       summary {
         cursor: pointer;
@@ -561,34 +546,4 @@
     margin: 0;
     font-weight: 600;
   }
-}
-
-.recovery-actions {
-  display: flex;
-  flex-direction: column;
-  gap: 0.5rem;
-  margin-top: 0.5rem;
-
-  button.danger {
-    background: rgba(255,107,133,.14);
-    border: 1px solid rgba(255,107,133,.35);
-    color: var(--negative);
-
-    &:hover:not(:disabled) {
-      background: rgba(255,107,133,.22);
-    }
-  }
-}
-
-.hint.warn {
-  margin-top: 0.5rem;
-  padding: 0.5rem 0.7rem;
-  border-radius: var(--r-tile);
-  background: rgba(255,180,84,.10);
-  border: 1px solid rgba(255,180,84,.25);
-  color: var(--warning);
-  font-size: 12.5px;
-  line-height: 1.4;
-
-  strong { color: var(--text); }
 }

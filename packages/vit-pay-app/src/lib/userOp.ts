@@ -90,4 +90,28 @@ async function signAndSendUserOp(
   return await smartAccount.sendUserOperation(userOp, bundlerUrl)
 }
 
-export { signAndSendUserOp }
+/**
+ * Sign a UserOp with an EOA private key (recovery owner path).
+ *
+ * `smartAccount` must already point at the target Safe — for the restore flow
+ * that means `new SafeAccount(safeAddress)` on a deployed account, so the
+ * UserOp carries no init code.
+ * The key comes from the 12 words the user just typed: keep it in memory only,
+ * never log it and never persist it.
+ */
+async function signAndSendUserOpWithEoa(
+  smartAccount: SafeAccount,
+  userOp: UserOperationV7,
+  privateKey: string,
+  chainId: bigint = environment.chainId,
+  bundlerUrl: string = environment.bundlerUrl,
+): Promise<SendUseroperationResponse> {
+  userOp.signature = smartAccount.signUserOperation(
+    userOp,
+    [privateKey],
+    chainId,
+  );
+  return await smartAccount.sendUserOperation(userOp, bundlerUrl);
+}
+
+export { signAndSendUserOp, signAndSendUserOpWithEoa }

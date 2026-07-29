@@ -1,92 +1,139 @@
 <section class="wallet-page">
   <header>
     <h1>ViT</h1>
-    <p class="subtitle">Paiements sécurisés · sans frais</p>
+    <p class="tagline" *ngIf="view === 'no-wallet'">
+      ViT est un portefeuille numérique aussi simple et discret que celui dans votre poche.
+    </p>
   </header>
 
   <p *ngIf="error" class="error" role="alert">{{ error }}</p>
+  <p *ngIf="notice" class="hint" role="status">{{ notice }}</p>
 
-  <!-- F1 : créer un wallet -->
-  <article *ngIf="view === 'no-wallet'" class="card">
-    <h2>Créer mon compte</h2>
-    <p>
-      Choisissez un pseudo connu de vos amis, puis protégez votre argent avec
-      Face ID, Touch ID ou l'empreinte de cet appareil.
+  <!-- Landing : choix de nom local (pas une réservation on-chain) -->
+  <article *ngIf="view === 'no-wallet'" class="card landing">
+    <div class="landing-logo" aria-hidden="true">V</div>
+    <h2>Choisissez votre nom</h2>
+    <p class="hint">
+      Identifiant privé sur cet appareil — pas encore unique sur le réseau.
     </p>
-    <label>
-      Pseudo / prénom
+    <div class="name-field" role="group" aria-label="Nom ViT">
       <input
         type="text"
-        [(ngModel)]="displayName"
-        placeholder="ex. Delphine"
-        autocomplete="nickname"
-        maxlength="40"
+        [ngModel]="walletName"
+        (ngModelChange)="onNameInput($event)"
+        placeholder="votre-nom"
+        autocomplete="username"
+        maxlength="20"
         [disabled]="busy"
+        aria-label="Nom"
       />
-    </label>
-    <button (click)="createWallet()" [disabled]="busy || displayName.trim().length < 2">
-      {{ busy ? 'Création…' : 'Créer mon compte' }}
-    </button>
-
-    <hr />
-
-    <h2>Déjà un compte ?</h2>
-    <p>
-      Si vous avez perdu l'accès à cet appareil mais que des personnes de confiance
-      sont configurées, vous pouvez récupérer votre compte ici.
-    </p>
-    <button class="secondary" (click)="openRecover()" [disabled]="busy">
-      Récupérer mon compte
-    </button>
-  </article>
-
-  <!-- Recovery depuis un nouvel appareil -->
-  <article *ngIf="view === 'recover'" class="card">
-    <h2>Récupérer mon compte</h2>
-    <p>
-      Création d'une nouvelle passkey locale, à autoriser ensuite par vos
-      guardians via la fonctionnalité <strong>recovery</strong> du
-      SocialRecoveryModule.
-    </p>
-
-    <label>
-      Adresse de votre Safe à récupérer
-      <input
-        type="text"
-        [(ngModel)]="recoverSafeAddress"
-        placeholder="0x…"
-        [disabled]="busy || !!recoverNewOwnerAddress"
-      />
-    </label>
-    <button
-      *ngIf="!recoverNewOwnerAddress"
-      (click)="startRecover()"
-      [disabled]="busy">
-      {{ busy ? 'Création passkey…' : 'Créer ma passkey de récupération' }}
-    </button>
-
-    <div *ngIf="recoverNewOwnerAddress" class="result">
-      <p>
-        ✅ Nouvelle passkey créée. Partagez cette <strong>owner address</strong>
-        à vos guardians :
-      </p>
-      <p><code>{{ recoverNewOwnerAddress }}</code></p>
-      <p>
-        Les guardians doivent appeler <code>executeRecovery({{
-        recoverSafeAddress }}, [{{ recoverNewOwnerAddress }}], 1)</code> sur le
-        SocialRecoveryModule, l'approuver à hauteur du threshold, puis attendre
-        le grace period et appeler <code>finalizeRecovery</code>. Une fois cela
-        fait, cliquer ci-dessous.
-      </p>
-      <button (click)="verifyRecover()" [disabled]="busy">
-        {{ busy ? 'Vérification…' : 'Vérifier la récupération' }}
-      </button>
+      <span class="name-suffix" aria-hidden="true">&#64;{{ nameDomain }}</span>
     </div>
 
-    <hr />
-    <button class="secondary" (click)="cancelRecover()" [disabled]="busy">
-      Annuler
-    </button>
+    <ng-container *ngIf="showContactFields">
+      <p class="hint">Contact joint à vos envois pour informer le destinataire.</p>
+
+      <div
+        class="steps-viewport"
+        (pointerdown)="onDragStart($event)"
+        (pointermove)="onDragMove($event)"
+        (pointerup)="onDragEnd()"
+        (pointercancel)="onDragEnd()">
+        <div
+          class="steps-track"
+          [class.dragging]="dragging"
+          [style.transform]="trackTransform">
+
+          <section
+            class="step"
+            [attr.inert]="contactStep === 0 ? null : ''"
+            [attr.aria-current]="contactStep === 0 ? 'step' : null">
+            <h3 #stepHeading tabindex="-1">Pseudo</h3>
+            <input
+              type="text"
+              class="step-input"
+              [(ngModel)]="displayName"
+              placeholder="Prénom ou pseudo"
+              autocomplete="name"
+              enterkeyhint="next"
+              maxlength="40"
+              [disabled]="busy"
+              (keyup.enter)="nextStep()"
+              aria-label="Prénom ou pseudo" />
+            <button
+              *ngIf="phonePickerOk"
+              type="button"
+              class="link"
+              (click)="pickSelfContact()"
+              [disabled]="busy">
+              Importer mon contact
+            </button>
+          </section>
+
+          <section
+            class="step"
+            [attr.inert]="contactStep === 1 ? null : ''"
+            [attr.aria-current]="contactStep === 1 ? 'step' : null">
+            <h3 #stepHeading tabindex="-1">Téléphone <small>optionnel</small></h3>
+            <input
+              type="tel"
+              class="step-input"
+              vitTel
+              [countryOrder]="telCountryOrder"
+              placeholder="079 123 45 67"
+              autocomplete="tel"
+              inputmode="tel"
+              enterkeyhint="next"
+              [disabled]="busy"
+              [(ngModel)]="profileTel"
+              [ngModelOptions]="{ standalone: true }"
+              aria-label="Numéro de téléphone" />
+          </section>
+
+          <section
+            class="step"
+            [attr.inert]="contactStep === 2 ? null : ''"
+            [attr.aria-current]="contactStep === 2 ? 'step' : null">
+            <h3 #stepHeading tabindex="-1">E-mail <small>optionnel</small></h3>
+            <input
+              type="email"
+              class="step-input"
+              [(ngModel)]="profileEmail"
+              placeholder="vous@exemple.ch"
+              autocomplete="email"
+              inputmode="email"
+              enterkeyhint="done"
+              [disabled]="busy"
+              (keyup.enter)="createWallet()"
+              aria-label="Adresse e-mail" />
+          </section>
+
+        </div>
+      </div>
+
+      <div class="step-dots" role="tablist" aria-label="Étapes du contact">
+        <button
+          *ngFor="let label of contactStepLabels; let i = index"
+          type="button"
+          role="tab"
+          class="step-dot"
+          [class.active]="i === contactStep"
+          [attr.aria-selected]="i === contactStep"
+          [attr.aria-label]="label"
+          (click)="goToStep(i)"
+          [disabled]="busy"></button>
+      </div>
+
+      <button type="button" (click)="createWallet()" [disabled]="busy || !canCreate">
+        {{ busy ? 'Création…' : 'Créer mon compte' }}
+      </button>
+
+      <p class="restore-link">
+        <a [routerLink]="['/', walletName, 'restore']">
+          Déjà un compte ? Récupérer avec mes codes
+        </a>
+      </p>
+    </ng-container>
   </article>
 
   <article *ngIf="view === 'loading'" class="card">
@@ -147,6 +194,24 @@
         <dt>Solde ZCHF</dt>
         <dd>{{ balance }} <button (click)="refreshBalance()" [disabled]="busy">↻</button></dd>
       </dl>
+
+      <div class="backup-status">
+        <p *ngIf="!s.recoveryEnabled" class="hint">
+          Aucun code de secours activé : si vous perdez cet appareil et sa passkey,
+          le compte est irrécupérable.
+        </p>
+        <p *ngIf="s.recoveryEnabled && backupKitPending" class="hint">
+          Pensez à vérifier vos codes de secours (coffre / QR).
+        </p>
+        <button
+          *ngIf="s.walletName && !s.recoveryEnabled"
+          type="button"
+          class="secondary"
+          (click)="openVault()"
+          [disabled]="busy">
+          {{ busy ? '…' : 'Configurer les codes de secours' }}
+        </button>
+      </div>
     </article>
 
     <!-- F2 : recevoir des ZCHF de test (MockZCHF) — dev only -->

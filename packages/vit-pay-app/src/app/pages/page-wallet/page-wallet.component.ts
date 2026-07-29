@@ -9,9 +9,11 @@ import {
   ViewChildren,
 } from '@angular/core';
 import { ActivatedRoute, Router } from '@angular/router';
+import type { Iso2 } from 'intl-tel-input';
 import { WalletService } from '../../wallet/wallet.service';
 import { WalletUnlockService } from '../../wallet/wallet-unlock.service';
 import { ThemeService } from '../../theme/theme.service';
+import { ContactsService } from '../../contacts/contacts.service';
 import {
   RecoveryRequest,
   UserOperationDebug,
@@ -27,8 +29,13 @@ import {
   parseZchfAmount,
   shortAddress,
 } from '../../wallet/wallet.utils';
+import {
+  isValidWalletName,
+  normalizeWalletName,
+  WALLET_NAME_DOMAIN,
+} from '../../wallet/wallet-name';
 
-type ViewState = 'no-wallet' | 'loading' | 'ready' | 'recover';
+type ViewState = 'no-wallet' | 'loading' | 'ready';
 
 @Component({
   selector: 'vit-page-wallet',
@@ -48,13 +55,49 @@ export class PageWalletComponent implements OnInit, AfterViewInit, OnDestroy {
   }
   get cardTitles(): string[] { return this.cardTabs.map((t) => t.title); }
   get devMode(): boolean { return this.theme.isDevMode(); }
+  get phonePickerOk(): boolean {
+    return typeof navigator !== 'undefined'
+      && !!(navigator as any).contacts
+      && typeof (navigator as any).contacts.select === 'function';
+  }
+  get nameValid(): boolean {
+    return isValidWalletName(this.walletName);
+  }
+  get showContactFields(): boolean {
+    return this.nameValid;
+  }
+  /** Création active une fois le nom valide et le pseudo de contact renseigné. */
+  get canCreate(): boolean {
+    return this.nameValid && this.displayName.trim().length >= 2;
+  }
+  readonly nameDomain = WALLET_NAME_DOMAIN;
+
+  // --- Onboarding contact : un champ par étape (pseudo → tél → e-mail) ---
+  readonly contactStepLabels = ['Pseudo', 'Téléphone', 'E-mail'];
+  readonly contactStepCount = this.contactStepLabels.length;
+  contactStep = 0;
+  dragging = false;
+  private dragStartX = 0;
+  private dragDx = 0;
+  /** Au-delà de ce déplacement horizontal, on change d'étape. */
+  private static readonly SWIPE_THRESHOLD_PX = 48;
+  /** Suisse en tête, puis les pays frontaliers. */
+  readonly telCountryOrder: Iso2[] = ['ch', 'fr', 'de', 'it', 'at'];
+
+  get trackTransform(): string {
+    return `translateX(calc(${this.contactStep * -100}% + ${this.dragDx}px))`;
+  }
+
 
   @ViewChild('deck') deckRef?: ElementRef<HTMLElement>;
   @ViewChildren('deckCard') deckCards?: QueryList<ElementRef<HTMLElement>>;
+  @ViewChildren('stepHeading') stepHeadings?: QueryList<ElementRef<HTMLElement>>;
   private cardObserver?: IntersectionObserver;
   state: WalletState | null = null;
   balance: string = '—';
   error?: string;
+  /** Non-blocking informational message (e.g. post-restore advice). */
+  notice?: string;
   busy = false;
 
   // faucet (MockZCHF)
@@ -76,27 +119,30 @@ export class PageWalletComponent implements OnInit, AfterViewInit, OnDestroy {
   addDeviceResult?: { address: string; op: UserOperationResult };
   externalOwnerAddress = '';
 
-  // recovery
+  // recovery request (dev / account card)
   guardiansInput = '';
   guardianThreshold = 1;
   recoveryRequest: RecoveryRequest | null = null;
   lastRecoveryOp?: UserOperationResult;
 
-  // recovery depuis un nouvel appareil (vue 'recover')
-  recoverSafeAddress = '';
-  recoverNewOwnerAddress = '';
-
-  // exported for template
   readonly shortAddress = shortAddress;
 
   iban: string | null = null;
-  /** Pseudo / prénom demandé à la création. */
+  /** Identité locale <nom>@vit.app */
+  walletName = '';
+  /** Pseudo affiché (contact). */
   displayName = '';
+  profileTel = '';
+  profileEmail = '';
+
+  /** Codes not armed, or vault skipped. */
+  backupKitPending = false;
 
   constructor(
     private wallet: WalletService,
     private unlock: WalletUnlockService,
     private theme: ThemeService,
+    private contacts: ContactsService,
     private route: ActivatedRoute,
     private router: Router,
   ) {
@@ -121,6 +167,11 @@ export class PageWalletComponent implements OnInit, AfterViewInit, OnDestroy {
       if (state) {
         this.state = state;
         this.view = 'ready';
+        // The kit material cannot be re-derived from storage, so we can only
+        // warn: the user has to generate a new recovery code to fix this.
+        this.backupKitPending =
+          state.backupKitConfirmed === false ||
+          (!!state.walletName && !state.recoveryEnabled);
         await this.refreshBalance();
         await this.refreshRecoveryRequest();
         this.redirectAfterCreate();
@@ -136,50 +187,62 @@ export class PageWalletComponent implements OnInit, AfterViewInit, OnDestroy {
     }
   }
 
-  openRecover(): void {
-    this.error = undefined;
-    this.recoverSafeAddress = '';
-    this.recoverNewOwnerAddress = '';
-    this.wallet.cancelPendingRecovery();
-    this.view = 'recover';
+  /** « C'est moi » — prefill the profile from the device address book. */
+  async pickSelfContact(): Promise<void> {
+    const me = await this.contacts.pickSelfFromPhone();
+    if (!me) return;
+    if (me.name) this.displayName = me.name;
+    if (me.tel) this.profileTel = me.tel;
+    if (me.email) this.profileEmail = me.email;
   }
 
-  cancelRecover(): void {
-    this.wallet.cancelPendingRecovery();
-    this.recoverSafeAddress = '';
-    this.recoverNewOwnerAddress = '';
-    this.error = undefined;
-    this.view = 'no-wallet';
+  onNameInput(value: string): void {
+    this.walletName = normalizeWalletName(value).replace(/[^a-z0-9-]/g, '');
   }
 
-  async startRecover(): Promise<void> {
-    this.busy = true;
-    this.error = undefined;
-    try {
-      const out = await this.wallet.startNewDeviceRecovery(this.recoverSafeAddress);
-      this.recoverNewOwnerAddress = out.newOwnerAddress;
-    } catch (err) {
-      this.error = mapPasskeyError(err);
-    } finally {
-      this.busy = false;
-    }
+  nextStep(): void {
+    this.goToStep(this.contactStep + 1);
   }
 
-  async verifyRecover(): Promise<void> {
-    this.busy = true;
-    this.error = undefined;
-    try {
-      this.state = await this.wallet.verifyAndAdoptRecoveredWallet();
-      this.recoverSafeAddress = '';
-      this.recoverNewOwnerAddress = '';
-      this.view = 'ready';
-      await this.refreshBalance();
-      await this.refreshRecoveryRequest();
-    } catch (err) {
-      this.error = err instanceof Error ? err.message : String(err);
-    } finally {
-      this.busy = false;
-    }
+  onDragStart(event: PointerEvent): void {
+    if (this.busy) return;
+    this.dragStartX = event.clientX;
+    this.dragDx = 0;
+    this.dragging = true;
+  }
+
+  onDragMove(event: PointerEvent): void {
+    if (!this.dragging) return;
+    const dx = event.clientX - this.dragStartX;
+    // Pas de rebond au-delà de la première et de la dernière étape.
+    const atStart = this.contactStep === 0 && dx > 0;
+    const atEnd = this.contactStep === this.contactStepCount - 1 && dx < 0;
+    this.dragDx = atStart || atEnd ? dx / 4 : dx;
+  }
+
+  onDragEnd(): void {
+    if (!this.dragging) return;
+    const dx = this.dragDx;
+    this.dragging = false;
+    this.dragDx = 0;
+    if (Math.abs(dx) < PageWalletComponent.SWIPE_THRESHOLD_PX) return;
+    this.goToStep(this.contactStep + (dx < 0 ? 1 : -1));
+  }
+
+  goToStep(index: number): void {
+    const next = Math.min(Math.max(index, 0), this.contactStepCount - 1);
+    if (next === this.contactStep) return;
+    this.contactStep = next;
+    // Le lecteur d'écran doit annoncer la nouvelle étape : on déplace le focus
+    // sur son titre une fois le rendu appliqué.
+    setTimeout(() => {
+      this.stepHeadings?.get(next)?.nativeElement.focus({ preventScroll: true });
+    });
+  }
+
+  openVault(): void {
+    const n = this.state?.walletName;
+    if (n) void this.router.navigate(['/', n, 'vault']);
   }
 
   async createWallet(): Promise<void> {
@@ -189,17 +252,20 @@ export class PageWalletComponent implements OnInit, AfterViewInit, OnDestroy {
       if (!isWebAuthnAvailable()) {
         throw new Error('WebAuthn is not available in this browser');
       }
-      if (this.displayName.trim().length < 2) {
-        throw new Error('Indiquez un pseudo d\'au moins 2 caractères');
+      if (!isValidWalletName(this.walletName)) {
+        throw new Error('Choisissez un nom valide (3–20 caractères, a-z 0-9 -)');
       }
-      this.state = await this.wallet.createWalletWithPasskey(this.displayName);
-      this.unlock.markUnlocked();
-      this.view = 'ready';
-      await this.refreshBalance();
-      this.redirectAfterCreate();
+      const state = await this.wallet.createWalletWithPasskey(this.walletName, {
+        displayName: this.displayName || this.walletName,
+        tel: this.profileTel,
+        email: this.profileEmail,
+      });
+      this.state = state;
+      await this.router.navigate(['/', state.walletName!, 'vault']);
     } catch (err) {
+      this.wallet.abortUnconfirmedWallet();
       const msg = err instanceof Error ? err.message : String(err);
-      this.error = /pseudo|caractères/i.test(msg) ? msg : mapPasskeyError(err);
+      this.error = /nom|caractères|réservé/i.test(msg) ? msg : mapPasskeyError(err);
     } finally {
       this.busy = false;
     }

@@ -19,6 +19,19 @@ import {
   PasskeyLocalStorageFormat,
 } from '../../lib/passkeys';
 import { signAndSendUserOp } from '../../lib/userOp';
+import {
+  GUARDIAN_COUNT,
+  GUARDIAN_THRESHOLD,
+  RecoveryCodeMaterial,
+  RecoveryCodePayload,
+  buildCodePayload,
+  decodeCodePayload,
+  deriveFromPayload,
+  generateGuardianCodes,
+  resolveWalletAddress,
+} from './recovery-codes';
+import { validateWalletName } from './wallet-name';
+import { encodeContactPayload, type ClaimContactPayload } from '../claimlink/claim-contact';
 
 // Fix 3 (journal §17) — Override les 5 addresses webauthn vers les contracts
 // canoniques Safe Passkey Module v0.2.1 (exposés via SafeMultiChainSigAccountV1).
@@ -92,10 +105,13 @@ export interface NewDeviceRecoveryStart {
   safeAddress: string;
 }
 const CLAIMLINK_ABI = [
-  'function create(bytes32 id, address token, uint128 amount, uint64 expiry, bytes32 secretHash)',
-  'function claim(bytes32 id, bytes32 secret, address recipient)',
+  'function create(bytes32 id, address token, uint128 amount, uint64 expiry, bytes32 secretHash, bytes32 metaHash)',
+  'function claim(bytes32 id, bytes32 secret, address recipient, bytes32 expectedMetaHash)',
   'function cancel(bytes32 id)',
-  'function getLink(bytes32 id) view returns (tuple(address sender, address token, uint128 amount, uint64 expiry, uint8 status, bytes32 secretHash))',
+  'function cancelExpired(bytes32 id)',
+  'function getLink(bytes32 id) view returns (tuple(address sender, address token, uint128 amount, uint64 expiry, uint8 status, bytes32 secretHash, bytes32 metaHash))',
+  'event LinkCreated(bytes32 indexed id, address indexed sender, address indexed token, uint128 amount, uint64 expiry, bytes32 metaHash)',
+  'event LinkClaimed(bytes32 indexed id, address indexed recipient, uint128 amount)',
 ];
 
 export interface RecentTransfer {
@@ -178,6 +194,12 @@ export class WalletService {
       passkey,
       deployed,
       displayName: stored.displayName,
+      walletName: stored.walletName,
+      profileTel: stored.profileTel,
+      profileEmail: stored.profileEmail,
+      attachContactToClaims: stored.attachContactToClaims,
+      backupKitConfirmed: stored.backupKitConfirmed,
+      recoveryOwnerAddress: stored.recoveryOwnerAddress,
     };
     return this.state;
   }
@@ -186,20 +208,47 @@ export class WalletService {
     return this.state?.displayName ?? this.storage.load()?.displayName;
   }
 
-  async createWalletWithPasskey(displayName: string): Promise<WalletState> {
+  getWalletName(): string | undefined {
+    return this.state?.walletName ?? this.storage.load()?.walletName;
+  }
+
+  getProfileContact(): ClaimContactPayload | null {
+    const stored = this.storage.load();
+    const name = (this.state?.displayName ?? stored?.displayName)?.trim();
+    if (!name) return null;
+    return {
+      n: name,
+      t: this.state?.profileTel ?? stored?.profileTel,
+      e: this.state?.profileEmail ?? stored?.profileEmail,
+    };
+  }
+
+  /**
+   * Create wallet with a single passkey owner (no recovery EOA).
+   * Codes de secours are generated later on /<name>/vault and armed as
+   * SocialRecoveryModule guardians (threshold 2/3).
+   */
+  async createWalletWithPasskey(
+    walletName: string,
+    profile?: { displayName?: string; tel?: string; email?: string },
+  ): Promise<WalletState> {
     if (typeof navigator === 'undefined' || !navigator.credentials) {
-      throw new Error('WebAuthn is not available in this browser'); // mapped by mapPasskeyError
+      throw new Error('WebAuthn is not available in this browser');
     }
 
-    const name = displayName.trim();
-    if (name.length < 2) {
+    const name = validateWalletName(walletName);
+    const displayName = (profile?.displayName ?? name).trim();
+    if (displayName.length < 2) {
       throw new Error('Indiquez un pseudo d\'au moins 2 caractères');
     }
 
-    const credential = await createPasskey(name);
+    const credential = await createPasskey(displayName);
     const passkey = toLocalStorageFormat(credential);
+
+    // Mono-owner passkey — address derivation must stay consistent everywhere.
+    const ownersForAddress = [passkey.pubkeyCoordinates];
     const accountAddress = SafeAccount.createAccountAddress(
-      [passkey.pubkeyCoordinates],
+      ownersForAddress,
       INIT_CODE_WEBAUTHN_OVERRIDES,
     );
 
@@ -220,7 +269,12 @@ export class WalletService {
       owners: [ownerAddress],
       recoveryEnabled: false,
       zchfTokenAddress: this.config.zchfTokenAddress,
-      displayName: name,
+      walletName: name,
+      displayName,
+      profileTel: profile?.tel?.trim() || undefined,
+      profileEmail: profile?.email?.trim() || undefined,
+      attachContactToClaims: true,
+      backupKitConfirmed: false,
     };
     this.storage.save(stored);
 
@@ -235,9 +289,516 @@ export class WalletService {
         pubkeyCoordinates: passkey.pubkeyCoordinates,
       },
       deployed: false,
+      walletName: name,
+      displayName,
+      profileTel: stored.profileTel,
+      profileEmail: stored.profileEmail,
+      attachContactToClaims: true,
+      backupKitConfirmed: false,
+    };
+
+    return this.state;
+  }
+
+  /**
+   * Génère les 3 codes (scrypt) pour le Safe courant. Matériel éphémère —
+   * jamais persisté. Appeler avant l'écran vault.
+   */
+  async generateRecoveryCodes(
+    onProgress?: (index: number, ratio: number) => void,
+  ): Promise<RecoveryCodeMaterial[]> {
+    const state = this.requireState();
+    return generateGuardianCodes(state.accountAddress, { onProgress });
+  }
+
+  /**
+   * Arme le SocialRecoveryModule : deploy (si besoin) + enableModule +
+   * 3 guardians (seuil 2). Une seule UserOp sponsorisée.
+   */
+  async armRecoveryGuardians(
+    materials: RecoveryCodeMaterial[],
+  ): Promise<UserOperationResult> {
+    if (materials.length !== GUARDIAN_COUNT) {
+      throw new Error(`Il faut exactement ${GUARDIAN_COUNT} codes`);
+    }
+    const guardians = materials.map((m) => m.address);
+    const result = await this.enableRecovery(guardians, GUARDIAN_THRESHOLD);
+    if (result.success) {
+      const stored = this.storage.load();
+      if (stored) {
+        stored.backupKitConfirmed = true;
+        this.storage.save(stored);
+        if (this.state) this.state.backupKitConfirmed = true;
+      }
+    }
+    return result;
+  }
+
+  /** Skip vault : wallet utilisable sans recovery (bandeau permanent). */
+  skipRecoveryVault(): void {
+    const stored = this.storage.load();
+    if (!stored) return;
+    stored.backupKitConfirmed = true;
+    this.storage.save(stored);
+    if (this.state) this.state.backupKitConfirmed = true;
+  }
+
+  /** Mark vault step done without re-arming (already armed). */
+  confirmVaultSaved(): void {
+    const stored = this.storage.load();
+    if (!stored) throw new Error('Pas de wallet');
+    stored.backupKitConfirmed = true;
+    this.storage.save(stored);
+    if (this.state) this.state.backupKitConfirmed = true;
+  }
+
+  /**
+   * Roll back onboarding abandoned before vault confirmation.
+   * Refuses to clear a deployed wallet (funds may exist on-chain).
+   */
+  abortUnconfirmedWallet(): void {
+    const stored = this.storage.load();
+    if (!stored || stored.backupKitConfirmed) return;
+    if (this.state?.deployed) return;
+    this.storage.clear();
+    this.state = null;
+  }
+
+  buildCodePayloads(
+    materials: RecoveryCodeMaterial[],
+    opts?: { includeSoftMetaOnFirst?: boolean },
+  ): RecoveryCodePayload[] {
+    const state = this.requireState();
+    return materials.map((m) => {
+      const extras =
+        opts?.includeSoftMetaOnFirst && m.index === 1
+          ? {
+              credentialId: state.passkey.rawId,
+              x: '0x' + state.passkey.pubkeyCoordinates.x.toString(16),
+              y: '0x' + state.passkey.pubkeyCoordinates.y.toString(16),
+              name: state.walletName,
+            }
+          : { name: state.walletName };
+      return buildCodePayload(m, state.accountAddress, extras);
+    });
+  }
+
+  /**
+   * Hard restore : 2 codes → multiConfirmRecovery(execute) → wait → finalize.
+   * Gas : UserOps sponsorisées depuis un Safe temporaire (nouvelle passkey).
+   */
+  async restoreWithRecoveryCodes(
+    walletName: string,
+    rawPayloads: string[],
+    opts?: { onProgress?: (step: string, ratio?: number) => void },
+  ): Promise<{ state: WalletState; suggestRotateCodes: true }> {
+    const name = validateWalletName(walletName);
+    if (rawPayloads.length < GUARDIAN_THRESHOLD) {
+      throw new Error(`Il faut au moins ${GUARDIAN_THRESHOLD} codes`);
+    }
+
+    opts?.onProgress?.('decode');
+    const payloads = rawPayloads.map((r) => decodeCodePayload(r));
+    const safeAddress = resolveWalletAddress(name, payloads);
+
+    // Vérifie cohérence du nom embarqué si présent.
+    for (const p of payloads) {
+      if (p.n && p.n !== name) {
+        throw new Error(`Le code appartient à ${p.n}@vit.app, pas ${name}@vit.app`);
+      }
+    }
+
+    opts?.onProgress?.('derive', 0);
+    const keys: Array<{ privateKey: string; address: string; index: number }> = [];
+    for (let i = 0; i < payloads.length; i++) {
+      const derived = await deriveFromPayload(payloads[i], {
+        onProgress: (r) => opts?.onProgress?.('derive', (i + r) / payloads.length),
+      });
+      keys.push({ ...derived, index: payloads[i].i });
+    }
+
+    // Déduplique par adresse (2 codes distincts requis).
+    const unique = new Map(keys.map((k) => [k.address, k]));
+    if (unique.size < GUARDIAN_THRESHOLD) {
+      throw new Error('Deux codes distincts sont requis');
+    }
+    const pair = Array.from(unique.values()).slice(0, GUARDIAN_THRESHOLD);
+
+    opts?.onProgress?.('passkey');
+    if (typeof navigator === 'undefined' || !navigator.credentials) {
+      throw new Error('WebAuthn indisponible');
+    }
+    const credential = await createPasskey(name);
+    const passkey = toLocalStorageFormat(credential);
+    const newOwnerAddress = SafeAccount.getSignerLowerCaseAddress(
+      passkey.pubkeyCoordinates,
+      WEBAUTHN_CANONICAL_OVERRIDES,
+    );
+
+    // Un nouvel owner ne peut pas être un guardian (contrainte du module).
+    for (const k of pair) {
+      if (k.address === newOwnerAddress.toLowerCase()) {
+        throw new Error('Conflit owner/guardian — réessayez');
+      }
+    }
+
+    assertConfigUsable(this.config);
+    const module = new SocialRecoveryModule(this.config.socialRecoveryModuleAddress);
+
+    opts?.onProgress?.('sign');
+    const eip712 = await module.getRecoveryRequestEip712Data(
+      this.config.nodeRpcUrl,
+      this.config.chainId,
+      safeAddress,
+      [newOwnerAddress],
+      1n,
+    );
+
+    // Signatures triées par adresse croissante (exigence du contrat).
+    pair.sort((a, b) => (a.address < b.address ? -1 : a.address > b.address ? 1 : 0));
+    const signaturePairList: Array<{ signer: string; signature: string }> = [];
+    for (const k of pair) {
+      const wallet = new ethers.Wallet(k.privateKey);
+      const signature = await wallet.signTypedData(
+        eip712.domain as ethers.TypedDataDomain,
+        eip712.types as Record<string, Array<{ name: string; type: string }>>,
+        eip712.messageValue as Record<string, unknown>,
+      );
+      signaturePairList.push({ signer: k.address, signature });
+    }
+
+    const multiTx = module.createMultiConfirmRecoveryMetaTransaction(
+      safeAddress,
+      [newOwnerAddress],
+      1,
+      signaturePairList,
+      true,
+    );
+
+    opts?.onProgress?.('execute');
+    const execResult = await this.executeSponsoredModuleCallAsNewPasskey(
+      passkey,
+      multiTx,
+    );
+    if (!execResult.success) {
+      throw new Error(execResult.error ?? 'Échec multiConfirmRecovery');
+    }
+
+    opts?.onProgress?.('wait');
+    await this.waitForRecoveryGracePeriod(safeAddress);
+
+    opts?.onProgress?.('finalize');
+    const finalizeTx = module.createFinalizeRecoveryMetaTransaction(safeAddress);
+    const finResult = await this.executeSponsoredModuleCallAsNewPasskey(
+      passkey,
+      finalizeTx,
+    );
+    if (!finResult.success) {
+      throw new Error(finResult.error ?? 'Échec finalizeRecovery');
+    }
+
+    const stored: StoredWallet = {
+      version: 1,
+      accountAddress: ethers.getAddress(safeAddress),
+      chainId: Number(this.config.chainId),
+      credentialId: passkey.rawId,
+      webauthnPublicKey: {
+        x: '0x' + passkey.pubkeyCoordinates.x.toString(16),
+        y: '0x' + passkey.pubkeyCoordinates.y.toString(16),
+      },
+      owners: [newOwnerAddress.toLowerCase()],
+      recoveryEnabled: true,
+      zchfTokenAddress: this.config.zchfTokenAddress,
+      walletName: name,
       displayName: name,
+      backupKitConfirmed: true,
+    };
+    this.storage.save(stored);
+
+    this.state = {
+      accountAddress: stored.accountAddress,
+      chainId: stored.chainId,
+      owners: stored.owners,
+      recoveryEnabled: true,
+      zchfTokenAddress: stored.zchfTokenAddress,
+      passkey: {
+        rawId: passkey.rawId,
+        pubkeyCoordinates: passkey.pubkeyCoordinates,
+      },
+      deployed: true,
+      walletName: name,
+      displayName: name,
+      backupKitConfirmed: true,
+    };
+
+    return { state: this.state, suggestRotateCodes: true };
+  }
+
+  /**
+   * Soft restore : charge utile du coffre (code 1 avec cid/x/y) + passkey sync.
+   */
+  async importFromCodePayload(raw: string): Promise<WalletState> {
+    if (this.storage.load()) {
+      throw new Error('Un wallet est déjà présent sur cet appareil');
+    }
+    const payload = decodeCodePayload(raw);
+    if (!payload.cid || !payload.x || !payload.y) {
+      throw new Error(
+        'Ce code ne contient pas les métadonnées passkey — utilisez la restauration avec 2 codes',
+      );
+    }
+    const name = payload.n ? validateWalletName(payload.n) : undefined;
+    const stored: StoredWallet = {
+      version: 1,
+      accountAddress: ethers.getAddress(payload.a),
+      chainId: Number(this.config.chainId),
+      credentialId: payload.cid,
+      webauthnPublicKey: { x: payload.x, y: payload.y },
+      owners: [],
+      recoveryEnabled: true,
+      zchfTokenAddress: this.config.zchfTokenAddress,
+      walletName: name,
+      displayName: name,
+      backupKitConfirmed: true,
+    };
+
+    let deployed = false;
+    try {
+      assertConfigUsable(this.config);
+      const provider = new ethers.JsonRpcProvider(this.config.nodeRpcUrl);
+      const code = await provider.getCode(stored.accountAddress);
+      deployed = code !== '0x';
+      if (deployed) {
+        const safe = new ethers.Contract(stored.accountAddress, SAFE_GET_OWNERS_ABI, provider);
+        stored.owners = ((await safe['getOwners']()) as string[]).map((o) => o.toLowerCase());
+      }
+    } catch {
+      deployed = false;
+    }
+
+    this.storage.save(stored);
+    this.state = {
+      accountAddress: stored.accountAddress,
+      chainId: stored.chainId,
+      owners: stored.owners,
+      recoveryEnabled: true,
+      zchfTokenAddress: stored.zchfTokenAddress,
+      passkey: {
+        rawId: payload.cid,
+        pubkeyCoordinates: {
+          x: BigInt(payload.x),
+          y: BigInt(payload.y),
+        },
+      },
+      deployed,
+      walletName: name,
+      displayName: name,
+      backupKitConfirmed: true,
     };
     return this.state;
+  }
+
+  /**
+   * Rotation post-restore : revoke anciens guardians + ajoute 3 nouveaux.
+   * Les nouveaux codes sont retournés une seule fois.
+   */
+  async rotateRecoveryGuardians(
+    onProgress?: (index: number, ratio: number) => void,
+  ): Promise<{ materials: RecoveryCodeMaterial[]; operation: UserOperationResult }> {
+    const state = this.requireState();
+    if (!state.recoveryEnabled) {
+      throw new Error('Recovery non activée');
+    }
+    assertConfigUsable(this.config);
+    const module = new SocialRecoveryModule(this.config.socialRecoveryModuleAddress);
+    const current = await module.getGuardians(
+      this.config.nodeRpcUrl,
+      state.accountAddress,
+    );
+
+    const materials = await generateGuardianCodes(state.accountAddress, { onProgress });
+    const transactions: MetaTransaction[] = [];
+
+    // Revoke all current guardians down to threshold 1 temporarily, then add new ones.
+    for (let i = 0; i < current.length; i++) {
+      const remaining = current.length - i - 1;
+      const newThreshold = remaining >= 1 ? 1n : 1n;
+      transactions.push(
+        await module.createRevokeGuardianWithThresholdMetaTransaction(
+          this.config.nodeRpcUrl,
+          state.accountAddress,
+          current[i],
+          newThreshold,
+        ),
+      );
+    }
+    for (const m of materials) {
+      transactions.push(
+        module.createAddGuardianWithThresholdMetaTransaction(
+          m.address,
+          BigInt(GUARDIAN_THRESHOLD),
+        ),
+      );
+    }
+
+    const operation = await this.executeSponsoredUserOp(transactions);
+    return { materials, operation };
+  }
+
+  private async waitForRecoveryGracePeriod(safeAddress: string): Promise<void> {
+    const module = new SocialRecoveryModule(this.config.socialRecoveryModuleAddress);
+    const maxWaitMs = 5 * 60 * 1000;
+    const start = Date.now();
+    while (Date.now() - start < maxWaitMs) {
+      const req = await module.getRecoveryRequest(this.config.nodeRpcUrl, safeAddress);
+      if (req.executeAfter === 0n) {
+        throw new Error('Aucune recovery en cours (annulée ?)');
+      }
+      const nowSec = Math.floor(Date.now() / 1000);
+      if (nowSec >= Number(req.executeAfter)) return;
+      const sleepMs = Math.min(5_000, (Number(req.executeAfter) - nowSec) * 1000);
+      await new Promise((r) => setTimeout(r, Math.max(1_000, sleepMs)));
+    }
+    throw new Error('Délai de grâce dépassé sans finalisation possible');
+  }
+
+  /**
+   * Exécute un appel au SocialRecoveryModule via un Safe temporaire sponsorisé
+   * (nouvelle passkey). Permet multiConfirm / finalize sans ETH natif.
+   */
+  private async executeSponsoredModuleCallAsNewPasskey(
+    passkey: PasskeyLocalStorageFormat,
+    moduleTx: MetaTransaction,
+  ): Promise<UserOperationResult> {
+    assertConfigUsable(this.config);
+    const account = SafeAccount.initializeNewAccount(
+      [passkey.pubkeyCoordinates],
+      INIT_CODE_WEBAUTHN_OVERRIDES,
+    );
+
+    let userOperation;
+    try {
+      userOperation = await account.createUserOperation(
+        [moduleTx],
+        this.config.nodeRpcUrl,
+        this.config.bundlerUrl,
+        {
+          ...WEBAUTHN_CANONICAL_OVERRIDES,
+          expectedSigners: [passkey.pubkeyCoordinates],
+          preVerificationGasPercentageMultiplier: 120,
+          verificationGasLimitPercentageMultiplier: 120,
+        },
+      );
+    } catch (err) {
+      return {
+        userOpHash: '',
+        success: false,
+        error: 'Estimation gas: ' + formatErrorChain(err),
+      };
+    }
+
+    const paymaster = new CandidePaymaster(this.config.paymasterUrl);
+    try {
+      const { userOperation: sponsored } =
+        await paymaster.createSponsorPaymasterUserOperation(
+          account,
+          userOperation,
+          this.config.bundlerUrl,
+          this.config.sponsorshipPolicyId,
+        );
+      userOperation = sponsored;
+    } catch (err) {
+      return {
+        userOpHash: '',
+        success: false,
+        error: `Transaction non sponsorisée: ${formatErrorChain(err)}`,
+      };
+    }
+
+    try {
+      const response = await signAndSendUserOp(
+        account,
+        userOperation,
+        passkey,
+        this.config.chainId,
+        this.config.bundlerUrl,
+        WEBAUTHN_CANONICAL_OVERRIDES,
+      );
+      const userOpHash = response.userOperationHash;
+      const receipt = await response.included();
+      if (!receipt) {
+        return { userOpHash, success: false, error: 'UserOperation receipt unavailable' };
+      }
+      return {
+        userOpHash,
+        transactionHash: receipt.receipt.transactionHash,
+        success: !!receipt.success,
+        error: receipt.success ? undefined : 'UserOperation execution failed',
+      };
+    } catch (err) {
+      return { userOpHash: '', success: false, error: formatErrorChain(err) };
+    }
+  }
+
+  // (legacy mnemonic path removed — see recovery-codes + SocialRecoveryModule)
+
+  updateProfile(profile: {
+    displayName?: string;
+    tel?: string;
+    email?: string;
+    attachContactToClaims?: boolean;
+  }): void {
+    const stored = this.storage.load();
+    if (!stored) throw new Error('Pas de wallet');
+    if (profile.displayName !== undefined) {
+      const n = profile.displayName.trim();
+      if (n.length < 2) throw new Error('Pseudo trop court');
+      stored.displayName = n;
+    }
+    if (profile.tel !== undefined) stored.profileTel = profile.tel.trim() || undefined;
+    if (profile.email !== undefined) stored.profileEmail = profile.email.trim() || undefined;
+    if (profile.attachContactToClaims !== undefined) {
+      stored.attachContactToClaims = profile.attachContactToClaims;
+    }
+    this.storage.save(stored);
+    if (this.state) {
+      this.state.displayName = stored.displayName;
+      this.state.profileTel = stored.profileTel;
+      this.state.profileEmail = stored.profileEmail;
+      this.state.attachContactToClaims = stored.attachContactToClaims;
+    }
+  }
+
+  async fetchOwnersOnChain(safeAddress: string): Promise<string[]> {
+    assertConfigUsable(this.config);
+    const provider = new ethers.JsonRpcProvider(this.config.nodeRpcUrl);
+    const safe = new ethers.Contract(safeAddress, SAFE_GET_OWNERS_ABI, provider);
+    const owners = (await safe['getOwners']()) as string[];
+    return owners.map((o) => o.toLowerCase());
+  }
+
+  /** Safe linked-list sentinel for first owner. */
+  private prevOwnerInLinkedList(owners: string[], target: string): string {
+    const SENTINEL = '0x0000000000000000000000000000000000000001';
+    const lower = owners.map((o) => o.toLowerCase());
+    const idx = lower.indexOf(target.toLowerCase());
+    if (idx < 0) throw new Error('Owner introuvable dans getOwners()');
+    if (idx === 0) return SENTINEL;
+    return owners[idx - 1];
+  }
+
+  /**
+   * Owner set for Safe init code. New wallets: passkey only.
+   * Legacy wallets may still carry recoveryOwnerAddress — keep it in the set
+   * so counterfactual address derivation stays stable until they redeploy.
+   */
+  private initOwnerSigners(): Array<{ x: bigint; y: bigint } | string> {
+    const state = this.requireState();
+    const owners: Array<{ x: bigint; y: bigint } | string> = [state.passkey.pubkeyCoordinates];
+    if (state.recoveryOwnerAddress) {
+      owners.push(state.recoveryOwnerAddress);
+    }
+    return owners;
   }
 
   async getZchfBalance(): Promise<bigint> {
@@ -385,6 +946,9 @@ export class WalletService {
     }
   }
 
+  // FIXME(sécurité): garde-fou UX uniquement — le compteur vit dans le
+  // localStorage et se contourne depuis les devtools. Une vraie limite doit
+  // être appliquée on-chain (guard / policy paymaster).
   private checkDailyLimit(amount: bigint): void {
     const { spentToday, limit } = this.getDailySpending();
     if (limit === undefined) return;
@@ -449,7 +1013,7 @@ export class WalletService {
     }
     const state = this.requireState();
     const account = SafeAccount.initializeNewAccount(
-      [state.passkey.pubkeyCoordinates],
+      this.initOwnerSigners(),
       INIT_CODE_WEBAUTHN_OVERRIDES,
     );
     const addTx = account.createStandardAddOwnerWithThresholdMetaTransaction(
@@ -480,9 +1044,10 @@ export class WalletService {
       WEBAUTHN_CANONICAL_OVERRIDES,
     );
 
-    const state = this.requireState();
+    // Same owner set as executeSponsoredUserOp: the init code must reproduce the
+    // account address exactly, otherwise a counterfactual Safe deploys elsewhere.
     const account = SafeAccount.initializeNewAccount(
-      [state.passkey.pubkeyCoordinates],
+      this.initOwnerSigners(),
       INIT_CODE_WEBAUTHN_OVERRIDES,
     );
 
@@ -789,6 +1354,7 @@ export class WalletService {
     amount: bigint,
     expiry: bigint,
     secretHash: string,
+    metaHash: string = ethers.ZeroHash,
   ): Promise<UserOperationResult> {
     this.checkDailyLimit(amount);
     await this.checkSufficientBalance(amount);
@@ -804,6 +1370,7 @@ export class WalletService {
       amount,
       expiry,
       secretHash,
+      metaHash,
     );
     const result = await this.executeSponsoredUserOp([approveTx, createTx]);
     if (result.success) this.incrementDailySpending(amount);
@@ -815,8 +1382,15 @@ export class WalletService {
     id: string,
     secret: string,
     recipient: string,
+    expectedMetaHash: string = ethers.ZeroHash,
   ): Promise<UserOperationResult> {
-    const tx = this.buildClaimLinkClaim(claimLinkAddress, id, secret, recipient);
+    const tx = this.buildClaimLinkClaim(
+      claimLinkAddress,
+      id,
+      secret,
+      recipient,
+      expectedMetaHash,
+    );
     return this.executeSponsoredUserOp([tx]);
   }
 
@@ -825,6 +1399,19 @@ export class WalletService {
     id: string,
   ): Promise<UserOperationResult> {
     const tx = this.buildClaimLinkCancel(claimLinkAddress, id);
+    return this.executeSponsoredUserOp([tx]);
+  }
+
+  async cancelExpiredClaimLink(
+    claimLinkAddress: string,
+    id: string,
+  ): Promise<UserOperationResult> {
+    const iface = new ethers.Interface(CLAIMLINK_ABI);
+    const tx: MetaTransaction = {
+      to: claimLinkAddress,
+      value: 0n,
+      data: iface.encodeFunctionData('cancelExpired', [id]),
+    };
     return this.executeSponsoredUserOp([tx]);
   }
 
@@ -838,6 +1425,7 @@ export class WalletService {
     expiry: bigint;
     status: number;
     secretHash: string;
+    metaHash: string;
   }> {
     assertConfigUsable(this.config);
     const provider = new ethers.JsonRpcProvider(this.config.nodeRpcUrl);
@@ -850,6 +1438,7 @@ export class WalletService {
       expiry:     link.expiry as bigint,
       status:     Number(link.status),
       secretHash: link.secretHash as string,
+      metaHash:   (link.metaHash as string) || ethers.ZeroHash,
     };
   }
 
@@ -869,12 +1458,20 @@ export class WalletService {
     amount: bigint,
     expiry: bigint,
     secretHash: string,
+    metaHash: string,
   ): MetaTransaction {
     const iface = new ethers.Interface(CLAIMLINK_ABI);
     return {
       to: claimLinkAddress,
       value: 0n,
-      data: iface.encodeFunctionData('create', [id, token, amount, expiry, secretHash]),
+      data: iface.encodeFunctionData('create', [
+        id,
+        token,
+        amount,
+        expiry,
+        secretHash,
+        metaHash,
+      ]),
     };
   }
 
@@ -883,12 +1480,18 @@ export class WalletService {
     id: string,
     secret: string,
     recipient: string,
+    expectedMetaHash: string,
   ): MetaTransaction {
     const iface = new ethers.Interface(CLAIMLINK_ABI);
     return {
       to: claimLinkAddress,
       value: 0n,
-      data: iface.encodeFunctionData('claim', [id, secret, recipient]),
+      data: iface.encodeFunctionData('claim', [
+        id,
+        secret,
+        recipient,
+        expectedMetaHash,
+      ]),
     };
   }
 
@@ -935,7 +1538,7 @@ export class WalletService {
     assertConfigUsable(this.config);
     const state = this.requireState();
     const account = SafeAccount.initializeNewAccount(
-      [state.passkey.pubkeyCoordinates],
+      this.initOwnerSigners(),
       INIT_CODE_WEBAUTHN_OVERRIDES,
     );
     const buildDebug = (userOp?: unknown): UserOperationDebug => ({

@@ -1,3 +1,4 @@
+/** @deprecated V1 — Horcrux on-chain abandoned. Use vit-pay-app backup-kit (BIP39 + fiche). */
 import { AbiCoder, Contract, getBytes, hexlify, keccak256 } from "ethers";
 import { xor_shuffle, xor_deshuffle } from "./core.XOR";
 import { POWforce } from "./core.POW";

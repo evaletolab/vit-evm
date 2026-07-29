@@ -19,6 +19,7 @@ import {
 import { UserOperationResult } from '../../wallet/wallet.types';
 import { ContactsService, Contact } from '../../contacts/contacts.service';
 import { ClaimLinkService } from '../../claimlink/claimlink.service';
+import { TxOverlayService } from '../../wallet/tx-overlay.service';
 
 type Step = 'scanning' | 'confirm' | 'sending' | 'done' | 'error';
 type RecipientKind = 'address' | 'email' | 'phone' | 'unknown';
@@ -60,6 +61,7 @@ export class PageBuyComponent implements AfterViewInit, OnDestroy {
     private contactsSvc: ContactsService,
     private route: ActivatedRoute,
     private claimLink: ClaimLinkService,
+    private txOverlay: TxOverlayService,
   ) {}
 
   async ngAfterViewInit(): Promise<void> {
@@ -250,17 +252,23 @@ export class PageBuyComponent implements AfterViewInit, OnDestroy {
     // Adresse EVM → paiement direct on-chain
     this.sentViaLink = false;
     this.step = 'sending';
+    // Blocking overlay: signing + bundler inclusion can take a few seconds and
+    // must not look like a dead screen, nor allow a second submit.
+    this.txOverlay.show(`Envoi de ${this.amount} xCHF…`);
     try {
       const result = await this.wallet.sendZchfPayment(recipient, amountWei);
       this.lastResult = result;
       if (result.success) {
+        this.txOverlay.succeed('Paiement envoyé');
         this.step = 'done';
       } else {
         this.errorMessage = mapPaymasterError(new Error(result.error ?? 'Erreur inconnue'));
+        this.txOverlay.fail('Paiement refusé', this.errorMessage);
         this.step = 'error';
       }
     } catch (err) {
       this.errorMessage = err instanceof Error ? err.message : String(err);
+      this.txOverlay.fail('Paiement refusé', this.errorMessage);
       this.step = 'error';
     }
   }
@@ -276,17 +284,29 @@ export class PageBuyComponent implements AfterViewInit, OnDestroy {
       return;
     }
     this.step = 'sending';
+    this.txOverlay.show(`Blocage de ${this.amount} xCHF…`);
     try {
-      // Pas d'expiration : le lien reste réclamable, annulable depuis « Liens ».
-      const { url } = await this.claimLink.create(amountWei, 0n);
+      const state = await this.wallet.loadWallet();
+      const { link, url } = await this.claimLink.create(amountWei, 0n);
+      if (state) {
+        this.contactsSvc.upsertPending(state.accountAddress, {
+          name: recipient,
+          tel: kind === 'phone' ? recipient : undefined,
+          email: kind === 'email' ? recipient : undefined,
+          claimId: link.id,
+          note: `${this.amount} xCHF en attente`,
+        });
+      }
       this.sentViaLink = true;
       this.claimUrl = url;
       this.claimKind = kind;
       this.claimRecipient = recipient;
+      this.txOverlay.succeed('Lien prêt');
       this.openDraft(recipient, kind, url);
       this.step = 'done';
     } catch (err) {
       this.errorMessage = err instanceof Error ? err.message : String(err);
+      this.txOverlay.fail('Envoi impossible', this.errorMessage);
       this.step = 'error';
     }
   }

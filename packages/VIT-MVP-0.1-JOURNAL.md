@@ -1159,3 +1159,35 @@ packages/vit-pay-app/src/app/wallet/wallet.service.ts
 - Envisager d'exposer `checkSufficientBalance` au niveau UI (désactiver le
   bouton "Envoyer" tant que le solde est insuffisant) plutôt que de laisser
   l'utilisateur découvrir l'erreur après coup.
+
+---
+
+## 23. V1 — Backup off-chain + shell P0–P8 (2026-07-26)
+
+### 23.1 Décisions
+
+- **Pas de Horcrux on-chain** : `Horcrux.sol` / `core.horcrux` / SSS marqués deprecated.
+- Recovery = **BIP39 12 mots → EOA** 2e owner Safe (`threshold: 1`), ordre figé `[passkeyCoords, recoveryEOA]`.
+- Kit **2 parties** : fiche (Safe + credentialId + pubkey) + mnemonic secret. Export **bloquant** à la création ; sauvegarde auto via form credential / `PasswordCredential` (Apple/GG/1Pass) + QR/copie manuel.
+- Soft restore = fiche + passkey syncée ; hard = `signUserOperation(privateKeys[])` (abstractionkit) + `getOwners()` live avant `swapOwner`.
+- Spike EOA : `SafeAccountV0_3_0.signUserOperation(userOp, privateKeys[], chainId)` confirmé dans abstractionkit — branché via `signAndSendUserOpWithEoa`.
+
+### 23.2 VitClaimLink UUPS v2
+
+- Proxy UUPS + `initialize(owner)`.
+- `metaHash` sur create/claim (intégrité contact URL).
+- `cancelExpired(id)` permissionless (fonds → sender).
+- Scripts : `deployClaimLink.js` (deployProxy), `upgradeClaimLink.js`.
+
+### 23.3 App
+
+- `backup-kit.ts`, `claim-contact.ts`, `pending-claims.ts`, `tx-overlay`.
+- Profil P8 (pseudo/tél/e-mail), claim link contact complet (`c=` fragment).
+- Shell nav Accueil/Carnet/Envoyer/Activité/Profil ; `/request` reverse claim UX ; activité + noms carnet ; liens expirés.
+- Wallets existants : `addRecoveryBackupForExistingWallet()`.
+
+### 23.4 V2 reporté
+
+- Notification ancien device + fenêtre cancel ~30s.
+- Domaine dédié (origine invariant credentials).
+- Signature payload contact par owner Safe.

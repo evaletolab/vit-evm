@@ -5,8 +5,10 @@ export * from './tools';
 // CORE
 export * from './core.AES';
 export * from './core.POW';
+/** @deprecated V1 — SSS unused; recovery = BIP39 mnemonic off-chain. Kept for tests only. */
 export * from './core.SSS';
 export * from './core.XOR';
+/** @deprecated V1 — Horcrux on-chain abandoned; do not use in vit-pay-app. */
 export * from './core.horcrux';
 export * from './core.identity';
 export * from './core.entropy';

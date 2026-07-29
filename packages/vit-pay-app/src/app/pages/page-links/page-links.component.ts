@@ -2,6 +2,7 @@ import { Component, OnInit } from '@angular/core';
 import { ethers } from 'ethers';
 import { WalletService } from '../../wallet/wallet.service';
 import { ClaimLinkService, StoredLink } from '../../claimlink/claimlink.service';
+import { TxOverlayService } from '../../wallet/tx-overlay.service';
 import { parseZchfAmount } from '../../wallet/wallet.utils';
 
 type View = 'list' | 'create' | 'created';
@@ -28,7 +29,11 @@ export class PageLinksComponent implements OnInit {
 
   configured = false;
 
-  constructor(private wallet: WalletService, private cl: ClaimLinkService) {}
+  constructor(
+    private wallet: WalletService,
+    private cl: ClaimLinkService,
+    private txOverlay: TxOverlayService,
+  ) {}
 
   async ngOnInit(): Promise<void> {
     this.configured = !!this.cl.contractAddress();
@@ -42,6 +47,8 @@ export class PageLinksComponent implements OnInit {
       this.hasWallet = true;
       this.owner = state.accountAddress;
       this.links = this.cl.list(this.owner);
+      // Read-only refresh: auto-cancelling here would pop a passkey prompt on
+      // page load. Expired links are refunded from the "Annuler" action.
       this.cl.refreshStatuses(this.owner).then((fresh) => { this.links = fresh; });
     } catch (e: unknown) {
       this.error = e instanceof Error ? e.message : 'Erreur';
@@ -69,7 +76,11 @@ export class PageLinksComponent implements OnInit {
         ? BigInt(Math.floor(Date.now() / 1000) + this.expiryHours * 3600)
         : 0n;
       this.busy = true;
-      const { link, url } = await this.cl.create(wei, expiry);
+      const { link, url } = await this.txOverlay.run(
+        `Blocage de ${this.amount} xCHF…`,
+        () => this.cl.create(wei, expiry),
+        { successTitle: 'Lien prêt' },
+      );
       this.lastLink = link;
       this.lastUrl = url;
       this.links = this.cl.list(this.owner);
@@ -92,8 +103,13 @@ export class PageLinksComponent implements OnInit {
     }
   }
 
+  /**
+   * Rebuild the share URL from what was stored at creation time. Never inject
+   * the current profile here: the metaHash is fixed on-chain, so a different
+   * contact payload would make the claim revert (MetaMismatch).
+   */
   buildUrl(link: StoredLink): string {
-    return this.cl.buildShareUrl(link.id, link.secret, this.wallet.getDisplayName());
+    return this.cl.buildShareUrl(link.id, link.secret, link.contactEncoded);
   }
 
   async share(link: StoredLink): Promise<void> {
@@ -120,8 +136,16 @@ export class PageLinksComponent implements OnInit {
     this.busy = true;
     this.error = '';
     try {
-      const op = await this.cl.cancel(link.id);
-      if (!op.success) throw new Error(op.error || 'Échec annulation');
+      await this.txOverlay.run(
+        'Annulation du lien…',
+        async () => {
+          const op = await this.cl.cancel(link.id);
+          // Surface a failed UserOp as an error: run() only sees exceptions.
+          if (!op.success) throw new Error(op.error || 'Échec annulation');
+          return op;
+        },
+        { successTitle: 'Fonds récupérés' },
+      );
       this.links = this.cl.list(this.owner);
     } catch (e: unknown) {
       this.error = e instanceof Error ? e.message : 'Erreur';

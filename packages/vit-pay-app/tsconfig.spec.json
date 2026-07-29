@@ -8,6 +8,9 @@
       "jasmine"
     ]
   },
+  "exclude": [
+    "src/app/pages/vit-welcome/**"
+  ],
   "include": [
     "src/**/*.spec.ts",
     "src/**/*.d.ts",

@@ -1,5 +1,31 @@
 # 09 — Changelog
 
+## V1.1 — 2026-07-27 → 2026-07-28
+
+**Codes de secours = guardians SocialRecoveryModule**
+
+- Remplace le kit mnémonique / second owner EOA.
+- Safe mono-owner passkey ; 3 codes base32 16 car. (scrypt → EOA guardians), seuil 2/3.
+- Identité locale `<nom>@vit.app` ; routes `/<nom>/vault` et `/<nom>/restore`.
+- Armement UserOp : `enableModule` + 3 guardians ; hard restore via `multiConfirmRecovery` + `finalizeRecovery`.
+- Suppression de `backup-kit.ts` (BIP39 owner).
+- Banc d'essai : `packages/vit-pay-app/scripts/bench-recovery-codes.mjs`.
+- Landing `/wallet` (2026-07-28) : champ nom style Argent (input aligné à droite + suffixe `@vit.app` grisé, hors des styles `label` de carte), « Créer mon compte » désactivé tant que le pseudo est vide, restauration en `<a routerLink>` au lieu d'un bouton (`goToRestore()` supprimé).
+- 39 specs Karma vertes (`ChromeHeadlessNoSandbox`).
+
+Voir [02 — Architecture](02-architecture.md).
+
+## V1 — 2026-07-26
+
+**Backup off-chain (remplacé en V1.1), claim links v2, shell produit** (journal §23)
+
+- ~~Kit de secours mnémonique BIP39~~ → remplacé par codes guardians (V1.1).
+- **`VitClaimLink` v2** : proxy UUPS, `metaHash`, `cancelExpired(id)`. Scripts deploy/upgrade. ⚠️ Contrat à redéployer.
+- **Shell produit P0–P8** : accueil / carnet / envoyer / activité / profil, contacts, pending claims, `/request`, overlay tx, UI allégée.
+- OpenZeppelin 5.4.0, `.env` Hardhat, exclusion `vit-welcome` des tests.
+
+Voir [02 — Architecture](02-architecture.md) · [03 — Contracts](03-contracts.md) · [04bis — UX Wireframes](04-ux-wireframes.md).
+
 ## Itération 0.4 — 2026-06-19
 
 **UX, dev-gate, on/off-ramp Mt Pelerin**
