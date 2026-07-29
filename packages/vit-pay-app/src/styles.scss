@@ -308,10 +308,10 @@ sl-dialog::part(panel) {
 /* === Onboarding landing (page-wallet) === */
 .wallet-page .landing {
   text-align: center;
-  background: transparent;
-  border: 0;
+  background: transparent !important;
+  border: 0 !important;
   border-radius: 0;
-  box-shadow: none;
+  box-shadow: none !important;
   padding: 0.5rem 0 1.5rem;
 
   .landing-logo {
@@ -340,7 +340,7 @@ sl-dialog::part(panel) {
     margin: 1.25rem auto 1rem;
     padding: 0.25rem 0 0.45rem;
     border: 0;
-    border-bottom: 1px solid rgba(0, 0, 0, 0.2);
+    border-bottom: 1px solid var(--hairline, rgba(255, 255, 255, 0.2));
     box-sizing: border-box;
 
     input {
@@ -360,11 +360,11 @@ sl-dialog::part(panel) {
       font-weight: 700 !important;
       letter-spacing: -0.02em !important;
       text-transform: none !important;
-      color: var(--text, #111) !important;
+      color: var(--text) !important;
       outline: none;
 
       &::placeholder {
-        color: rgba(0, 0, 0, 0.28);
+        color: var(--text-dim, #6e7392);
         font-weight: 600;
       }
       &:focus {
@@ -380,7 +380,7 @@ sl-dialog::part(panel) {
       font-size: 1.35rem;
       font-weight: 600;
       letter-spacing: -0.02em;
-      color: rgba(0, 0, 0, 0.32);
+      color: var(--text-muted, #8a8fa6);
       white-space: nowrap;
       user-select: none;
     }
@@ -408,22 +408,22 @@ sl-dialog::part(panel) {
   .step-dots {
     display: flex;
     justify-content: center;
-    gap: 0.4rem;
-    margin: 0.35rem 0 0.75rem;
+    gap: 0.45rem;
+    margin: 0.5rem 0 0;
   }
 
   .step-dot {
-    width: 7px;
-    height: 7px;
+    width: 8px;
+    height: 8px;
     padding: 0;
     border: 0;
     border-radius: 50%;
-    background: rgba(0, 0, 0, 0.18);
+    background: #b0b0b0;
     transition: background 0.2s ease, transform 0.2s ease;
 
     &.active {
-      background: var(--violet);
-      transform: scale(1.35);
+      background: #111;
+      transform: scale(1.25);
     }
   }
 
@@ -436,30 +436,25 @@ sl-dialog::part(panel) {
     padding: 0.6rem 0.25rem 0.25rem;
     box-sizing: border-box;
 
-    h3 {
-      margin: 0;
-      font-size: 0.95rem;
-      font-weight: 600;
-      letter-spacing: -0.01em;
-      outline: none;
-
-      small {
-        margin-left: 0.35rem;
-        font-size: 0.75rem;
-        font-weight: 400;
-        color: var(--text-dim, #888);
-      }
+    &--cta {
+      justify-content: center;
+      padding-top: 0.85rem;
     }
   }
 
-  /* Le champ tél est rendu par intl-tel-input : voir styles.scss (.iti). */
+  .step-cta {
+    width: 100%;
+    box-sizing: border-box;
+  }
+
+  /* Le champ tél est rendu par intl-tel-input : voir .iti plus bas. */
   .step-input {
     width: 100%;
     box-sizing: border-box;
     padding: 0.7rem 0.85rem;
-    border: 1px solid rgba(0, 0, 0, 0.18);
+    border: 1px solid var(--hairline, rgba(255, 255, 255, 0.16));
     border-radius: var(--r-tile);
-    background: rgba(255, 255, 255, 0.6);
+    background: var(--glass, rgba(255, 255, 255, 0.06));
     font: inherit;
     font-size: 1rem;
     color: var(--text);
@@ -495,8 +490,10 @@ sl-dialog::part(panel) {
 
 /* === intl-tel-input : accord avec les champs ViT === */
 .iti {
-  --iti-border-color: rgba(0, 0, 0, 0.18);
+  --iti-border-color: var(--hairline, rgba(255, 255, 255, 0.16));
   --iti-hover-color: rgba(124, 92, 255, 0.08);
+  --iti-country-selector-bg: var(--surface-1, #0c0e1a);
+  --iti-icon-color: var(--text-muted, #8a8fa6);
   width: 100%;
 
   input[type='tel'] {
@@ -506,7 +503,7 @@ sl-dialog::part(panel) {
     padding-bottom: 0.7rem;
     border: 1px solid var(--iti-border-color);
     border-radius: var(--r-tile);
-    background: rgba(255, 255, 255, 0.6);
+    background: var(--glass, rgba(255, 255, 255, 0.06));
     font: inherit;
     font-size: 1rem;
     color: var(--text);

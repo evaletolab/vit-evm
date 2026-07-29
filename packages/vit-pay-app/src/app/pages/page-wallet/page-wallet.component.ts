@@ -73,7 +73,7 @@ export class PageWalletComponent implements OnInit, AfterViewInit, OnDestroy {
   readonly nameDomain = WALLET_NAME_DOMAIN;
 
   // --- Onboarding contact : un champ par étape (pseudo → tél → e-mail) ---
-  readonly contactStepLabels = ['Pseudo', 'Téléphone', 'E-mail'];
+  readonly contactStepLabels = ['Pseudo', 'Téléphone', 'E-mail', 'Créer'];
   readonly contactStepCount = this.contactStepLabels.length;
   contactStep = 0;
   dragging = false;
@@ -91,7 +91,7 @@ export class PageWalletComponent implements OnInit, AfterViewInit, OnDestroy {
 
   @ViewChild('deck') deckRef?: ElementRef<HTMLElement>;
   @ViewChildren('deckCard') deckCards?: QueryList<ElementRef<HTMLElement>>;
-  @ViewChildren('stepHeading') stepHeadings?: QueryList<ElementRef<HTMLElement>>;
+  @ViewChildren('stepFocus') stepFocusEls?: QueryList<ElementRef<HTMLElement>>;
   private cardObserver?: IntersectionObserver;
   state: WalletState | null = null;
   balance: string = '—';
@@ -128,7 +128,7 @@ export class PageWalletComponent implements OnInit, AfterViewInit, OnDestroy {
   readonly shortAddress = shortAddress;
 
   iban: string | null = null;
-  /** Identité locale <nom>@vit.app */
+  /** Identité locale <nom>@vit.swiss */
   walletName = '';
   /** Pseudo affiché (contact). */
   displayName = '';
@@ -233,10 +233,9 @@ export class PageWalletComponent implements OnInit, AfterViewInit, OnDestroy {
     const next = Math.min(Math.max(index, 0), this.contactStepCount - 1);
     if (next === this.contactStep) return;
     this.contactStep = next;
-    // Le lecteur d'écran doit annoncer la nouvelle étape : on déplace le focus
-    // sur son titre une fois le rendu appliqué.
+    // Le focus suit l'étape active (input ou CTA).
     setTimeout(() => {
-      this.stepHeadings?.get(next)?.nativeElement.focus({ preventScroll: true });
+      this.stepFocusEls?.get(next)?.nativeElement.focus({ preventScroll: true });
     });
   }
 

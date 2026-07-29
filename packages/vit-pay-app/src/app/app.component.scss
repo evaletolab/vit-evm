@@ -50,6 +50,7 @@
   position: fixed;
   left: 50%;
   bottom: calc(5.5rem + env(safe-area-inset-bottom));
+  bottom: 1rem;
   transform: translateX(-50%);
   width: calc(100% - 1.6rem);
   max-width: 26rem;

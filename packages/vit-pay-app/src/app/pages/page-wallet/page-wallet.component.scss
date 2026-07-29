@@ -322,7 +322,7 @@
       }
     }
 
-    button {
+    button:not(.step-dot) {
       align-self: flex-start;
       padding: 0.65rem 1.15rem;
       border-radius: var(--r-btn);

@@ -2,7 +2,7 @@
   <header>
     <h1>ViT</h1>
     <p class="tagline" *ngIf="view === 'no-wallet'">
-      ViT est un portefeuille numérique aussi simple et discret que celui dans votre poche.
+      ViT est un portefeuille numérique aussi simple et privé que celui dans votre poche.
     </p>
   </header>
 
@@ -12,9 +12,9 @@
   <!-- Landing : choix de nom local (pas une réservation on-chain) -->
   <article *ngIf="view === 'no-wallet'" class="card landing">
     <div class="landing-logo" aria-hidden="true">V</div>
-    <h2>Choisissez votre nom</h2>
-    <p class="hint">
-      Identifiant privé sur cet appareil — pas encore unique sur le réseau.
+    <h2>Choisissez un nom</h2>
+    <p class="hint" hidden>
+      Identifiant privé sur cet appareil
     </p>
     <div class="name-field" role="group" aria-label="Nom ViT">
       <input
@@ -31,7 +31,7 @@
     </div>
 
     <ng-container *ngIf="showContactFields">
-      <p class="hint">Contact joint à vos envois pour informer le destinataire.</p>
+      <p class="hint">Contact à joindre avec vos envois pour informer le destinataire.</p>
 
       <div
         class="steps-viewport"
@@ -48,8 +48,8 @@
             class="step"
             [attr.inert]="contactStep === 0 ? null : ''"
             [attr.aria-current]="contactStep === 0 ? 'step' : null">
-            <h3 #stepHeading tabindex="-1">Pseudo</h3>
             <input
+              #stepFocus
               type="text"
               class="step-input"
               [(ngModel)]="displayName"
@@ -59,7 +59,7 @@
               maxlength="40"
               [disabled]="busy"
               (keyup.enter)="nextStep()"
-              aria-label="Prénom ou pseudo" />
+              aria-label="Prénom/Nom ou pseudo" />
             <button
               *ngIf="phonePickerOk"
               type="button"
@@ -74,13 +74,13 @@
             class="step"
             [attr.inert]="contactStep === 1 ? null : ''"
             [attr.aria-current]="contactStep === 1 ? 'step' : null">
-            <h3 #stepHeading tabindex="-1">Téléphone <small>optionnel</small></h3>
             <input
+              #stepFocus
               type="tel"
               class="step-input"
               vitTel
               [countryOrder]="telCountryOrder"
-              placeholder="079 123 45 67"
+              placeholder="Téléphone (optionnel)"
               autocomplete="tel"
               inputmode="tel"
               enterkeyhint="next"
@@ -94,18 +94,32 @@
             class="step"
             [attr.inert]="contactStep === 2 ? null : ''"
             [attr.aria-current]="contactStep === 2 ? 'step' : null">
-            <h3 #stepHeading tabindex="-1">E-mail <small>optionnel</small></h3>
             <input
+              #stepFocus
               type="email"
               class="step-input"
               [(ngModel)]="profileEmail"
-              placeholder="vous@exemple.ch"
+              placeholder="E-mail (optionnel)"
               autocomplete="email"
               inputmode="email"
-              enterkeyhint="done"
+              enterkeyhint="next"
               [disabled]="busy"
-              (keyup.enter)="createWallet()"
+              (keyup.enter)="nextStep()"
               aria-label="Adresse e-mail" />
+          </section>
+
+          <section
+            class="step step--cta"
+            [attr.inert]="contactStep === 3 ? null : ''"
+            [attr.aria-current]="contactStep === 3 ? 'step' : null">
+            <button
+              #stepFocus
+              type="button"
+              class="step-cta"
+              (click)="createWallet()"
+              [disabled]="busy || !canCreate">
+              {{ busy ? 'Création…' : 'Créer mon compte' }}
+            </button>
           </section>
 
         </div>
@@ -123,10 +137,6 @@
           (click)="goToStep(i)"
           [disabled]="busy"></button>
       </div>
-
-      <button type="button" (click)="createWallet()" [disabled]="busy || !canCreate">
-        {{ busy ? 'Création…' : 'Créer mon compte' }}
-      </button>
 
       <p class="restore-link">
         <a [routerLink]="['/', walletName, 'restore']">
