@@ -7,7 +7,7 @@
   <p *ngIf="error" class="error" role="alert">{{ error }}</p>
   <p *ngIf="progress" class="hint">{{ progress }}</p>
 
-  <!-- Formulaire visible : déclenche autofill du coffre (username = nom@vit.app) -->
+  <!-- Formulaire visible : déclenche autofill du coffre (username = nom@vit.swiss) -->
   <form class="card autofill-form" autocomplete="on" (submit)="$event.preventDefault(); onVaultAutofill()">
     <label>
       Identifiant

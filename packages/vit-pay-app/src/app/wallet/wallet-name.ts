@@ -1,5 +1,5 @@
 /**
- * Identité locale <nom>@vit.app (V1 — pas de registre on-chain).
+ * Identité locale <nom>@vit.swiss (V1 — pas de registre on-chain).
  * Sert à séparer les instances et à scoper le coffre (username du credential).
  */
 
@@ -25,7 +25,7 @@ export const RESERVED_WALLET_NAMES = new Set([
 
 export const WALLET_NAME_MIN = 3;
 export const WALLET_NAME_MAX = 20;
-export const WALLET_NAME_DOMAIN = 'vit.app';
+export const WALLET_NAME_DOMAIN = 'vit.swiss';
 
 const NAME_RE = /^[a-z0-9]+(?:-[a-z0-9]+)*$/;
 

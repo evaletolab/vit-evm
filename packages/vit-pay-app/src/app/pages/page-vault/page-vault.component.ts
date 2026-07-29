@@ -167,7 +167,7 @@ export class PageVaultComponent implements OnInit {
 
   private async refreshQr(slot: CodeSlot): Promise<void> {
     const url = buildRestoreQrUrl(this.name, slot.payload, {
-      origin: typeof location !== 'undefined' ? location.origin : 'https://vit.app',
+      origin: typeof location !== 'undefined' ? location.origin : 'https://vit.swiss',
       hashRoute: environment.hashRoute,
     });
     slot.qrDataUrl = await QRCode.toDataURL(url, { width: 220, margin: 1 });

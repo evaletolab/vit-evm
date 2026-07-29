@@ -38,7 +38,7 @@ Première implémentation : iframe plein-écran avec URL `bypassSecurityTrustRes
 
 **Fix** : suppression de l'iframe et `DomSanitizer`, remplacement par un bouton CTA → `window.open(url, '_blank')`. Marche immédiatement sans inscription partenaire ; UX dégradée (perte du contexte in-app) acceptable pour une v1.
 
-**Upgrade path** : s'inscrire au programme partenaire Mt Pelerin pour récupérer `code` + secret HMAC, re-câbler l'iframe avec `_ctkn` signé et domaine `vit.app` (ou équivalent) allowlisté.
+**Upgrade path** : s'inscrire au programme partenaire Mt Pelerin pour récupérer `code` + secret HMAC, re-câbler l'iframe avec `_ctkn` signé et domaine `vit.swiss` (ou équivalent) allowlisté.
 
 ## Debug : URL d'inscription Mt Pelerin
 

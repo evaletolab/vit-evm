@@ -6,11 +6,11 @@
 
 - Remplace le kit mnémonique / second owner EOA.
 - Safe mono-owner passkey ; 3 codes base32 16 car. (scrypt → EOA guardians), seuil 2/3.
-- Identité locale `<nom>@vit.app` ; routes `/<nom>/vault` et `/<nom>/restore`.
+- Identité locale `<nom>@vit.swiss` ; routes `/<nom>/vault` et `/<nom>/restore`.
 - Armement UserOp : `enableModule` + 3 guardians ; hard restore via `multiConfirmRecovery` + `finalizeRecovery`.
 - Suppression de `backup-kit.ts` (BIP39 owner).
 - Banc d'essai : `packages/vit-pay-app/scripts/bench-recovery-codes.mjs`.
-- Landing `/wallet` (2026-07-28) : champ nom style Argent (input aligné à droite + suffixe `@vit.app` grisé, hors des styles `label` de carte), « Créer mon compte » désactivé tant que le pseudo est vide, restauration en `<a routerLink>` au lieu d'un bouton (`goToRestore()` supprimé).
+- Landing `/wallet` (2026-07-28) : champ nom style Argent (input aligné à droite + suffixe `@vit.swiss` grisé, hors des styles `label` de carte), « Créer mon compte » désactivé tant que le pseudo est vide, restauration en `<a routerLink>` au lieu d'un bouton (`goToRestore()` supprimé).
 - 39 specs Karma vertes (`ChromeHeadlessNoSandbox`).
 
 Voir [02 — Architecture](02-architecture.md).

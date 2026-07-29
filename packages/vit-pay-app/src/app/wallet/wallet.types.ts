@@ -41,7 +41,7 @@ export interface StoredWallet {
   /** Pseudo / prénom connu des amis (optionnel pour wallets créés avant). */
   displayName?: string;
   /**
-   * Identité locale <nom>@vit.app (V1 — pas de registre).
+   * Identité locale <nom>@vit.swiss (V1 — pas de registre).
    * Sert d'URL (/nom/vault) et d'username du coffre.
    */
   walletName?: string;

@@ -34,7 +34,7 @@ const routes: Routes = [
   { path: 'devices', component: PageDevicesComponent, canActivate: [requireWalletGuard] },
   { path: 'recovery', component: PageRecoveryComponent, canActivate: [requireWalletGuard] },
   { path: 'claim', component: PageClaimComponent },
-  // Identité <nom>@vit.app — après les routes plates (mots réservés).
+  // Identité <nom>@vit.swiss — après les routes plates (mots réservés).
   { path: ':name/vault', component: PageVaultComponent },
   { path: ':name/restore', component: PageRestoreComponent },
 ];

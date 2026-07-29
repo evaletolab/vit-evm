@@ -20,6 +20,6 @@ Travaux UX (iter 0.4) : guard wallet, thème, mode dev, Mt Pelerin — voir [04 
 ## V1.1 — codes guardians + identité (2026-07-27)
 
 - 3 codes base32 → SocialRecoveryModule (seuil 2/3), Safe mono-owner passkey — [02 — Architecture](02-architecture.md).
-- Identité `<nom>@vit.app`, routes `/vault` et `/restore`.
+- Identité `<nom>@vit.swiss`, routes `/vault` et `/restore`.
 - `VitClaimLink` v2 UUPS toujours à redéployer — [03 — Contracts](03-contracts.md).
 - Shell P0–P8 inchangé — [04bis — UX Wireframes](04-ux-wireframes.md).
