@@ -39,6 +39,7 @@ export class IntlTelDirective implements AfterViewInit, OnDestroy, ControlValueA
 
   private iti?: Iti;
   private pending = '';
+  private utilsReady = false;
   private onChange: (value: string) => void = () => {};
   private onTouched: () => void = () => {};
 
@@ -51,15 +52,25 @@ export class IntlTelDirective implements AfterViewInit, OnDestroy, ControlValueA
       countryNameLocale: 'fr',
       formatAsYouType: true,
       strictMode: true,
-      // ~260 kB de libphonenumber, servis dans un chunk séparé.
+      // ~260 kB de libphonenumber, chunk séparé — attendre `iti.promise`
+      // avant getNumber() sinon throw « utils is required ».
       loadUtils: () => import('intl-tel-input/utils'),
     });
-    if (this.pending) this.iti.setNumber(this.pending);
 
     const input = this.host.nativeElement;
     input.addEventListener('input', this.emit);
     input.addEventListener('countrychange', this.emit);
     input.addEventListener('blur', this.touch);
+
+    void this.iti.promise
+      .then(() => {
+        this.utilsReady = true;
+        if (this.pending) this.iti?.setNumber(this.pending);
+        this.emit();
+      })
+      .catch((err: unknown) => {
+        console.error('intl-tel-input utils failed to load', err);
+      });
   }
 
   ngOnDestroy(): void {
@@ -72,7 +83,7 @@ export class IntlTelDirective implements AfterViewInit, OnDestroy, ControlValueA
 
   writeValue(value: string | null): void {
     this.pending = value ?? '';
-    if (this.iti) this.iti.setNumber(this.pending);
+    if (this.iti && this.utilsReady) this.iti.setNumber(this.pending);
     else this.host.nativeElement.value = this.pending;
   }
 
@@ -88,12 +99,22 @@ export class IntlTelDirective implements AfterViewInit, OnDestroy, ControlValueA
     this.host.nativeElement.disabled = isDisabled;
   }
 
-  /** Stocke l'E.164 dès qu'il est disponible, sinon la saisie brute. */
+  /** Stocke l'E.164 dès que les utils sont prêts, sinon la saisie brute. */
   private readonly emit = (): void => {
     const raw = this.host.nativeElement.value.trim();
-    const e164 = this.iti?.getNumber() ?? '';
+    let e164 = '';
+    if (this.utilsReady && this.iti) {
+      try {
+        e164 = this.iti.getNumber() ?? '';
+      } catch {
+        // Utils pas encore attachés — on garde le brut.
+      }
+    }
     this.onChange(e164 || raw);
-    this.telValidityChange.emit(raw.length === 0 || !!this.iti?.isValidNumber());
+    const valid =
+      raw.length === 0 ||
+      (this.utilsReady ? !!this.iti?.isValidNumber() : true);
+    this.telValidityChange.emit(valid);
   };
 
   private readonly touch = (): void => this.onTouched();
