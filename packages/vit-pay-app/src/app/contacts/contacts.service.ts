@@ -1,6 +1,13 @@
 import { Injectable } from '@angular/core';
 import { ethers } from 'ethers';
 import { environment } from '../../environments/environment';
+import {
+  ContactProviderId,
+  ImportedContact,
+  importFromGoogle,
+  importFromMicrosoft,
+} from './contact-providers';
+import { ContactCardPayload } from './contact-share';
 
 export interface Contact {
   id: string;
@@ -212,48 +219,71 @@ export class ContactsService {
     return !!environment.googleClientId && typeof (window as any).google !== 'undefined';
   }
 
+  isMicrosoftPickerSupported(): boolean {
+    return !!environment.microsoftClientId;
+  }
+
   /**
-   * OAuth Google (People API readonly) → liste des connexions de l'utilisateur.
-   * Ne donne que des noms (+ tel/email en hint). Aucune crypto-address.
-   * Requires `googleClientId` configured et `<script src="…/gsi/client">` chargé.
+   * Carnet distant (Google People / Microsoft Graph). Ces API ne renvoient que
+   * nom / tel / e-mail : les contacts importés arrivent donc sans address Safe,
+   * en statut `pending`, jusqu'à ce qu'une carte ViT soit scannée.
    */
-  async pickFromGoogle(): Promise<Array<{ name: string; hint?: string }> | null> {
-    const win = window as any;
-    if (!environment.googleClientId || !win.google?.accounts?.oauth2) return null;
-
-    const accessToken = await new Promise<string | null>((resolve) => {
-      const client = win.google.accounts.oauth2.initTokenClient({
-        client_id: environment.googleClientId,
-        scope: 'https://www.googleapis.com/auth/contacts.readonly',
-        callback: (resp: { access_token?: string; error?: string }) => {
-          resolve(resp.access_token || null);
-        },
-      });
-      client.requestAccessToken({ prompt: '' });
-    });
-
-    if (!accessToken) return null;
-
-    const url = 'https://people.googleapis.com/v1/people/me/connections' +
-      '?personFields=names,emailAddresses,phoneNumbers&pageSize=200';
-    const res = await fetch(url, { headers: { Authorization: `Bearer ${accessToken}` } });
-    if (!res.ok) return null;
-    const data = await res.json() as {
-      connections?: Array<{
-        names?: Array<{ displayName?: string }>;
-        emailAddresses?: Array<{ value?: string }>;
-        phoneNumbers?: Array<{ value?: string }>;
-      }>;
-    };
-    const conns = data.connections || [];
-    const out: Array<{ name: string; hint?: string }> = [];
-    for (const c of conns) {
-      const name = c.names?.[0]?.displayName?.trim();
-      if (!name) continue;
-      const hint = c.emailAddresses?.[0]?.value || c.phoneNumbers?.[0]?.value;
-      out.push({ name, hint });
+  async importFromProvider(provider: ContactProviderId): Promise<ImportedContact[]> {
+    if (provider === 'google') {
+      if (!environment.googleClientId) throw new Error('Google non configuré (googleClientId).');
+      return importFromGoogle(environment.googleClientId);
     }
-    return out;
+    if (!environment.microsoftClientId) {
+      throw new Error('Microsoft non configuré (microsoftClientId).');
+    }
+    return importFromMicrosoft(environment.microsoftClientId);
+  }
+
+  /**
+   * Enregistre en masse des fiches sans address. Les doublons (même nom, ou
+   * même tel/e-mail) sont ignorés pour rendre un ré-import idempotent.
+   */
+  importMany(owner: string, contacts: ImportedContact[], source: Contact['source'] = 'phone'): number {
+    const existing = this.list(owner);
+    const seen = new Set(
+      existing.flatMap((c) => [
+        c.name.toLowerCase(),
+        ...(c.tel ? [c.tel] : []),
+        ...(c.email ? [c.email.toLowerCase()] : []),
+      ]),
+    );
+
+    let added = 0;
+    for (const c of contacts) {
+      const keys = [c.name.toLowerCase(), ...(c.tel ? [c.tel] : []), ...(c.email ? [c.email.toLowerCase()] : [])];
+      if (keys.some((k) => seen.has(k))) continue;
+      this.upsert(owner, {
+        name: c.name,
+        address: '',
+        tel: c.tel,
+        email: c.email,
+        source,
+        status: 'pending',
+      });
+      keys.forEach((k) => seen.add(k));
+      added++;
+    }
+    return added;
+  }
+
+  /** Ajoute (ou met à jour) le contact reçu via une carte ViT partagée. */
+  addFromCard(owner: string, card: ContactCardPayload): Contact {
+    const existing = card.a ? this.findByAddress(owner, card.a) : undefined;
+    return this.upsert(owner, {
+      id: existing?.id,
+      name: card.n,
+      address: card.a || '',
+      tel: card.t,
+      email: card.e,
+      note: existing?.note,
+      source: 'manual',
+      status: card.a ? 'confirmed' : 'pending',
+    });
   }
 
   private key(owner: string): string {

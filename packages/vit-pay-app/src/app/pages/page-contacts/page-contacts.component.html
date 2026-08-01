@@ -1,9 +1,12 @@
 <section class="contacts-page">
   <header class="topbar">
-    <a class="back" [routerLink]="['/']" aria-label="Retour">
+    <a *ngIf="view === 'list'" class="back" [routerLink]="['/']" aria-label="Retour">
       <span class="material-symbols-outlined">arrow_back</span>
     </a>
-    <h1>Carnet d'adresses</h1>
+    <button *ngIf="view !== 'list'" type="button" class="back" (click)="back()" aria-label="Retour">
+      <span class="material-symbols-outlined">arrow_back</span>
+    </button>
+    <h1>{{ view === 'card' ? (cardIsMine ? 'Ma carte' : 'Partager') : 'Carnet d\'adresses' }}</h1>
     <button *ngIf="view === 'list' && hasWallet" class="add" type="button" (click)="openAdd()" aria-label="Ajouter">
       <span class="material-symbols-outlined">add</span>
     </button>
@@ -11,20 +14,32 @@
   </header>
 
   <p *ngIf="error" class="error">{{ error }}</p>
+  <p *ngIf="notice" class="notice">{{ notice }}</p>
   <p *ngIf="!hasWallet" class="hint">Crée un wallet d'abord pour gérer ton carnet.</p>
 
   <!-- ===== LISTE ===== -->
   <ng-container *ngIf="view === 'list' && hasWallet">
     <div class="actions">
-      <button class="cta" type="button" (click)="openAdd()">
+      <button class="cta" type="button" (click)="startScan()">
+        <span class="material-symbols-outlined">qr_code_scanner</span>
+        Scanner une carte
+      </button>
+      <button class="secondary" type="button" (click)="showMyCard()">
+        <span class="material-symbols-outlined">qr_code_2</span>
+        Ma carte
+      </button>
+    </div>
+
+    <div class="actions">
+      <button class="secondary" type="button" (click)="openAdd()">
         <span class="material-symbols-outlined">person_add</span>
-        Ajouter manuellement
+        Manuel
       </button>
       <button
         class="secondary"
         type="button"
         (click)="importFromPhone()"
-        [disabled]="!phonePickerSupported"
+        [disabled]="!phonePickerSupported || busy"
         [title]="phonePickerSupported ? 'Importer depuis le téléphone' : 'Non disponible sur cet appareil (iOS / desktop)'">
         <span class="material-symbols-outlined">contacts</span>
         Téléphone
@@ -33,10 +48,21 @@
         *ngIf="googlePickerSupported"
         class="secondary"
         type="button"
-        (click)="importFromGoogle()"
-        title="Importer les noms depuis Google Contacts">
+        (click)="importFrom('google')"
+        [disabled]="busy"
+        title="Importer depuis Google Contacts">
         <span class="material-symbols-outlined">cloud</span>
         Google
+      </button>
+      <button
+        *ngIf="microsoftPickerSupported"
+        class="secondary"
+        type="button"
+        (click)="importFrom('microsoft')"
+        [disabled]="busy"
+        title="Importer depuis Outlook / Microsoft 365">
+        <span class="material-symbols-outlined">mail</span>
+        Microsoft
       </button>
     </div>
 
@@ -45,10 +71,18 @@
         <span class="contact__avatar">{{ c.name.charAt(0).toUpperCase() }}</span>
         <div class="contact__info">
           <div class="contact__name">{{ c.name }}</div>
-          <div class="contact__addr">{{ short(c.address) }}</div>
+          <div class="contact__addr" *ngIf="c.address; else noAddr">{{ short(c.address) }}</div>
+          <ng-template #noAddr>
+            <div class="contact__addr contact__addr--missing">
+              {{ c.tel || c.email || 'Sans address' }}
+            </div>
+          </ng-template>
           <div class="contact__note" *ngIf="c.note">{{ c.note }}</div>
         </div>
         <div class="contact__actions">
+          <button type="button" class="icon-btn" (click)="shareContact(c)" aria-label="Partager">
+            <span class="material-symbols-outlined">qr_code_2</span>
+          </button>
           <button type="button" class="icon-btn" (click)="openEdit(c)" aria-label="Modifier">
             <span class="material-symbols-outlined">edit</span>
           </button>
@@ -62,9 +96,74 @@
     <ng-template #empty>
       <div class="empty">
         <span class="vit-label">Aucun contact</span>
-        <p>Ajoute une address pour accélérer tes paiements.</p>
+        <p>Scanne la carte ViT d'un proche, ou importe ton carnet.</p>
       </div>
     </ng-template>
+  </ng-container>
+
+  <!-- ===== CARTE QR ===== -->
+  <div class="card-view" *ngIf="view === 'card'">
+    <div class="card-qr">
+      <canvas #qrCanvas width="232" height="232"></canvas>
+    </div>
+    <div class="card-id">
+      <strong>{{ cardTitle }}</strong>
+      <em *ngIf="cardSubtitle">{{ cardSubtitle }}</em>
+    </div>
+    <p class="hint">
+      {{ cardIsMine ? 'Fais scanner ce code pour recevoir de l\'argent' : 'Ce code ajoute ce contact au carnet de ton correspondant' }}
+    </p>
+    <div class="form-actions form-actions--center">
+      <button type="button" class="secondary" (click)="copyCardUrl()">
+        <span class="material-symbols-outlined">content_copy</span>
+        {{ copied ? 'Copié !' : 'Copier le lien' }}
+      </button>
+      <button type="button" class="cta" (click)="shareCardUrl()">
+        <span class="material-symbols-outlined">share</span>
+        Partager
+      </button>
+    </div>
+  </div>
+
+  <!-- ===== SCAN ===== -->
+  <div class="scan-view" *ngIf="view === 'scan'">
+    <video #scanVideo class="scan-video" playsinline muted></video>
+    <p class="hint">Vise la carte ViT de ton contact</p>
+    <button type="button" class="secondary" (click)="stopScan()">Annuler</button>
+  </div>
+
+  <!-- ===== IMPORT DISTANT ===== -->
+  <ng-container *ngIf="view === 'import'">
+    <p class="hint">
+      {{ importProvider === 'google' ? 'Google' : 'Microsoft' }} ne partage pas d'address de wallet :
+      ces contacts arrivent sans address.
+    </p>
+    <input
+      class="import-filter"
+      type="search"
+      [(ngModel)]="importFilter"
+      (ngModelChange)="applyImportFilter()"
+      name="importFilter"
+      placeholder="Rechercher…"
+      autocomplete="off" />
+
+    <ul class="contact-list">
+      <li class="contact contact--pick" *ngFor="let c of importedFiltered" (click)="addImported(c)">
+        <span class="contact__avatar">{{ c.name.charAt(0).toUpperCase() }}</span>
+        <div class="contact__info">
+          <div class="contact__name">{{ c.name }}</div>
+          <div class="contact__addr contact__addr--missing">{{ c.email || c.tel || '—' }}</div>
+        </div>
+        <span class="material-symbols-outlined">chevron_right</span>
+      </li>
+    </ul>
+
+    <div class="form-actions">
+      <button type="button" class="secondary" (click)="cancel()">Annuler</button>
+      <button type="button" class="cta" (click)="addAllImported()" [disabled]="!importedFiltered.length">
+        Tout ajouter ({{ importedFiltered.length }})
+      </button>
+    </div>
   </ng-container>
 
   <!-- ===== FORMULAIRE ===== -->
@@ -86,8 +185,21 @@
       <input type="text" [(ngModel)]="formName" name="name" placeholder="Léa Martin" required />
     </label>
     <label>
-      <span class="label-text">Address Ethereum</span>
-      <input type="text" [(ngModel)]="formAddress" name="address" placeholder="0x…" required spellcheck="false" />
+      <span class="label-text">Address Ethereum (optionnel)</span>
+      <input
+        type="text"
+        [(ngModel)]="formAddress"
+        name="address"
+        placeholder="0x… — ou scanne sa carte plus tard"
+        spellcheck="false" />
+    </label>
+    <label>
+      <span class="label-text">Téléphone (optionnel)</span>
+      <input type="tel" [(ngModel)]="formTel" name="tel" placeholder="+41 79 000 00 00" inputmode="tel" />
+    </label>
+    <label>
+      <span class="label-text">E-mail (optionnel)</span>
+      <input type="email" [(ngModel)]="formEmail" name="email" placeholder="lea@example.ch" inputmode="email" />
     </label>
     <label>
       <span class="label-text">Note (optionnel)</span>
