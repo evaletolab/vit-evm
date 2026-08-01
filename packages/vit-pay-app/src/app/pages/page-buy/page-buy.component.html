@@ -50,6 +50,16 @@
           <span class="material-symbols-outlined">qr_code_scanner</span>
         </button>
       </div>
+      <ul class="suggest" *ngIf="suggestions.length">
+        <li *ngFor="let s of suggestions" class="suggest__row" (click)="pickSuggestion(s)">
+          <span class="suggest__avatar">{{ s.name.charAt(0).toUpperCase() }}</span>
+          <div class="suggest__info">
+            <div class="suggest__name">{{ s.name }}</div>
+            <div class="suggest__meta">{{ s.meta }}</div>
+          </div>
+          <span class="material-symbols-outlined" *ngIf="s.remote" title="Depuis ton carnet Google / Microsoft">cloud</span>
+        </li>
+      </ul>
       <p class="matched" *ngIf="matchedContact">
         <span class="material-symbols-outlined">verified</span>
         {{ matchedContact.name }}

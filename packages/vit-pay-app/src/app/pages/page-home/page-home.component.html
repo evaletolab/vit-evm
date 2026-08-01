@@ -6,14 +6,23 @@
       <div class="greeting__hi">Bonsoir,</div>
       <h1>{{ hasWallet ? (displayName || shortAddr || 'Wallet') : 'Visiteur' }}</h1>
     </div>
-    <a
-      *ngIf="hasWallet; else noWalletAvatar"
-      class="qr-btn"
-      [routerLink]="['/contacts']"
-      [queryParams]="{ me: 1 }"
-      aria-label="Ma carte de contact ViT">
-      <span class="material-symbols-outlined">qr_code_2</span>
-    </a>
+    <div class="topbar__actions" *ngIf="hasWallet; else noWalletAvatar">
+      <a
+        *ngIf="contactAccessActive"
+        class="access-dot"
+        [routerLink]="['/contacts/access']"
+        title="Carnets Google / Microsoft actifs"
+        aria-label="Carnets de contacts connectés">
+        <span class="material-symbols-outlined">cloud_done</span>
+      </a>
+      <a
+        class="qr-btn"
+        [routerLink]="['/contacts']"
+        [queryParams]="{ me: 1 }"
+        aria-label="Ma carte de contact ViT">
+        <span class="material-symbols-outlined">qr_code_2</span>
+      </a>
+    </div>
     <ng-template #noWalletAvatar>
       <div class="avatar avatar--off" aria-hidden="true"></div>
     </ng-template>

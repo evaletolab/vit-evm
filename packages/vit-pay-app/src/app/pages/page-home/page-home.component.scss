@@ -80,6 +80,28 @@
       }
     }
 
+    &__actions {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+
+    .access-dot {
+      width: 2rem;
+      height: 2rem;
+      border-radius: 50%;
+      background: rgba(93,184,166,.14);
+      border: 1px solid rgba(93,184,166,.35);
+      color: var(--positive, #5db8a6);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      text-decoration: none;
+      flex-shrink: 0;
+
+      .material-symbols-outlined { font-size: 1.05rem; }
+    }
+
     .qr-btn {
       width: 2.6rem;
       height: 2.6rem;

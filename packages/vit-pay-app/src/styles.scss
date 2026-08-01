@@ -305,6 +305,56 @@ sl-dialog::part(panel) {
   color: var(--text);
 }
 
+/* === Suggestions de destinataire (page-buy) ===
+   Hors du composant : sa feuille frôle déjà le budget anyComponentStyle. */
+.buy-page .suggest {
+  list-style: none;
+  margin: 6px 0 0;
+  padding: 4px;
+  border-radius: var(--r-tile);
+  background: var(--glass);
+  border: 1px solid var(--hairline);
+  backdrop-filter: blur(10px);
+
+  &__row {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 8px;
+    border-radius: 10px;
+    cursor: pointer;
+
+    &:hover { background: rgba(255, 255, 255, .05); }
+    .material-symbols-outlined { font-size: 16px; color: var(--text-dim); }
+  }
+
+  &__avatar {
+    width: 30px;
+    height: 30px;
+    border-radius: 10px;
+    background: var(--grad);
+    color: #fff;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.8rem;
+    font-weight: 700;
+    flex-shrink: 0;
+  }
+
+  &__info { min-width: 0; flex: 1; }
+  &__name { font-size: 0.88rem; font-weight: 600; }
+
+  &__meta {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 10px;
+    color: var(--text-muted);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+}
+
 /* === Onboarding landing (page-wallet) === */
 .wallet-page .landing {
   text-align: center;

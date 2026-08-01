@@ -3,6 +3,7 @@ import { Router } from '@angular/router';
 import { ethers } from 'ethers';
 import { WalletService, RecentTransfer } from '../../wallet/wallet.service';
 import { ContactsService } from '../../contacts/contacts.service';
+import { ContactAccessService } from '../../contacts/contact-access.service';
 import { ClaimLinkService } from '../../claimlink/claimlink.service';
 import { formatZchfAmount, shortAddress } from '../../wallet/wallet.utils';
 import { environment } from '../../../environments/environment';
@@ -37,10 +38,12 @@ export class PageHomeComponent implements OnInit {
   loadingTxs = false;
   recentTxs: RecentTx[] = [];
   owner = '';
+  contactAccessActive = false;
 
   constructor(
     private wallet: WalletService,
     private contacts: ContactsService,
+    private contactAccess: ContactAccessService,
     private claimLink: ClaimLinkService,
     private router: Router,
   ) {}
@@ -56,6 +59,7 @@ export class PageHomeComponent implements OnInit {
       this.owner = state.accountAddress;
       this.shortAddr = shortAddress(state.accountAddress);
       this.displayName = state.displayName || '';
+      this.contactAccessActive = this.contactAccess.hasAnyConnected(state.accountAddress);
 
       this.wallet.getZchfBalance()
         .then((raw) => { this.balance = formatZchfAmount(raw); })

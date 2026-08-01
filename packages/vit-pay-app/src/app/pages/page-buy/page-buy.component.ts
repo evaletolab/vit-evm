@@ -15,14 +15,25 @@ import {
   isValidEvmAddress,
   mapPaymasterError,
   parseZchfAmount,
+  shortAddress,
 } from '../../wallet/wallet.utils';
 import { UserOperationResult } from '../../wallet/wallet.types';
 import { ContactsService, Contact } from '../../contacts/contacts.service';
+import { ContactAccessService } from '../../contacts/contact-access.service';
 import { ClaimLinkService } from '../../claimlink/claimlink.service';
 import { TxOverlayService } from '../../wallet/tx-overlay.service';
 
 type Step = 'scanning' | 'confirm' | 'sending' | 'done' | 'error';
 type RecipientKind = 'address' | 'email' | 'phone' | 'unknown';
+
+/** Proposition de destinataire : carnet local ou carnet distant autorisé. */
+interface RecipientSuggestion {
+  name: string;
+  /** Ce qui est injecté dans le champ : adresse 0x…, e-mail ou téléphone. */
+  value: string;
+  meta: string;
+  remote: boolean;
+}
 
 @Component({
   selector: 'vit-page-buy',
@@ -48,6 +59,7 @@ export class PageBuyComponent implements AfterViewInit, OnDestroy {
   contactsOpen = false;
   contacts: Contact[] = [];
   matchedContact?: Contact;
+  suggestions: RecipientSuggestion[] = [];
 
   private stream?: MediaStream;
   private detector?: any;
@@ -59,6 +71,7 @@ export class PageBuyComponent implements AfterViewInit, OnDestroy {
     private wallet: WalletService,
     private zone: NgZone,
     private contactsSvc: ContactsService,
+    private contactAccess: ContactAccessService,
     private route: ActivatedRoute,
     private claimLink: ClaimLinkService,
     private txOverlay: TxOverlayService,
@@ -102,8 +115,56 @@ export class PageBuyComponent implements AfterViewInit, OnDestroy {
   }
 
   onToChange(): void {
-    if (!this.ownerAddress || !this.to) { this.matchedContact = undefined; return; }
+    if (!this.ownerAddress || !this.to) {
+      this.matchedContact = undefined;
+      this.suggestions = [];
+      return;
+    }
     this.matchedContact = this.contactsSvc.findByAddress(this.ownerAddress, this.to);
+    this.suggestions = this.matchedContact ? [] : this.buildSuggestions(this.to);
+  }
+
+  pickSuggestion(s: RecipientSuggestion): void {
+    this.to = s.value;
+    this.suggestions = [];
+    this.onToChange();
+  }
+
+  /**
+   * Carnet local d'abord, puis les carnets Google / Microsoft autorisés depuis
+   * `/contacts/access` — l'annuaire est déjà en cache, aucune requête réseau.
+   */
+  private buildSuggestions(query: string): RecipientSuggestion[] {
+    const q = query.trim().toLowerCase();
+    if (q.length < 2 || isValidEvmAddress(query.trim())) return [];
+
+    const out: RecipientSuggestion[] = [];
+    const seen = new Set<string>();
+
+    for (const c of this.contacts) {
+      if (!c.name.toLowerCase().includes(q)) continue;
+      const value = c.address || c.email || c.tel;
+      if (!value || seen.has(value)) continue;
+      seen.add(value);
+      out.push({
+        name: c.name,
+        value,
+        meta: c.address ? shortAddress(c.address) : (c.email || c.tel || ''),
+        remote: false,
+      });
+      if (out.length >= 5) return out;
+    }
+
+    for (const s of this.contactAccess.search(this.ownerAddress, q)) {
+      // Sans e-mail ni téléphone on ne saurait pas où envoyer le lien.
+      const value = s.email || s.tel;
+      if (!value || seen.has(value)) continue;
+      seen.add(value);
+      out.push({ name: s.name, value, meta: value, remote: true });
+      if (out.length >= 5) break;
+    }
+
+    return out;
   }
 
   /** Type de destinataire saisi, pour adapter le libellé du bouton / les indices. */
