@@ -11,8 +11,7 @@
 
   <!-- Landing : choix de nom local (pas une réservation on-chain) -->
   <article *ngIf="view === 'no-wallet'" class="card landing">
-    <div class="landing-logo" aria-hidden="true">V</div>
-    <h2>Choisissez un nom</h2>
+    <div class="landing-logo" aria-hidden="true">ViT</div>
     <p class="hint" hidden>
       Identifiant privé sur cet appareil
     </p>
@@ -31,7 +30,7 @@
     </div>
 
     <ng-container *ngIf="showContactFields">
-      <p class="hint">Contact à joindre avec vos envois pour informer le destinataire.</p>
+      <p class="hint">Contact pour informer le destinataire.</p>
 
       <div
         class="steps-viewport"
