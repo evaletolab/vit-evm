@@ -79,6 +79,24 @@
         &::after { display: none; }
       }
     }
+
+    .qr-btn {
+      width: 2.6rem;
+      height: 2.6rem;
+      border-radius: 50%;
+      background: var(--glass);
+      border: 1px solid var(--hairline);
+      color: var(--text);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      text-decoration: none;
+      backdrop-filter: blur(10px);
+      flex-shrink: 0;
+
+      .material-symbols-outlined { font-size: 1.35rem; }
+      &:active { transform: scale(0.95); }
+    }
   }
 
   /* === Solde === */

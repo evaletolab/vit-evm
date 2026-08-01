@@ -6,7 +6,17 @@
       <div class="greeting__hi">Bonsoir,</div>
       <h1>{{ hasWallet ? (displayName || shortAddr || 'Wallet') : 'Visiteur' }}</h1>
     </div>
-    <div class="avatar" [class.avatar--off]="!hasWallet" aria-hidden="true"></div>
+    <a
+      *ngIf="hasWallet; else noWalletAvatar"
+      class="qr-btn"
+      [routerLink]="['/contacts']"
+      [queryParams]="{ me: 1 }"
+      aria-label="Ma carte de contact ViT">
+      <span class="material-symbols-outlined">qr_code_2</span>
+    </a>
+    <ng-template #noWalletAvatar>
+      <div class="avatar avatar--off" aria-hidden="true"></div>
+    </ng-template>
   </header>
 
   <section class="balance">
