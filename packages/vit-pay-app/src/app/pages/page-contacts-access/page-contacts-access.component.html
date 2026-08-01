@@ -1,0 +1,65 @@
+<section class="access-page">
+  <header class="topbar">
+    <a class="back" [routerLink]="['/contacts']" aria-label="Retour">
+      <span class="material-symbols-outlined">arrow_back</span>
+    </a>
+    <h1>Accès aux contacts</h1>
+    <span class="back back--placeholder" aria-hidden="true"></span>
+  </header>
+
+  <p *ngIf="error" class="error">{{ error }}</p>
+  <p *ngIf="notice" class="notice">{{ notice }}</p>
+  <p *ngIf="!hasWallet" class="hint">Crée un wallet d'abord.</p>
+
+  <p class="intro">
+    Autorise ViT à lire ton carnet pour retrouver un proche par son nom au moment
+    d'envoyer de l'argent. Les fiches restent sur cet appareil, en lecture seule,
+    et ViT n'écrit jamais chez le fournisseur.
+  </p>
+
+  <ng-container *ngIf="hasWallet">
+    <article class="provider" *ngFor="let p of providers">
+      <div class="provider__head">
+        <span class="provider__icon" [class.provider__icon--on]="p.connected">
+          <span class="material-symbols-outlined">{{ p.id === 'google' ? 'cloud' : 'mail' }}</span>
+        </span>
+        <div class="provider__body">
+          <div class="provider__title">{{ p.label }}</div>
+          <div class="provider__meta" *ngIf="p.connected; else offMeta">
+            Actif · {{ p.count }} fiche{{ p.count > 1 ? 's' : '' }}
+            <span *ngIf="p.syncedAt"> · maj {{ p.syncedAt | date:'dd/MM HH:mm' }}</span>
+          </div>
+          <ng-template #offMeta>
+            <div class="provider__meta">
+              {{ p.configured ? 'Non connecté' : 'Non configuré sur ce déploiement' }}
+            </div>
+          </ng-template>
+        </div>
+      </div>
+
+      <div class="provider__actions">
+        <button
+          type="button"
+          class="cta"
+          (click)="connect(p)"
+          [disabled]="!p.configured || busy !== null">
+          {{ busy === p.id ? 'Connexion…' : (p.connected ? 'Synchroniser' : 'Connecter') }}
+        </button>
+        <button
+          *ngIf="p.connected"
+          type="button"
+          class="secondary"
+          (click)="disconnect(p)"
+          [disabled]="busy !== null">
+          Déconnecter
+        </button>
+      </div>
+    </article>
+  </ng-container>
+
+  <p class="hint">
+    {{ devicePickerSupported
+        ? 'Le carnet du téléphone reste accessible ponctuellement depuis le carnet ViT, sans autorisation permanente.'
+        : "Le carnet du téléphone n'est pas accessible sur cet appareil (iOS, ou navigateur non compatible)." }}
+  </p>
+</section>

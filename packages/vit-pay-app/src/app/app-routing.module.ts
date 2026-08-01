@@ -10,6 +10,7 @@ import { PageSentComponent } from './pages/page-sent/page-sent.component';
 import { PageTransactionsComponent } from './pages/page-transactions/page-transactions.component';
 import { PageWalletComponent } from './pages/page-wallet/page-wallet.component';
 import { PageContactsComponent } from './pages/page-contacts/page-contacts.component';
+import { PageContactsAccessComponent } from './pages/page-contacts-access/page-contacts-access.component';
 import { PageLinksComponent } from './pages/page-links/page-links.component';
 import { PageClaimComponent } from './pages/page-claim/page-claim.component';
 import { PageIbanComponent } from './pages/page-iban/page-iban.component';
@@ -29,6 +30,7 @@ const routes: Routes = [
   { path: 'txs', component: PageTransactionsComponent, canActivate: [requireWalletGuard] },
   { path: 'wallet', component: PageWalletComponent, canActivate: [devOnlyGuard] },
   { path: 'contacts', component: PageContactsComponent, canActivate: [requireWalletGuard] },
+  { path: 'contacts/access', component: PageContactsAccessComponent, canActivate: [requireWalletGuard] },
   { path: 'links', component: PageLinksComponent, canActivate: [requireWalletGuard] },
   { path: 'iban', component: PageIbanComponent, canActivate: [requireWalletGuard] },
   { path: 'devices', component: PageDevicesComponent, canActivate: [requireWalletGuard] },

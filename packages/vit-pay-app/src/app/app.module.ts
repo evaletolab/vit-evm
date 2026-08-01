@@ -15,6 +15,7 @@ import { PageTransactionsComponent } from './pages/page-transactions/page-transa
 import { PageBuyComponent } from './pages/page-buy/page-buy.component';
 import { PageWalletComponent } from './pages/page-wallet/page-wallet.component';
 import { PageContactsComponent } from './pages/page-contacts/page-contacts.component';
+import { PageContactsAccessComponent } from './pages/page-contacts-access/page-contacts-access.component';
 import { PageLinksComponent } from './pages/page-links/page-links.component';
 import { PageClaimComponent } from './pages/page-claim/page-claim.component';
 import { PageIbanComponent } from './pages/page-iban/page-iban.component';
@@ -38,6 +39,7 @@ import { TxOverlayComponent } from './wallet/tx-overlay.component';
     PageBuyComponent,
     PageWalletComponent,
     PageContactsComponent,
+    PageContactsAccessComponent,
     PageLinksComponent,
     PageClaimComponent,
     PageIbanComponent,

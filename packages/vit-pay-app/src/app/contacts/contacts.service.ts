@@ -1,14 +1,5 @@
 import { Injectable } from '@angular/core';
 import { ethers } from 'ethers';
-import { environment } from '../../environments/environment';
-import {
-  ContactProviderId,
-  ImportedContact,
-  importFromGoogle,
-  importFromMicrosoft,
-} from './contact-providers';
-import { ContactCardPayload } from './contact-share';
-
 export interface Contact {
   id: string;
   name: string;
@@ -182,18 +173,6 @@ export class ContactsService {
     }));
   }
 
-  /** Single-contact pick for « C'est moi » profile bootstrap (V1 Contact Picker). */
-  async pickSelfFromPhone(): Promise<{ name: string; tel?: string; email?: string } | null> {
-    const picked = await this.selectFromPhone(false);
-    const c = picked?.[0];
-    if (!c) return null;
-    return {
-      name: (c.name?.[0] || '').trim(),
-      tel: c.tel?.[0],
-      email: c.email?.[0],
-    };
-  }
-
   private async selectFromPhone(
     multiple: boolean,
   ): Promise<Array<{ name?: string[]; email?: string[]; tel?: string[] }> | null> {
@@ -213,77 +192,6 @@ export class ContactsService {
   isPhonePickerSupported(): boolean {
     const navAny = navigator as any;
     return !!(navAny.contacts && typeof navAny.contacts.select === 'function');
-  }
-
-  isGooglePickerSupported(): boolean {
-    return !!environment.googleClientId && typeof (window as any).google !== 'undefined';
-  }
-
-  isMicrosoftPickerSupported(): boolean {
-    return !!environment.microsoftClientId;
-  }
-
-  /**
-   * Carnet distant (Google People / Microsoft Graph). Ces API ne renvoient que
-   * nom / tel / e-mail : les contacts importés arrivent donc sans address Safe,
-   * en statut `pending`, jusqu'à ce qu'une carte ViT soit scannée.
-   */
-  async importFromProvider(provider: ContactProviderId): Promise<ImportedContact[]> {
-    if (provider === 'google') {
-      if (!environment.googleClientId) throw new Error('Google non configuré (googleClientId).');
-      return importFromGoogle(environment.googleClientId);
-    }
-    if (!environment.microsoftClientId) {
-      throw new Error('Microsoft non configuré (microsoftClientId).');
-    }
-    return importFromMicrosoft(environment.microsoftClientId);
-  }
-
-  /**
-   * Enregistre en masse des fiches sans address. Les doublons (même nom, ou
-   * même tel/e-mail) sont ignorés pour rendre un ré-import idempotent.
-   */
-  importMany(owner: string, contacts: ImportedContact[], source: Contact['source'] = 'phone'): number {
-    const existing = this.list(owner);
-    const seen = new Set(
-      existing.flatMap((c) => [
-        c.name.toLowerCase(),
-        ...(c.tel ? [c.tel] : []),
-        ...(c.email ? [c.email.toLowerCase()] : []),
-      ]),
-    );
-
-    let added = 0;
-    for (const c of contacts) {
-      const keys = [c.name.toLowerCase(), ...(c.tel ? [c.tel] : []), ...(c.email ? [c.email.toLowerCase()] : [])];
-      if (keys.some((k) => seen.has(k))) continue;
-      this.upsert(owner, {
-        name: c.name,
-        address: '',
-        tel: c.tel,
-        email: c.email,
-        source,
-        status: 'pending',
-      });
-      keys.forEach((k) => seen.add(k));
-      added++;
-    }
-    return added;
-  }
-
-  /** Ajoute (ou met à jour) le contact reçu via une carte ViT partagée. */
-  addFromCard(owner: string, card: ContactCardPayload): Contact {
-    const existing = card.a ? this.findByAddress(owner, card.a) : undefined;
-    return this.upsert(owner, {
-      id: existing?.id,
-      name: card.n,
-      address: card.a || '',
-      tel: card.t,
-      email: card.e,
-      note: existing?.note,
-      source: 'manual',
-      status: card.a ? 'confirmed' : 'pending',
-    });
   }
 
   private key(owner: string): string {
