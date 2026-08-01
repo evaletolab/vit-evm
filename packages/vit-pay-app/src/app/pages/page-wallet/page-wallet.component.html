@@ -59,14 +59,6 @@
               [disabled]="busy"
               (keyup.enter)="nextStep()"
               aria-label="Prénom/Nom ou pseudo" />
-            <button
-              *ngIf="phonePickerOk"
-              type="button"
-              class="link"
-              (click)="pickSelfContact()"
-              [disabled]="busy">
-              Importer mon contact
-            </button>
           </section>
 
           <section
@@ -86,6 +78,7 @@
               [disabled]="busy"
               [(ngModel)]="profileTel"
               [ngModelOptions]="{ standalone: true }"
+              (keyup.enter)="nextStep()"
               aria-label="Numéro de téléphone" />
           </section>
 

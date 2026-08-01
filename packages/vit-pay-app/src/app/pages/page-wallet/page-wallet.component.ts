@@ -13,7 +13,6 @@ import type { Iso2 } from 'intl-tel-input';
 import { WalletService } from '../../wallet/wallet.service';
 import { WalletUnlockService } from '../../wallet/wallet-unlock.service';
 import { ThemeService } from '../../theme/theme.service';
-import { ContactsService } from '../../contacts/contacts.service';
 import {
   RecoveryRequest,
   UserOperationDebug,
@@ -55,11 +54,6 @@ export class PageWalletComponent implements OnInit, AfterViewInit, OnDestroy {
   }
   get cardTitles(): string[] { return this.cardTabs.map((t) => t.title); }
   get devMode(): boolean { return this.theme.isDevMode(); }
-  get phonePickerOk(): boolean {
-    return typeof navigator !== 'undefined'
-      && !!(navigator as any).contacts
-      && typeof (navigator as any).contacts.select === 'function';
-  }
   get nameValid(): boolean {
     return isValidWalletName(this.walletName);
   }
@@ -142,7 +136,6 @@ export class PageWalletComponent implements OnInit, AfterViewInit, OnDestroy {
     private wallet: WalletService,
     private unlock: WalletUnlockService,
     private theme: ThemeService,
-    private contacts: ContactsService,
     private route: ActivatedRoute,
     private router: Router,
   ) {
@@ -185,15 +178,6 @@ export class PageWalletComponent implements OnInit, AfterViewInit, OnDestroy {
       this.error = err instanceof Error ? err.message : String(err);
       this.view = 'no-wallet';
     }
-  }
-
-  /** « C'est moi » — prefill the profile from the device address book. */
-  async pickSelfContact(): Promise<void> {
-    const me = await this.contacts.pickSelfFromPhone();
-    if (!me) return;
-    if (me.name) this.displayName = me.name;
-    if (me.tel) this.profileTel = me.tel;
-    if (me.email) this.profileEmail = me.email;
   }
 
   onNameInput(value: string): void {
