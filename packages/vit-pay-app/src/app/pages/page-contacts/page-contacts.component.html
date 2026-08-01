@@ -44,30 +44,41 @@
         <span class="material-symbols-outlined">contacts</span>
         Téléphone
       </button>
-      <button
-        *ngIf="googlePickerSupported"
-        class="secondary"
-        type="button"
-        (click)="importFrom('google')"
-        [disabled]="busy"
-        title="Importer depuis Google Contacts">
-        <span class="material-symbols-outlined">cloud</span>
-        Google
-      </button>
-      <button
-        *ngIf="microsoftPickerSupported"
-        class="secondary"
-        type="button"
-        (click)="importFrom('microsoft')"
-        [disabled]="busy"
-        title="Importer depuis Outlook / Microsoft 365">
-        <span class="material-symbols-outlined">mail</span>
-        Microsoft
-      </button>
     </div>
 
-    <ul class="contact-list" *ngIf="contacts.length; else empty">
-      <li class="contact" *ngFor="let c of contacts">
+    <input
+      class="search"
+      type="search"
+      [(ngModel)]="query"
+      (ngModelChange)="onSearch()"
+      name="query"
+      placeholder="Rechercher un contact…"
+      autocomplete="off" />
+
+    <a class="access-link" [class.access-link--on]="accessActive" [routerLink]="['/contacts/access']">
+      <span class="material-symbols-outlined">{{ accessActive ? 'cloud_done' : 'cloud_off' }}</span>
+      {{ accessActive
+          ? 'Carnets Google / Microsoft actifs'
+          : 'Connecter Google ou Microsoft pour retrouver un proche' }}
+      <span class="material-symbols-outlined access-link__chev">chevron_right</span>
+    </a>
+
+    <ng-container *ngIf="suggestions.length">
+      <span class="vit-label">Depuis tes carnets</span>
+      <ul class="contact-list">
+        <li class="contact contact--pick" *ngFor="let s of suggestions" (click)="addSuggestion(s)">
+          <span class="contact__avatar">{{ s.name.charAt(0).toUpperCase() }}</span>
+          <div class="contact__info">
+            <div class="contact__name">{{ s.name }}</div>
+            <div class="contact__addr contact__addr--missing">{{ s.email || s.tel || '—' }}</div>
+          </div>
+          <span class="material-symbols-outlined">person_add</span>
+        </li>
+      </ul>
+    </ng-container>
+
+    <ul class="contact-list" *ngIf="filtered.length; else empty">
+      <li class="contact" *ngFor="let c of filtered">
         <span class="contact__avatar">{{ c.name.charAt(0).toUpperCase() }}</span>
         <div class="contact__info">
           <div class="contact__name">{{ c.name }}</div>
@@ -95,8 +106,8 @@
 
     <ng-template #empty>
       <div class="empty">
-        <span class="vit-label">Aucun contact</span>
-        <p>Scanne la carte ViT d'un proche, ou importe ton carnet.</p>
+        <span class="vit-label">{{ query ? 'Aucun résultat' : 'Aucun contact' }}</span>
+        <p>Scanne la carte ViT d'un proche, ou connecte ton carnet Google / Microsoft.</p>
       </div>
     </ng-template>
   </ng-container>
@@ -131,40 +142,6 @@
     <p class="hint">Vise la carte ViT de ton contact</p>
     <button type="button" class="secondary" (click)="stopScan()">Annuler</button>
   </div>
-
-  <!-- ===== IMPORT DISTANT ===== -->
-  <ng-container *ngIf="view === 'import'">
-    <p class="hint">
-      {{ importProvider === 'google' ? 'Google' : 'Microsoft' }} ne partage pas d'address de wallet :
-      ces contacts arrivent sans address.
-    </p>
-    <input
-      class="import-filter"
-      type="search"
-      [(ngModel)]="importFilter"
-      (ngModelChange)="applyImportFilter()"
-      name="importFilter"
-      placeholder="Rechercher…"
-      autocomplete="off" />
-
-    <ul class="contact-list">
-      <li class="contact contact--pick" *ngFor="let c of importedFiltered" (click)="addImported(c)">
-        <span class="contact__avatar">{{ c.name.charAt(0).toUpperCase() }}</span>
-        <div class="contact__info">
-          <div class="contact__name">{{ c.name }}</div>
-          <div class="contact__addr contact__addr--missing">{{ c.email || c.tel || '—' }}</div>
-        </div>
-        <span class="material-symbols-outlined">chevron_right</span>
-      </li>
-    </ul>
-
-    <div class="form-actions">
-      <button type="button" class="secondary" (click)="cancel()">Annuler</button>
-      <button type="button" class="cta" (click)="addAllImported()" [disabled]="!importedFiltered.length">
-        Tout ajouter ({{ importedFiltered.length }})
-      </button>
-    </div>
-  </ng-container>
 
   <!-- ===== FORMULAIRE ===== -->
   <form *ngIf="view === 'form' && hasWallet" class="contact-form" (ngSubmit)="save()" autocomplete="off">

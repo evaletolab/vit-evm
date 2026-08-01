@@ -4,7 +4,7 @@ import { ethers } from 'ethers';
 import * as QRCode from 'qrcode';
 import { WalletService } from '../../wallet/wallet.service';
 import { ContactsService, Contact } from '../../contacts/contacts.service';
-import { ContactProviderId, ImportedContact } from '../../contacts/contact-providers';
+import { ContactAccessService, DirectoryMatch } from '../../contacts/contact-access.service';
 import {
   ContactCardPayload,
   buildContactShareUrl,
@@ -16,7 +16,7 @@ import { QrScanner } from '../../shared/qr-scanner';
 import { shortAddress } from '../../wallet/wallet.utils';
 import { environment } from '../../../environments/environment';
 
-type View = 'list' | 'form' | 'card' | 'scan' | 'import';
+type View = 'list' | 'form' | 'card' | 'scan';
 
 @Component({
   selector: 'vit-page-contacts',
@@ -36,10 +36,15 @@ export class PageContactsComponent implements OnInit, OnDestroy {
   busy = false;
 
   phonePickerSupported = false;
-  googlePickerSupported = false;
-  microsoftPickerSupported = false;
+  /** Au moins un carnet distant autorisé — pilote l'icône d'état. */
+  accessActive = false;
 
   prefillFromPhone: Array<{ name: string; hint?: string }> = [];
+
+  /** Recherche : filtre le carnet local et interroge les carnets distants. */
+  query = '';
+  filtered: Contact[] = [];
+  suggestions: DirectoryMatch[] = [];
 
   // form
   formId: string | undefined;
@@ -57,13 +62,6 @@ export class PageContactsComponent implements OnInit, OnDestroy {
   cardIsMine = false;
   copied = false;
 
-  // import distant
-  imported: ImportedContact[] = [];
-  /** Recalculé à la frappe seulement : un getter re-rendrait la liste à chaque cycle. */
-  importedFiltered: ImportedContact[] = [];
-  importFilter = '';
-  importProvider: ContactProviderId = 'google';
-
   private profile: ContactCardPayload | null = null;
   private readonly scanner = new QrScanner();
 
@@ -72,6 +70,7 @@ export class PageContactsComponent implements OnInit, OnDestroy {
   constructor(
     private wallet: WalletService,
     private contactsSvc: ContactsService,
+    private access: ContactAccessService,
     private route: ActivatedRoute,
     private router: Router,
     private zone: NgZone,
@@ -79,15 +78,14 @@ export class PageContactsComponent implements OnInit, OnDestroy {
 
   async ngOnInit(): Promise<void> {
     this.phonePickerSupported = this.contactsSvc.isPhonePickerSupported();
-    this.googlePickerSupported = this.contactsSvc.isGooglePickerSupported();
-    this.microsoftPickerSupported = this.contactsSvc.isMicrosoftPickerSupported();
 
     try {
       const state = await this.wallet.loadWallet();
       if (!state) return;
       this.hasWallet = true;
       this.owner = state.accountAddress;
-      this.contacts = this.contactsSvc.list(this.owner);
+      this.accessActive = this.access.hasAnyConnected(this.owner);
+      this.reloadContacts();
       this.profile = {
         n: state.displayName || shortAddress(state.accountAddress),
         a: state.accountAddress,
@@ -113,16 +111,53 @@ export class PageContactsComponent implements OnInit, OnDestroy {
     this.scanner.stop();
   }
 
-  applyImportFilter(): void {
-    const q = this.importFilter.trim().toLowerCase();
-    this.importedFiltered = q
-      ? this.imported.filter(
+  /**
+   * Recalculé à la frappe seulement : un getter re-filtrerait la liste à chaque
+   * cycle de détection de changements.
+   */
+  onSearch(): void {
+    const q = this.query.trim().toLowerCase();
+    this.filtered = q
+      ? this.contacts.filter(
           (c) =>
             c.name.toLowerCase().includes(q) ||
             !!c.email?.toLowerCase().includes(q) ||
-            !!c.tel?.includes(q),
+            !!c.tel?.includes(q) ||
+            c.address.toLowerCase().includes(q),
         )
-      : this.imported;
+      : this.contacts;
+
+    // Carnets distants : on masque ceux déjà présents localement.
+    const known = new Set(
+      this.contacts.flatMap((c) => [
+        c.name.toLowerCase(),
+        ...(c.email ? [c.email.toLowerCase()] : []),
+        ...(c.tel ? [c.tel] : []),
+      ]),
+    );
+    this.suggestions = this.access
+      .search(this.owner, q)
+      .filter(
+        (s) =>
+          !known.has(s.name.toLowerCase()) &&
+          !(s.email && known.has(s.email.toLowerCase())) &&
+          !(s.tel && known.has(s.tel)),
+      );
+  }
+
+  private reloadContacts(): void {
+    this.contacts = this.contactsSvc.list(this.owner);
+    this.onSearch();
+  }
+
+  /** Une fiche distante devient un contact local (sans address). */
+  addSuggestion(s: DirectoryMatch): void {
+    this.resetForm();
+    this.formName = s.name;
+    this.formTel = s.tel || '';
+    this.formEmail = s.email || '';
+    this.formSource = 'phone';
+    this.view = 'form';
   }
 
   // === Formulaire ===========================================================
@@ -176,7 +211,7 @@ export class PageContactsComponent implements OnInit, OnDestroy {
         source: this.formSource,
         status: address ? 'confirmed' : 'pending',
       });
-      this.contacts = this.contactsSvc.list(this.owner);
+      this.reloadContacts();
       this.view = 'list';
       this.prefillFromPhone = [];
     } catch (e: unknown) {
@@ -187,7 +222,7 @@ export class PageContactsComponent implements OnInit, OnDestroy {
   remove(c: Contact): void {
     if (!confirm(`Supprimer « ${c.name} » ?`)) return;
     this.contactsSvc.remove(this.owner, c.id);
-    this.contacts = this.contactsSvc.list(this.owner);
+    this.reloadContacts();
   }
 
   // === Carte QR =============================================================
@@ -327,48 +362,6 @@ export class PageContactsComponent implements OnInit, OnDestroy {
       return;
     }
     this.handlePrefill(picked);
-  }
-
-  async importFrom(provider: ContactProviderId): Promise<void> {
-    this.error = '';
-    this.notice = '';
-    this.busy = true;
-    this.importProvider = provider;
-    try {
-      const list = await this.contactsSvc.importFromProvider(provider);
-      if (!list.length) {
-        this.error = 'Aucun contact récupéré.';
-        return;
-      }
-      this.imported = list;
-      this.importFilter = '';
-      this.applyImportFilter();
-      this.view = 'import';
-    } catch (e: unknown) {
-      this.error = e instanceof Error ? e.message : 'Import impossible';
-    } finally {
-      this.busy = false;
-    }
-  }
-
-  addImported(c: ImportedContact): void {
-    this.resetForm();
-    this.formName = c.name;
-    this.formTel = c.tel || '';
-    this.formEmail = c.email || '';
-    this.formSource = 'phone';
-    this.view = 'form';
-  }
-
-  addAllImported(): void {
-    const added = this.contactsSvc.importMany(this.owner, this.importedFiltered);
-    this.contacts = this.contactsSvc.list(this.owner);
-    this.imported = [];
-    this.importedFiltered = [];
-    this.view = 'list';
-    this.notice = added
-      ? `${added} contact${added > 1 ? 's' : ''} ajouté${added > 1 ? 's' : ''} sans address — scanne leur carte ViT pour les activer.`
-      : 'Ces contacts sont déjà dans ton carnet.';
   }
 
   private handlePrefill(picked: Array<{ name: string; hint?: string; tel?: string; email?: string }>): void {

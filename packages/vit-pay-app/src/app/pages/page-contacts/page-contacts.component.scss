@@ -363,8 +363,8 @@
     border: 1px solid var(--hairline);
   }
 
-  /* === Import distant === */
-  .import-filter {
+  /* === Recherche + carnets distants === */
+  .search {
     font: inherit;
     padding: 0.7rem 0.95rem;
     border: 1px solid var(--hairline);
@@ -375,6 +375,28 @@
     &:focus {
       outline: none;
       border-color: var(--violet);
+    }
+  }
+
+  .access-link {
+    display: flex;
+    align-items: center;
+    gap: 0.6rem;
+    padding: 0.6rem 0.85rem;
+    border-radius: var(--r-tile);
+    background: var(--glass);
+    border: 1px solid var(--hairline-soft);
+    color: var(--text-muted);
+    text-decoration: none;
+    font-size: 0.82rem;
+
+    .material-symbols-outlined { font-size: 1.1rem; }
+    &__chev { margin-left: auto; }
+
+    &--on {
+      color: var(--text);
+      border-color: rgba(93,184,166,.35);
+      > .material-symbols-outlined:first-child { color: var(--positive, #5db8a6); }
     }
   }
 
