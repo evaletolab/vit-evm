@@ -33,4 +33,8 @@ export const environment = {
   // Google Cloud Console, ajoute `http://localhost:4200` aux origines
   // autorisées, et colle le client ID ici. '' = bouton masqué.
   googleClientId: '' as string,
+  // OAuth Microsoft (Graph Contacts.Read). App Azure AD en plateforme
+  // « Single-page application », URI de redirection
+  // `http://localhost:4200/oauth-callback.html`. '' = bouton masqué.
+  microsoftClientId: '' as string,
 };

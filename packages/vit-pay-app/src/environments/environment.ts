@@ -28,4 +28,8 @@ export const environment = {
   // Google Cloud Console, ajoute l'origine GH Pages, et colle le client ID ici.
   // '' = bouton "Importer contacts Google" masqué.
   googleClientId: '' as string,
+  // OAuth Microsoft (Graph Contacts.Read). Enregistre une app Azure AD en
+  // plateforme « Single-page application » avec `<origine>/oauth-callback.html`
+  // comme URI de redirection. '' = bouton masqué.
+  microsoftClientId: '' as string,
 };
