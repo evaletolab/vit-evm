@@ -404,7 +404,7 @@ export class WalletService {
     // Vérifie cohérence du nom embarqué si présent.
     for (const p of payloads) {
       if (p.n && p.n !== name) {
-        throw new Error(`Le code appartient à ${p.n}@vit.swiss, pas ${name}@vit.swiss`);
+        throw new Error(`Le code appartient à ${p.n}@3vit.ch, pas ${name}@3vit.ch`);
       }
     }
 

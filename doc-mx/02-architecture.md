@@ -23,7 +23,7 @@ Tout `abstractionkit` est confiné à `wallet.service.ts` + `lib/userOp.ts` (vé
 | Version KDF | octet `v` dans la charge utile ; repli documenté `N=2^15` |
 | Stockage | jamais en localStorage — coffre (`credentials.store` / formulaire) ou QR |
 
-**Identité** `<nom>@vit.swiss` (`wallet-name.ts`) : locale en V1 (pas de registre). Sert d'URL (`/<nom>/vault`, `/<nom>/restore`) et d'`id` du coffre. L'adresse Safe voyage dans la charge utile du code (`resolveWalletAddress`).
+**Identité** `<nom>@3vit.ch` (`wallet-name.ts`) : locale en V1 (pas de registre). Sert d'URL (`/<nom>/vault`, `/<nom>/restore`) et d'`id` du coffre. L'adresse Safe voyage dans la charge utile du code (`resolveWalletAddress`).
 
 **Flux** :
 
@@ -63,7 +63,7 @@ Tout `abstractionkit` est confiné à `wallet.service.ts` + `lib/userOp.ts` (vé
 
 ## Dette résiduelle
 
-- Registre de noms on-chain (V2) pour unicité + payer `alice@vit.swiss`.
+- Registre de noms on-chain (V2) pour unicité + payer `alice@3vit.ch`.
 - Notification pendant le délai de grâce (V2).
 - Bascule module `After3Days` avant production (P0).
 - Domaine dédié définitif (RP ID passkeys + origine coffre).

@@ -60,7 +60,7 @@ export interface RecoveryCodePayload {
   cid?: string;
   x?: string;
   y?: string;
-  /** Nom local <nom>@vit.swiss. */
+  /** Nom local <nom>@3vit.ch. */
   n?: string;
 }
 
@@ -283,7 +283,7 @@ export function resolveWalletAddress(
   return addr;
 }
 
-export function vaultUsername(name: string, domain = 'vit.swiss'): string {
+export function vaultUsername(name: string, domain = '3vit.ch'): string {
   return `${name.toLowerCase()}@${domain}`;
 }
 

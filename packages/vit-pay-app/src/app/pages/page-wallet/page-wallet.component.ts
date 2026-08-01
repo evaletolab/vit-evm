@@ -128,7 +128,7 @@ export class PageWalletComponent implements OnInit, AfterViewInit, OnDestroy {
   readonly shortAddress = shortAddress;
 
   iban: string | null = null;
-  /** Identité locale <nom>@vit.swiss */
+  /** Identité locale <nom>@3vit.ch */
   walletName = '';
   /** Pseudo affiché (contact). */
   displayName = '';

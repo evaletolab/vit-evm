@@ -10,7 +10,7 @@ Sources actuelles : `packages/vit-pay-app` — ce doc décrit le **produit reten
 | P0 shell nav (accueil / carnet / envoyer / activité / profil) | ✅ livré |
 | P1 envoyer · P2 liens créés · P4 carnet pending · P5 contacts bilatéraux | ✅ livré |
 | P6 reverse claim (`/request`) · P7 activité · P8 profil émetteur | ✅ livré |
-| Landing `<nom>@vit.swiss` + vault 3 codes + restore | ✅ livré (V1.1), **E2E Sepolia à valider** |
+| Landing `<nom>@3vit.ch` + vault 3 codes + restore | ✅ livré (V1.1), **E2E Sepolia à valider** |
 | Contact joint au lien + `metaHash` on-chain | ✅ livré, **suppose le contrat v2 déployé** |
 | Google Contacts / People API (Safari iOS) | ⏳ spécifié, non implémenté |
 | Signature du payload contact par l'owner Safe | ⏳ V2 |
@@ -29,7 +29,7 @@ Sources actuelles : `packages/vit-pay-app` — ce doc décrit le **produit reten
 - **Reverse claim** = demande d’argent (`/request`).
 - Passkey sync ≠ restauration auto du wallet ViT.
 - Carnet : **Chrome Android = Contact Picker** ; Google Contacts = spec seulement.
-- **Création** : nom `<nom>@vit.swiss` (landing Argent) → contact (pseudo requis) → Face ID → `/<nom>/vault` (3 codes guardians, défaut 1 coffre + 2 QR) → armement on-chain.
+- **Création** : nom `<nom>@3vit.ch` (landing Argent) → contact (pseudo requis) → Face ID → `/<nom>/vault` (3 codes guardians, défaut 1 coffre + 2 QR) → armement on-chain.
 - **Restauration** : `/<nom>/restore` — soft (1 code + passkey) ou hard (2 codes).
 - Activité : txs + claims ; libellé = nom carnet.
 - Le reste (IBAN, guardians humains avancés, multi-device, mode dev…) → bas de page.
@@ -77,9 +77,9 @@ Les **3 codes** sont affichés un par carte ; chaque code a **sa** destination (
 ```
 ┌─────────────────────────────┐
 │  Coffre de secours          │
-│  alice@vit.swiss              │
+│  alice@3vit.ch              │
 │                             │
-│  alice@vit.swiss · code-1     │
+│  alice@3vit.ch · code-1     │
 │  GEPP-2EYW-GV2P-CC9B        │
 │  [ Coffre ] [ QR papier ]   │  ← destination par code
 │  [ Enregistrer dans coffre ]│  prompt natif du gestionnaire
@@ -93,7 +93,7 @@ Les **3 codes** sont affichés un par carte ; chaque code a **sa** destination (
 └─────────────────────────────┘
 ```
 
-**Enregistrement « coffre »** (Apple Passwords / Google Password Manager / 1Password) : formulaire credential standard — `username = <nom>@vit.swiss · code-<i>`, `password = payload base64url` (version KDF + adresse Safe + code, plus `credentialId`/pubkey pour le code 1 → soft restore), attributs `autocomplete="username"` / `"new-password"` + soumission, complété par `navigator.credentials.store(PasswordCredential)` sur Chrome.
+**Enregistrement « coffre »** (Apple Passwords / Google Password Manager / 1Password) : formulaire credential standard — `username = <nom>@3vit.ch · code-<i>`, `password = payload base64url` (version KDF + adresse Safe + code, plus `credentialId`/pubkey pour le code 1 → soft restore), attributs `autocomplete="username"` / `"new-password"` + soumission, complété par `navigator.credentials.store(PasswordCredential)` sur Chrome.
 
 **Restore** : `/<nom>/restore` — champ `autocomplete="current-password"` pour l’autofill (soft restore), sinon saisie de **2 codes** (hard restore).
 
@@ -236,7 +236,7 @@ Donc : soit **3 phrases longues** (seed / shares), soit **3 codes one-shot** ass
 
 **Réponse produit** : un vrai « Restaurer » ViT doit toujours aboutir au **même Safe** (même adresse publique de réception). Sinon ce n’est pas une restauration, c’est un nouveau compte. Les 3 codes doivent donc soit (A) prouver le droit de **changer l’owner** du Safe déjà connu, soit (B) reconstruire un secret qui **identifie** ce Safe — jamais créer un Safe neuf.
 
-**Choix V1.1** : option (A). Le payload sauvegardé (coffre / QR) embarque l’**adresse Safe** et le nom local, donc le restore ne demande que **2 codes** — pas de saisie d’adresse. Le nom `<nom>@vit.swiss` reste un libellé local : sans registre on-chain (V2), il ne suffit pas à retrouver le Safe.
+**Choix V1.1** : option (A). Le payload sauvegardé (coffre / QR) embarque l’**adresse Safe** et le nom local, donc le restore ne demande que **2 codes** — pas de saisie d’adresse. Le nom `<nom>@3vit.ch` reste un libellé local : sans registre on-chain (V2), il ne suffit pas à retrouver le Safe.
 
 ---
 
@@ -253,7 +253,7 @@ Donc : soit **3 phrases longues** (seed / shares), soit **3 codes one-shot** ass
 | **P5** | Au claim : contacts bilatéraux (sender ↔ claimer) | ✅ |
 | **P6** | Reverse claim (demander de l’argent) | ✅ `/request` |
 | **P7** | Activité unifiée (on-chain + claims) · noms · ajouter au carnet | ✅ `/txs` |
-| **P8** | Nom `<nom>@vit.swiss` + profil émetteur à la création · joint aux envois | ✅ landing + pseudo/tél/e-mail + import contact |
+| **P8** | Nom `<nom>@3vit.ch` + profil émetteur à la création · joint aux envois | ✅ landing + pseudo/tél/e-mail + import contact |
 
 **Shell minimal**
 
@@ -487,7 +487,7 @@ Règles :
 │  Identifiant privé sur cet  │
 │  appareil                   │
 │                             │
-│      alice@vit.swiss          │  ← input aligné à droite
+│      alice@3vit.ch          │  ← input aligné à droite
 │  ─────────────────────────  │     + suffixe gris, style Argent
 │                             │
 │  (dès que le nom est valide)│

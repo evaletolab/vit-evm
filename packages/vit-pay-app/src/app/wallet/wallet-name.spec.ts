@@ -15,7 +15,7 @@ describe('wallet-name', () => {
     expect(isValidWalletName('buy')).toBe(false);
     expect(isValidWalletName('-bad')).toBe(false);
     expect(validateWalletName('bob-42')).toBe('bob-42');
-    expect(walletHandle('Bob')).toBe('bob@vit.swiss');
+    expect(walletHandle('Bob')).toBe('bob@3vit.ch');
   });
 
   it('reserves flat routes', () => {

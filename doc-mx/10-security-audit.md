@@ -146,7 +146,7 @@ Entre `core.safe.4337.ts` et `core.safe.preflight.ts`. Extraire en helper commun
 
 ### P2-4 · Test coverage faible
 
-39 specs Karma vertes (V1.1 : +10 sur les codes de secours, le nom `<nom>@vit.swiss` et le payload contact). Couvrent utils, storage, encodage/KDF. Toujours aucun test UserOp, preflight, armement/restore on-chain ou claim link côté frontend.
+39 specs Karma vertes (V1.1 : +10 sur les codes de secours, le nom `<nom>@3vit.ch` et le payload contact). Couvrent utils, storage, encodage/KDF. Toujours aucun test UserOp, preflight, armement/restore on-chain ou claim link côté frontend.
 
 ### P2-10 · Suites de tests contrats en échec permanent (V1)
 
