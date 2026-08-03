@@ -3,16 +3,21 @@
 Cible : parcours **utilisateur** ultra-minimal.  
 Sources actuelles : `packages/vit-pay-app` — ce doc décrit le **produit retenu**, pas un inventaire exhaustif du code.
 
-## État d'implémentation (2026-07-28)
+## État d'implémentation (2026-08-03)
 
 | Écran / flow | État |
 |---|---|
 | P0 shell nav (accueil / carnet / envoyer / activité / profil) | ✅ livré |
-| P1 envoyer · P2 liens créés · P4 carnet pending · P5 contacts bilatéraux | ✅ livré |
-| P6 reverse claim (`/request`) · P7 activité · P8 profil émetteur | ✅ livré |
+| Accueil hub (solde · N contacts · activité · settings) | ✅ livré |
+| P1 envoyer (`/buy` URL ou scan · claim si pas d’addr) | ✅ livré |
+| P2 liens créés · P3 claim · P5 contacts bilatéraux | ✅ livré |
+| P4 carnet (CRUD · scan QR · Google/MS · pending) | ✅ livré |
+| P6 reverse claim (`/request`) · P7 activité | ✅ livré |
+| P8 profil émetteur + **édition dans Réglages** | ✅ livré |
 | Landing `<nom>@3vit.ch` + vault 3 codes + restore | ✅ livré (V1.1), **E2E Sepolia à valider** |
 | Contact joint au lien + `metaHash` on-chain | ✅ livré, **suppose le contrat v2 déployé** |
-| Google Contacts / People API (Safari iOS) | ⏳ spécifié, non implémenté |
+| Google Contacts / Microsoft Graph (OAuth client) | ✅ livré (gated `googleClientId` / `microsoftClientId`) |
+| Adresse publique = discriminant fort au scan/ajout | ✅ `upsertFromShare` |
 | Signature du payload contact par l'owner Safe | ⏳ V2 |
 | Notification owner pendant délai de grâce recovery | ⏳ V2 |
 | Registre de noms on-chain | ⏳ V2 |
@@ -23,16 +28,18 @@ Sources actuelles : `packages/vit-pay-app` — ce doc décrit le **produit reten
 
 ## Notes clés
 
-- Produit = déverrouiller · envoyer · recevoir · carnet · activité (noms, pas d’adresses hex).
-- **Style** : UX allégée — moins de bordures, cartes légères, hiérarchie par espacement/typographie.
-- Envoi à quelqu’un **sans wallet** = claim link + liste des envois.
-- **Reverse claim** = demande d’argent (`/request`).
+- Produit = déverrouiller · envoyer · recevoir · carnet · activité (noms / tél / e-mail, pas d’adresses hex en titre).
+- **Style** : plat — bordures 0, hiérarchie par espacement / typographie ; montants larges + devise `xCHF`.
+- **Accueil** : solde · jusqu’à N contacts en raccourci · activité ; recherche contact seulement si carnet > N ; ⚙ → Profil.
+- **Envoyer** : destinataire depuis l’accueil (URL) ou scan QR sur `/buy` — plus de saisie libre du destinataire.
+- Envoi à quelqu’un **sans adresse Safe** = claim link (+ brouillon mail/SMS si canal connu).
+- **Recevoir** (`/sent`) : QR EIP-681 / lien ViT avec carte `c=` ; counterpart masque le QR.
+- **Carnet** : scan QR carte ViT (`?add=`) · adresse publique = discriminant fort · Google / Microsoft OAuth.
 - Passkey sync ≠ restauration auto du wallet ViT.
-- Carnet : **Chrome Android = Contact Picker** ; Google Contacts = spec seulement.
-- **Création** : nom `<nom>@3vit.ch` (landing Argent) → contact (pseudo requis) → Face ID → `/<nom>/vault` (3 codes guardians, défaut 1 coffre + 2 QR) → armement on-chain.
-- **Restauration** : `/<nom>/restore` — soft (1 code + passkey) ou hard (2 codes).
+- **Création** : nom `<nom>@3vit.ch` → contact (pseudo requis) → Face ID → `/<nom>/vault` → armement on-chain.
+- **Profil** : éditable dans Réglages (pseudo / tél / e-mail) ; Compte s’ouvre sur le **pseudo**.
 - Activité : txs + claims ; libellé = nom carnet.
-- Le reste (IBAN, guardians humains avancés, multi-device, mode dev…) → bas de page.
+- Le reste (IBAN, guardians, multi-device, mode dev / mint…) → bas de page / Profil.
 
 ### Passkey · nouveau téléphone (réponse courte)
 
@@ -44,15 +51,15 @@ Sources actuelles : `packages/vit-pay-app` — ce doc décrit le **produit reten
 
 ### Contacts web
 
-| Plateforme | Solution simple | Critique |
+| Plateforme | Solution | État |
 |---|---|---|
-| **Chrome Android** | **Contact Picker API** (`navigator.contacts.select`) | One-shot, gesture user, prod-ready. Nom/tél/e-mail seulement. |
-| **Safari iOS** | Contact Picker = **flag expérimental** seulement → **pas utilisable en prod** | Apple ne l’active pas par défaut. |
-| **Safari iOS (retenu)** | Bouton **« Se connecter à Google Contacts »** (People API OAuth, 100 % client) | Même UX que desktop. Beaucoup d’iPhone ont un compte Google ; sinon saisie manuelle / coller depuis Contacts. |
-| **iCloud Contacts** | CardDAV iCloud | Possible en théorie, mais Apple ID + app-specific password / OAuth opaque, XML CardDAV, UX fragile en PWA pure → **trop lourd** pour le MVP. |
-| **WhatsApp** | — | Pas d’API web. |
+| **Chrome Android** | **Contact Picker API** (`navigator.contacts.select`) | ✅ one-shot, nom/tél/e-mail |
+| **Safari iOS / desktop** | OAuth **Google People** + **Microsoft Graph** (`ContactAccessService`) | ✅ gated par `environment.googleClientId` / `microsoftClientId` |
+| **Carte ViT (QR / URL)** | `?add=` / scan → `upsertFromShare` | ✅ adresse = discriminant fort |
+| **iCloud Contacts** | CardDAV | ❌ hors MVP |
+| **WhatsApp** | — | Pas d’API web |
 
-Règle produit : Chrome phone → Contact Picker en premier ; iOS → Google Contacts (+ manuel). Pas de dépendance iCloud pour le MVP.
+Règle produit : phone picker si dispo ; sinon Google / Microsoft ; toujours scan QR + saisie manuelle.
 
 ### Claim link avec contact émetteur — analyse sécurité
 
@@ -99,14 +106,14 @@ Les **3 codes** sont affichés un par carte ; chaque code a **sa** destination (
 
 Limites : la confirmation du prompt reste à l’utilisateur (garantie plateforme, aucune écriture silencieuse) ; ViT ne lit jamais le coffre. Mettre 2 codes au même endroit reste possible mais retire le bénéfice du seuil 2/3 — l’écran l’empêche par défaut via le compteur de destinations distinctes.
 
-### Profil émetteur à la création (P8)
+### Profil émetteur (P8)
 
-Le pseudo existe déjà (`displayName`, requis ≥ 2 chars). Extension :
+Le pseudo existe déjà (`displayName`, requis ≥ 2 chars).
 
-- Champs : **pseudo** (requis) + **tél / e-mail** (optionnels), avec l’explication « ces informations seront jointes quand vous envoyez de l’argent ».
-- Préremplissage « C’est moi » : **Contact Picker** (Chrome Android, sélection de sa propre fiche) ou **Google Contacts** (People API, profil `people/me`) ; saisie manuelle sinon. **Microsoft Graph = plus tard.**
-- Stockage : local uniquement (`StoredWallet.displayName` + nouveau bloc profil) — pas de serveur ViT, pas d’on-chain.
-- Réutilisé par : claim link (P1/P3), reverse claim (P6), brouillons mail/SMS.
+- Création : pseudo + tél / e-mail optionnels (landing `/wallet`).
+- **Édition** : Profil → Réglages → carte « Profil » (`updateProfile`) — Compte affiche le **pseudo**, jamais l’adresse en titre.
+- Stockage : local uniquement (`StoredWallet.displayName` / `profileTel` / `profileEmail`).
+- Réutilisé par : claim link, reverse claim, carte de visite partagée (`c=` / `?add=`).
 
 ### Horcrux.sol — score sécurité (stockage de restore codes)
 
@@ -246,14 +253,14 @@ Donc : soit **3 phrases longues** (seed / shares), soit **3 codes one-shot** ass
 | ID | Use case | Statut code |
 |---|---|---|
 | **P0** | Déverrouiller à l’ouverture | ✅ unlock overlay |
-| **P1** | Envoyer à un contact / e-mail / tél (claim si pas d’addr) | ✅ envoi + pending carnet |
+| **P1** | Envoyer : contact URL ou scan · claim si pas d’addr | ✅ `/buy` |
 | **P2** | Voir mes claim links · statut · annuler · récupérer | ✅ `/links` |
 | **P3** | Recevoir / réclamer un claim link | ✅ `/claim` |
-| **P4** | Carnet : liste + connecter Google / téléphone | ✅ CRUD + pending · Google toujours gated `googleClientId` |
+| **P4** | Carnet : liste + scan QR + Google/MS + téléphone | ✅ `/contacts` · `/contacts/access` |
 | **P5** | Au claim : contacts bilatéraux (sender ↔ claimer) | ✅ |
 | **P6** | Reverse claim (demander de l’argent) | ✅ `/request` |
-| **P7** | Activité unifiée (on-chain + claims) · noms · ajouter au carnet | ✅ `/txs` |
-| **P8** | Nom `<nom>@3vit.ch` + profil émetteur à la création · joint aux envois | ✅ landing + pseudo/tél/e-mail + import contact |
+| **P7** | Activité unifiée (on-chain + claims) · noms · ajouter | ✅ `/` + `/txs` |
+| **P8** | Nom `@3vit.ch` + profil · **éditable dans Réglages** | ✅ |
 
 **Shell minimal**
 
@@ -261,11 +268,11 @@ Donc : soit **3 phrases longues** (seed / shares), soit **3 codes one-shot** ass
 ┌─────────────────────────────┐
 │      <écran actif>          │
 ├─────┬─────┬─────┬─────┬─────┤
-│Accueil│Carnet│ Envoyer │Activité│…│
-│  /  │carnet│  FAB   │  hist │   │
+│Accueil│Carnet│ Envoyer │Activité│Profil│
+│  /  │carnet│  FAB   │  hist │compte│
 └─────┴─────┴─────┴─────┴─────┘
-  Accueil = solde + raccourcis Envoyer / Recevoir / Envois
-  Envois  = mes claim links (P2) — entrée visible, pas enfouie
+  Accueil = solde + contacts + activité
+  FAB     = /buy (scan si pas de contact URL)
 ```
 
 ---
@@ -284,44 +291,32 @@ Donc : soit **3 phrases longues** (seed / shares), soit **3 codes one-shot** ass
 
 ---
 
-## P1 — Envoyer (facile, même sans wallet côté destinataire)
+## P1 — Envoyer (`/buy`)
+
+**Entrée** : Accueil (tap contact → `/buy?to=&name=`) ou FAB / scan sans contact.
 
 ```
 ┌─────────────────────────────┐
 │ ←  Envoyer                  │
 │                             │
-│ À                           │
-│ [ nom, e-mail, tél, 0x… ]   │
-│ [👥 Carnet] [📱 Téléphone]  │
+│ ┌─ Bob            [Enreg.]─┐ │  counterpart + save carnet
+│ │  +41 79 …               │ │  meta = tél / e-mail (pas 0x)
+│ └─────────────────────────┘ │
 │                             │
-│ Montant (xCHF)              │
-│ [ 25.00                   ] │
+│ Montant                     │
+│ 25.00              xCHF     │  vit-amount-field
 │                             │
-│ ● Si pas d’adresse Safe →   │
-│   claim link + brouillon    │
-│   mail/SMS                  │
+│ ● Pas d’adresse Safe →      │
+│   claim link (+ mail/SMS)   │
 │                             │
-│ [✓] Joindre mon contact     │  ← profil P8 complet (nom+tél/e-mail)
-│     Olivier · +41 79 …      │
-│     [ Choisir un contact ]  │  ← si profil vide (Picker / Google)
-│                             │
-│ [ Envoyer ]                 │
+│ [ Envoyer / Créer lien ]    │
 └─────────────────────────────┘
 ```
 
-« Joindre mon contact » : défaut ON si profil renseigné ; le lien porte le **contact complet** du profil (payload `c=` dans le fragment URL, jamais on-chain). Si le profil est vide, bouton **Choisir un contact** (Contact Picker local / Google) pour renseigner sa fiche avant l’envoi.
+Sans contact dans l’URL → **scan QR** (carte ViT `c=` / `?add=`, EIP-681, adresse).  
+QR non pertinent : on ignore et on continue (pas de restart caméra).
 
-**Effet carnet** : crée / met à jour une entrée `pending`  
-`{ name|email|tel, status: pending, claimId, amount }` — **pas encore d’adresse EVM**.
-
-```
-┌─────────────────────────────┐
-│ ✓ Envoyé                    │
-│ 25 xCHF → Bob (en attente)  │
-│ [ Copier lien ] [ Partager ]│
-│ [ Voir mes envois ]         │
-└─────────────────────────────┘
-```
+**Effet carnet** : avec claim → entrée `pending` ; avec carte partagée → `upsertFromShare` (**address = clé forte**).
 
 ---
 
@@ -382,24 +377,22 @@ Le nom vient du lien (non authentifié) ; le contact enregistré est lié à l�
 
 ```
 ┌─────────────────────────────┐
-│  Carnet                  +  │
+│ ← Carnet            [⌁] [+] │  scan + ajout manuel
 │                             │
-│ [ Se connecter Google ]     │  OAuth People API (client)
+│ [ Scanner une carte ViT ]   │
+│ [ Google / Microsoft … ]    │  /contacts/access
 │ [ Importer du téléphone ]   │  Contact Picker (Android)
 │                             │
-│ ● Pending                   │
-│   Bob · 25 xCHF en attente  │  (lié claim P1)
+│ [ Rechercher… ]             │
 │                             │
-│ ✓ Contacts                  │
-│   Delphine                  │  (adresse masquée)
-│   Léa                       │
-│                             │
-│ ? Inconnus (depuis activité)│
-│   Quelqu’un · [ Ajouter ]   │
+│ Delphine                    │
+│ +41 79 …                    │  meta = tél / e-mail
+│ Léa · lea@…                 │
 └─────────────────────────────┘
 ```
 
-Pas de serveur ViT : contacts en localStorage (chiffré idéalement), import = noms/hints seulement ; l’addr EVM arrive via claim / reverse / saisie.
+- Scan / `?add=` → ajout auto (`upsertFromShare`) : **address = discriminant fort** ; e-mail/tél ne fusionnent que des fiches sans address.
+- Pas de serveur ViT : contacts en localStorage ; l’addr EVM arrive via carte / claim / saisie.
 
 ---
 
@@ -505,11 +498,10 @@ Règles :
 └─────────────────────────────┘
 ```
 
-- Le nom est un **choix local**, pas une réservation on-chain : il sert de libellé et de segment de route (`/<nom>/vault`, `/<nom>/restore`). Registre on-chain = V2.
+- Le nom est un **choix local**, pas une réservation on-chain : libellé + segment de route (`/<nom>/vault`, `/<nom>/restore`). Registre on-chain = V2.
 - Champs de contact affichés **après** un nom valide. Pseudo requis ; tél/e-mail optionnels, stockés en local seulement.
-- « Importer mon contact » : **Contact Picker en V1** (Chrome Android) ; manuel sinon. **Google `people/me` = spécifié mais non implémenté V1** ; Microsoft plus tard.
-- Suite du parcours : Face ID (passkey) → `/<nom>/vault` (3 codes) → armement on-chain.
-- Modifiable ensuite dans le profil (avec le toggle global « joindre mon nom aux envois »).
+- Suite : Face ID (passkey) → `/<nom>/vault` (3 codes) → armement on-chain.
+- **Modifiable ensuite** : Profil → Réglages → Profil (pseudo / tél / e-mail).
 
 ---
 
@@ -517,41 +509,41 @@ Règles :
 
 ```
 ┌─────────────────────────────┐
-│ Bonjour, Delphine           │
+│ ⚙          Bonjour          │  settings → /account
+│            Delphine         │  pseudo (pas 0x…)
+│                     [QR]    │  recevoir → /sent
 │                             │
-│ 128,50 xCHF                 │
+│ Solde disponible            │
+│ 128,50              xCHF    │
 │                             │
-│ [ Envoyer ] [ Demander ]    │  P1 / P6
-│ [ Recevoir ] [ Envois ]     │  QR / P2
+│ Contacts          Carnet →  │
+│ · Léa · Bob · …             │  N max ; meta tél/e-mail
+│ [ Choisir un contact… ⌁ ]   │  si carnet > N
 │                             │
-│ Récents                     │  P7 (3–5 lignes)
+│ Activité          Tout →    │
 │  À Léa −12 · Claim Bob −25  │
 ├─────┬─────┬─────┬─────┬─────┤
-│Accueil│Carnet│ FAB │Activité│…│
+│Accueil│Carnet│ FAB │Activité│Profil│
 └─────┴─────┴─────┴─────┴─────┘
 ```
 
 ---
 
-## Hors scope produit (existant ou partiel · pas le shell)
-
-À ne pas mettre en avant tant que P0–P7 ne sont pas solides :
+## Hors scope produit (existant ou partiel · pas le shell quotidien)
 
 - Page IBAN / Mt Pelerin (`/iban`) — on/off-ramp
-- Recovery guardians UI (`/recovery`) + recover nouvel appareil (nécessaire **sécurité**, pas shell quotidien)
-- Multi-device / ajouter owner (`/devices`)
-- Scanner « Payer en magasin » comme écran d’entrée `/buy` (le défaut produit = formulaire Envoyer)
-- Thème / presets couleurs / mode dev / faucet MockZCHF / debug UserOp
-- Holo-card Safe `/wallet` post-création (détail technique)
-- Import Google Contacts **sans** `googleClientId` configuré
-- Limite journalière client-side (garde-fou, pas feature UX)
-- Historique Transfer « brut » actuel (lookback court / ressenti JSON-like) — à remplacer par P7
+- Recovery guardians UI (`/recovery`) + restore (sécurité)
+- Multi-device (`/devices`)
+- Mode dev / faucet MockZCHF / debug UserOp (`/wallet` gated)
+- Limite journalière client-side
+- Registre de noms on-chain (V2)
 
 ---
 
 ## Voir aussi
 
-- [04 — UX](04-ux.md) — notes techniques iter 0.4
+- [04 — UX](04-ux.md) — thème, mode dev, profil éditable
+- [09 — Changelog](09-changelog.md) — entrée UX shell 2026-08-03
 - Code claim : `claimlink/`, `pages/page-links/`, `pages/page-claim/`, `pages/page-buy/`
-- Code carnet : `contacts/contacts.service.ts`
-- Passkey / Safe : `wallet/wallet.service.ts` (`createAccountAddress` + stockage local)
+- Code carnet : `contacts/contacts.service.ts`, `contact-share.ts`, `contact-access.service.ts`
+- Passkey / Safe : `wallet/wallet.service.ts`

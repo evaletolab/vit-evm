@@ -1,5 +1,19 @@
 # 09 — Changelog
 
+## UX shell — 2026-08-03
+
+**Hub accueil, buy/sent par URL, carnet QR, profil éditable**
+
+- Accueil : solde + devise, N contacts (meta = tél/e-mail), activité ; settings ⚙ ; recherche « Choisir un contact » seulement si carnet > N ; empty state Scanner / Connecter carnet.
+- `/buy` : destinataire depuis `?to=` / `?name=` / `?c=` (chip + montant) ; sinon scan QR ; sans adresse → claim link (mail/SMS/partage) ; `vit-amount-field` gros + `xCHF`.
+- `/sent` : QR de réception ou counterpart ; copy = lien ViT avec carte `c=`.
+- Carnet : scan QR (topbar + CTA) pour ajouter une carte ; `upsertFromShare` — **adresse = discriminant fort** (plus de fusion e-mail/tél qui écrase une autre fiche).
+- Contact share : `?add=` → ajout auto ; Google People + Microsoft Graph (OAuth popup, `ContactAccessService`).
+- Profil / Réglages : édition pseudo · tél · e-mail ; Compte s’ouvre sur le **pseudo**, pas l’adresse.
+- Style plat (bordures 0) ; bannière PWA auto-dismiss 30 s ; tuile mint MockZCHF visible si mode dev.
+
+Voir [04bis — UX Wireframes](04-ux-wireframes.md) · [02 — Architecture](02-architecture.md) · [04 — UX](04-ux.md).
+
 ## V1.1 — 2026-07-27 → 2026-07-28
 
 **Codes de secours = guardians SocialRecoveryModule**

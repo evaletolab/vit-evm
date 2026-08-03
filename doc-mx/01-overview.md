@@ -15,11 +15,21 @@
 
 MVP fonctionnel **F1-F5**, F6 via **codes de secours guardians** (V1.1). Dépendance Candide découplable — voir [07 — Découpler Candide](07-paymaster-decoupling.md).
 
-Travaux UX (iter 0.4) : guard wallet, thème, mode dev, Mt Pelerin — voir [04 — UX](04-ux.md), [05 — Intégration Mt Pelerin](05-integrations-mtpelerin.md), [09 — Changelog](09-changelog.md).
+Travaux UX : iter 0.4 (thème, mode dev, Mt Pelerin) + **shell 2026-08** (hub, buy/sent, carnet QR, profil) — voir [04bis — UX Wireframes](04-ux-wireframes.md), [09 — Changelog](09-changelog.md).
 
 ## V1.1 — codes guardians + identité (2026-07-27)
 
 - 3 codes base32 → SocialRecoveryModule (seuil 2/3), Safe mono-owner passkey — [02 — Architecture](02-architecture.md).
 - Identité `<nom>@3vit.ch`, routes `/vault` et `/restore`.
 - `VitClaimLink` v2 UUPS toujours à redéployer — [03 — Contracts](03-contracts.md).
-- Shell P0–P8 inchangé — [04bis — UX Wireframes](04-ux-wireframes.md).
+- Shell P0–P8 : voir [04bis — UX Wireframes](04-ux-wireframes.md) (état **2026-08-03** : hub, buy/sent URL, carnet QR, profil éditable).
+
+## UX shell 2026-08 (résumé)
+
+- Accueil = solde + N contacts (tél/e-mail en meta) + activité ; recherche contact seulement si carnet > N.
+- Envoyer (`/buy`) : destinataire via URL (`?to=` / `?c=`) ou scan QR ; sans adresse Safe → claim link.
+- Recevoir (`/sent`) : QR partage / counterpart ; carte contact `c=` dans le lien.
+- Carnet : scan QR pour ajouter ; **adresse publique = discriminant fort** (`upsertFromShare`).
+- Profil → Réglages : édition pseudo / tél / e-mail ; titre Compte = pseudo (pas l’adresse).
+- Google People + Microsoft Graph (OAuth client, gated par `environment.*ClientId`).
+- Style plat : bordures 0 ; bannière PWA « Installer » auto-dismiss 30 s.

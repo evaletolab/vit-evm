@@ -1,6 +1,6 @@
 # 02 — Architecture
 
-État au 2026-07-27.
+État au 2026-08-03.
 
 ## Stack
 
@@ -41,7 +41,18 @@ Tout `abstractionkit` est confiné à `wallet.service.ts` + `lib/userOp.ts` (vé
 - `wallet/wallet-name.ts` — validateur + mots réservés.
 - `pages/page-vault`, `pages/page-restore` — UX codes.
 - `wallet/tx-overlay.*` — overlay plein écran UserOp.
-- `claimlink/*`, `contacts/*`, `shared/base64url.ts` — inchangés (Wave B).
+- `claimlink/*` — claim links + `metaHash` / payload contact.
+- `contacts/*` — carnet local + partage carte (`?add=` / `c=`) + OAuth Google/Microsoft (`contact-access.service.ts`, `contact-providers.ts`).
+- `shared/amount-field.component.ts` — montant + devise (buy / sent).
+- `shared/qr-scanner.ts` — BarcodeDetector / jsQR (callback peut ignorer un QR et continuer).
+
+### Carnet — discriminant
+
+`ContactsService.upsertFromShare` :
+
+- **Adresse publique = clé forte** : si la carte a une address, match **uniquement** sur cette address.
+- E-mail / tél ne fusionnent que des fiches **encore sans** address (pending).
+- Empêche d’écraser « ma » fiche (autre Safe) quand on scanne quelqu’un qui partage un e-mail/tél.
 
 ## Garde-fous UX
 
