@@ -24,7 +24,7 @@
       height: 2.5rem;
       border-radius: 50%;
       background: var(--glass);
-      border: 1px solid var(--hairline);
+      border: 0;
       color: var(--text);
       display: flex;
       align-items: center;
@@ -87,7 +87,7 @@
     padding: 1rem;
     border-radius: var(--r-card);
     background: var(--glass);
-    border: 1px solid var(--hairline);
+    border: 0;
     backdrop-filter: blur(10px);
 
     &__head {
@@ -101,7 +101,7 @@
       height: 42px;
       border-radius: 14px;
       background: rgba(255,255,255,.05);
-      border: 1px solid var(--hairline-soft);
+      border: 0;
       color: var(--text-muted);
       display: flex;
       align-items: center;
@@ -159,7 +159,7 @@
   }
   .secondary {
     background: var(--glass);
-    border: 1px solid var(--hairline);
+    border: 0;
     color: var(--text);
   }
 }

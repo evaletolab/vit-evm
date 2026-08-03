@@ -24,7 +24,7 @@
       height: 2.5rem;
       border-radius: 50%;
       background: var(--glass);
-      border: 1px solid var(--hairline);
+      border: 0;
       color: var(--text);
       display: flex;
       align-items: center;
@@ -42,7 +42,7 @@
     padding-bottom: 0.25rem;
 
     .filter-chip {
-      border: 1px solid var(--hairline);
+      border: 0;
       background: var(--glass);
       color: var(--text-muted);
       padding: 0.45rem 1rem;
@@ -80,7 +80,7 @@
     align-items: center;
     gap: 0.85rem;
     background: var(--glass);
-    border: 1px solid var(--hairline);
+    border: 0;
     color: var(--text);
     border-radius: var(--r-tile);
     padding: 0.85rem 1rem;

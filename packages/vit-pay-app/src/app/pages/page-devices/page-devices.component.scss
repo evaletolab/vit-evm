@@ -21,7 +21,7 @@
     width: 40px;
     height: 40px;
     border-radius: 12px;
-    border: 1px solid var(--hairline);
+    border: 0;
     background: var(--glass);
     color: var(--text);
     display: inline-flex;
@@ -68,7 +68,7 @@
     height: 48px;
     padding: 0 14px;
     border-radius: var(--r-tile);
-    border: 1px solid var(--hairline);
+    border: 0;
     background: var(--glass);
     color: var(--text);
     font-family: 'JetBrains Mono', monospace;
@@ -97,7 +97,7 @@
 }
 
 .result-card {
-  border: 1px solid var(--hairline);
+  border: 0;
 
   .result-row {
     display: flex;
@@ -127,7 +127,7 @@
 .debug {
   margin-top: 1rem;
   background: rgba(255,255,255,.02);
-  border: 1px solid var(--hairline-soft);
+  border: 0;
   border-radius: 8px;
   padding: 0.5rem 0.75rem;
 

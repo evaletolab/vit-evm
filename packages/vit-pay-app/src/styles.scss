@@ -191,7 +191,7 @@ a:hover { color: var(--cyan); }
   font-size: 11px;
   letter-spacing: 1px;
   background: var(--glass);
-  border: 1px solid var(--hairline);
+  border: 0;
   color: var(--text-2);
 }
 .vit-chip--success {
@@ -235,7 +235,7 @@ a:hover { color: var(--cyan); }
 }
 .vit-btn--ghost {
   background: var(--glass);
-  border: 1px solid var(--hairline);
+  border: 0;
   color: var(--text);
 }
 
@@ -287,7 +287,7 @@ sl-input::part(base),
 sl-select::part(combobox),
 sl-textarea::part(base) {
   background: var(--glass);
-  border: 1px solid var(--hairline);
+  border: 0;
   border-radius: var(--r-tile);
   color: var(--text);
 }
@@ -301,19 +301,18 @@ sl-button[variant="primary"]::part(base) {
 }
 sl-dialog::part(panel) {
   background: var(--surface-1);
-  border: 1px solid var(--hairline);
+  border: 0;
   color: var(--text);
 }
 
-/* === Suggestions de destinataire (page-buy) ===
-   Hors du composant : sa feuille frôle déjà le budget anyComponentStyle. */
-.buy-page .suggest {
+/* === Suggestions destinataire (home + legacy buy) === */
+.suggest {
   list-style: none;
   margin: 6px 0 0;
   padding: 4px;
   border-radius: var(--r-tile);
   background: var(--glass);
-  border: 1px solid var(--hairline);
+  border: 0;
   backdrop-filter: blur(10px);
 
   &__row {
@@ -390,7 +389,7 @@ sl-dialog::part(panel) {
     margin: 1.25rem auto 1rem;
     padding: 0.25rem 0 0.45rem;
     border: 0;
-    border-bottom: 1px solid var(--hairline, rgba(255, 255, 255, 0.2));
+    border-bottom: 0;
     box-sizing: border-box;
 
     input {
@@ -502,7 +501,7 @@ sl-dialog::part(panel) {
     width: 100%;
     box-sizing: border-box;
     padding: 0.7rem 0.85rem;
-    border: 1px solid var(--hairline, rgba(255, 255, 255, 0.16));
+    border: 0;
     border-radius: var(--r-tile);
     background: var(--glass, rgba(255, 255, 255, 0.06));
     font: inherit;

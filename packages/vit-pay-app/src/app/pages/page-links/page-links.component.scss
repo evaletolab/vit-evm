@@ -23,7 +23,7 @@
       width: 2.5rem; height: 2.5rem;
       border-radius: 50%;
       background: var(--glass);
-      border: 1px solid var(--hairline);
+      border: 0;
       color: var(--text);
       display: flex; align-items: center; justify-content: center;
       text-decoration: none;
@@ -67,7 +67,7 @@
     &:disabled { opacity: 0.4; cursor: not-allowed; }
   }
   .cta { background: var(--grad); color: #fff; box-shadow: var(--shadow-cta); }
-  .secondary { background: var(--glass); border: 1px solid var(--hairline); color: var(--text); backdrop-filter: blur(10px); }
+  .secondary { background: var(--glass); border: 0; color: var(--text); backdrop-filter: blur(10px); }
 
   .link-list {
     list-style: none; margin: 0; padding: 0;
@@ -78,7 +78,7 @@
     padding: 0.95rem 1rem;
     border-radius: var(--r-tile);
     background: var(--glass);
-    border: 1px solid var(--hairline);
+    border: 0;
     backdrop-filter: blur(10px);
     display: flex; flex-direction: column; gap: 0.55rem;
 
@@ -113,7 +113,7 @@
     width: 36px; height: 36px;
     border-radius: 12px;
     background: var(--glass);
-    border: 1px solid var(--hairline-soft);
+    border: 0;
     color: var(--text-muted);
     display: flex; align-items: center; justify-content: center;
     cursor: pointer;
@@ -146,7 +146,7 @@
       input {
         font: inherit;
         padding: 0.85rem 0.95rem;
-        border: 1px solid var(--hairline);
+        border: 0;
         background: rgba(255,255,255,.04);
         color: var(--text);
         border-radius: var(--r-tile);
@@ -169,7 +169,7 @@
     padding: 1.5rem 1.25rem;
     border-radius: var(--r-card);
     background: var(--glass);
-    border: 1px solid var(--hairline);
+    border: 0;
     backdrop-filter: blur(14px);
     text-align: center;
 
@@ -183,7 +183,7 @@
     &__sub { color: var(--text-muted); font-size: 0.85rem; margin: 0; }
     &__url {
       background: rgba(0,0,0,.35);
-      border: 1px solid var(--hairline-soft);
+      border: 0;
       border-radius: var(--r-tile);
       padding: 0.75rem 0.85rem;
       code {

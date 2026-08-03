@@ -27,7 +27,7 @@
     </button>
   </div>
 
-  <nav class="vit-nav" *ngIf="hasWallet" aria-label="Navigation principale">
+  <nav class="vit-nav" *ngIf="hasWallet" hidden aria-label="Navigation principale">
     <a class="vit-nav__item" routerLink="/" routerLinkActive="vit-nav__item--active" [routerLinkActiveOptions]="{exact: true}">
       <span class="material-symbols-outlined vit-nav__icon">home</span>
       <span class="vit-nav__label">Accueil</span>

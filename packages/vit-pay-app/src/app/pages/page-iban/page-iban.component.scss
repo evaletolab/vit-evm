@@ -21,7 +21,7 @@
     width: 40px;
     height: 40px;
     border-radius: 12px;
-    border: 1px solid var(--hairline);
+    border: 0;
     background: var(--glass);
     color: var(--text);
     display: inline-flex;
@@ -48,7 +48,7 @@
     padding: 0.5rem 0.25rem;
     border-radius: var(--r-tile);
     background: rgba(255,255,255,.03);
-    border: 1px solid var(--hairline-soft);
+    border: 0;
     color: var(--text-muted);
     font-family: 'Inter', sans-serif;
     transition: background .15s, color .15s, border .15s;
@@ -117,7 +117,7 @@
     padding: 0.6rem 0.75rem;
     border-radius: var(--r-tile);
     background: rgba(255,255,255,.03);
-    border: 1px solid var(--hairline-soft);
+    border: 0;
     color: var(--text);
     font-size: 13.5px;
 
@@ -136,7 +136,7 @@
   padding: 0.65rem 0.75rem;
   border-radius: var(--r-tile);
   background: rgba(255,255,255,.03);
-  border: 1px solid var(--hairline-soft);
+  border: 0;
 
   code {
     display: block;
@@ -152,7 +152,7 @@
     height: 36px;
     border-radius: 10px;
     background: var(--glass);
-    border: 1px solid var(--hairline);
+    border: 0;
     color: var(--text);
     display: inline-flex;
     align-items: center;
@@ -170,7 +170,7 @@
     height: 48px;
     padding: 0 14px;
     border-radius: var(--r-tile);
-    border: 1px solid var(--hairline);
+    border: 0;
     background: var(--glass);
     color: var(--text);
     font-family: 'JetBrains Mono', monospace;
@@ -243,7 +243,7 @@
   padding: 4px;
   border-radius: var(--r-pill);
   background: var(--glass);
-  border: 1px solid var(--hairline);
+  border: 0;
 
   button {
     display: inline-flex;
@@ -288,7 +288,7 @@
   font-size: 13px;
   color: var(--text-2);
   background: var(--glass);
-  border: 1px solid var(--hairline-soft);
+  border: 0;
   padding: 4px 8px;
   border-radius: 6px;
   letter-spacing: 1px;

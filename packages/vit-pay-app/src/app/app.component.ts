@@ -126,6 +126,13 @@ export class AppComponent implements OnInit, OnDestroy {
       setTimeout(() => {
         this.showInstallPrompt = true;
         this.cdr.markForCheck();
+        // Disparaît tout seul après 30 s si l'utilisateur n'a pas agi.
+        setTimeout(() => {
+          if (!this.showInstallPrompt) return;
+          this.showInstallPrompt = false;
+          try { sessionStorage.setItem('vit-install-dismissed', '1'); } catch { /* ignore */ }
+          this.cdr.markForCheck();
+        }, 30_000);
       }, 3000);
     });
 

@@ -21,7 +21,7 @@
     text-align: center;
     padding: 1.75rem 1.25rem;
     border-radius: var(--r-card);
-    border: 1px solid var(--hairline);
+    border: 0;
     background: var(--glass);
 
     h1 {
@@ -60,7 +60,7 @@
   padding: 0.7rem 0.85rem;
   border-radius: 12px;
   background: var(--glass-strong);
-  border: 1px solid var(--hairline);
+  border: 0;
   color: var(--text);
   z-index: 101;
   box-sizing: border-box;
@@ -115,7 +115,7 @@
   height: 58px;
   border-radius: 16px;
   background: var(--glass-strong);
-  border: 1px solid var(--hairline);
+  border: 0;
   display: flex;
   align-items: center;
   justify-content: space-around;
