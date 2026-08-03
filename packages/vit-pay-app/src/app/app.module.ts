@@ -27,6 +27,7 @@ import { PageRestoreComponent } from './pages/page-restore/page-restore.componen
 import { VitMintComponent } from './vit-mint/vit-mint.component';
 import { VitPasskeyComponent } from './vit-passkey/vit-passkey.component';
 import { TxOverlayComponent } from './wallet/tx-overlay.component';
+import { AmountFieldComponent } from './shared/amount-field.component';
 
 
 @NgModule({
@@ -51,6 +52,7 @@ import { TxOverlayComponent } from './wallet/tx-overlay.component';
     VitMintComponent,
     VitPasskeyComponent,
     TxOverlayComponent,
+    AmountFieldComponent,
   ],
   imports: [
     BrowserModule,

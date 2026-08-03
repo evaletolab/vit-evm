@@ -1,84 +1,110 @@
-<main class="home">
-  <div class="home__bg-grid" aria-hidden="true"></div>
-
-  <header class="topbar">
-    <div class="greeting">
-      <div class="greeting__hi">Bonsoir,</div>
-      <h1>{{ hasWallet ? (displayName || shortAddr || 'Wallet') : 'Visiteur' }}</h1>
-    </div>
-    <div class="topbar__actions" *ngIf="hasWallet; else noWalletAvatar">
-      <a
-        *ngIf="contactAccessActive"
-        class="access-dot"
-        [routerLink]="['/contacts/access']"
-        title="Carnets Google / Microsoft actifs"
-        aria-label="Carnets de contacts connectés">
-        <span class="material-symbols-outlined">cloud_done</span>
+<section class="home-page">
+  <!-- Qui + montant -->
+  <section class="hero">
+    <header class="topbar">
+      <a class="icon-btn" [routerLink]="['/account']" aria-label="Réglages">
+        <span class="material-symbols-outlined">settings</span>
       </a>
-      <a
-        class="qr-btn"
-        [routerLink]="['/contacts']"
-        [queryParams]="{ me: 1 }"
-        aria-label="Ma carte de contact ViT">
-        <span class="material-symbols-outlined">qr_code_2</span>
-      </a>
-    </div>
-    <ng-template #noWalletAvatar>
-      <div class="avatar avatar--off" aria-hidden="true"></div>
-    </ng-template>
-  </header>
+      <div class="topbar__id">
+        <div class="topbar__hi">Bonjour</div>
+        <h1>{{ displayName || shortAddr || 'Wallet' }}</h1>
+      </div>
+      <div class="topbar__actions">
+        <a
+          *ngIf="contactAccessActive"
+          class="icon-btn icon-btn--on"
+          [routerLink]="['/contacts/access']"
+          aria-label="Carnets connectés">
+          <span class="material-symbols-outlined">cloud_done</span>
+        </a>
+        <button type="button" class="icon-btn" (click)="goReceive()" aria-label="Recevoir">
+          <span class="material-symbols-outlined">qr_code_2</span>
+        </button>
+      </div>
+    </header>
 
-  <section class="balance">
-    <div class="balance__label">Solde disponible</div>
-    <div class="balance__amount">
-      {{ balance }}<span class="balance__unit">xCHF</span>
+    <div class="balance">
+      <span class="balance__label">Solde disponible</span>
+      <div class="balance__row">
+        <span class="balance__amount">{{ balance }}</span>
+        <span class="balance__unit">xCHF</span>
+      </div>
+      <span class="vit-chip vit-chip--success">Frais sponsorisés · Sepolia</span>
     </div>
-    <div class="balance__delta" *ngIf="hasWallet; else noWalletDelta">
-      <span class="material-symbols-outlined">trending_up</span>
-      Sponsorisé · zéro frais
+  </section>
+
+  <!-- Contacts -->
+  <section class="contacts" *ngIf="hasWallet">
+    <div class="section-head">
+      <span class="vit-label">Contacts</span>
+      <a class="section-head__more" [routerLink]="['/contacts']">Carnet</a>
     </div>
-    <ng-template #noWalletDelta>
-      <div class="balance__delta balance__delta--warn">
-        Crée ton wallet pour commencer
+
+    <ng-container *ngIf="contacts.length; else noContacts">
+      <ul class="contact-row">
+        <li *ngFor="let c of contacts">
+          <button type="button" class="contact-chip" (click)="goSend(c)">
+            <span class="contact-chip__avatar">{{ c.name.charAt(0).toUpperCase() }}</span>
+            <span class="contact-chip__name">{{ c.name }}</span>
+            <span class="contact-chip__meta">{{ contactMeta(c) }}</span>
+          </button>
+        </li>
+      </ul>
+
+      <div class="search-row" *ngIf="showContactPicker">
+        <input
+          type="search"
+          class="search-row__input"
+          [(ngModel)]="query"
+          (ngModelChange)="onSearch()"
+          placeholder="Choisir un contact…"
+          autocomplete="off"
+          enterkeyhint="search" />
+        <button type="button" class="search-row__scan" (click)="goScan()" aria-label="Scanner un QR">
+          <span class="material-symbols-outlined">qr_code_scanner</span>
+        </button>
+      </div>
+
+      <ul class="suggest" *ngIf="showContactPicker && suggestions.length">
+        <li *ngFor="let s of suggestions" class="suggest__row" (click)="pickSuggestion(s)">
+          <span class="suggest__avatar">{{ s.name.charAt(0).toUpperCase() }}</span>
+          <div class="suggest__info">
+            <div class="suggest__name">{{ s.name }}</div>
+            <div class="suggest__meta">{{ s.meta }}</div>
+          </div>
+          <span class="material-symbols-outlined" *ngIf="s.remote">cloud</span>
+        </li>
+      </ul>
+    </ng-container>
+
+    <ng-template #noContacts>
+      <div class="empty">
+        <span class="vit-label">Aucun contact</span>
+        <p>Scanne la carte ViT d'un proche, ou connecte ton carnet Google / Microsoft.</p>
+        <div class="empty__actions">
+          <button type="button" class="empty__cta" (click)="goScan()">
+            <span class="material-symbols-outlined">qr_code_scanner</span>
+            Scanner
+          </button>
+          <a class="empty__link" [routerLink]="['/contacts/access']">Connecter un carnet</a>
+        </div>
       </div>
     </ng-template>
   </section>
 
-  <nav class="quick-actions" aria-label="Actions rapides">
-    <a class="qa qa--primary" [routerLink]="['/buy']" role="button">
-      <span class="qa__tile">
-        <span class="material-symbols-outlined">arrow_outward</span>
-      </span>
-      <span class="qa__label">Envoyer</span>
-    </a>
-    <a class="qa" [routerLink]="['/request']" role="button">
-      <span class="qa__tile">
-        <span class="material-symbols-outlined">request_quote</span>
-      </span>
-      <span class="qa__label">Demander</span>
-    </a>
-    <a class="qa" [routerLink]="['/sent']" role="button">
-      <span class="qa__tile">
-        <span class="material-symbols-outlined">south_west</span>
-      </span>
-      <span class="qa__label">Recevoir</span>
-    </a>
-    <a class="qa" [routerLink]="['/links']" role="button">
-      <span class="qa__tile">
-        <span class="material-symbols-outlined">link</span>
-      </span>
-      <span class="qa__label">Envois</span>
-    </a>
-  </nav>
-
+  <!-- Activité -->
   <section class="txs">
-    <div class="txs__head">
+    <div class="section-head">
       <span class="vit-label">Activité</span>
-      <a class="txs__more" [routerLink]="['/txs']">Tout voir</a>
+      <a class="section-head__more" [routerLink]="['/txs']">Tout voir</a>
     </div>
 
     <ul class="tx-list" *ngIf="recentTxs.length; else txsEmpty">
-      <li class="tx" *ngFor="let tx of recentTxs" [class.tx--in]="tx.direction === 'in'" [class.tx--out]="tx.direction === 'out'">
+      <li
+        class="tx"
+        *ngFor="let tx of recentTxs"
+        [class.tx--in]="tx.direction === 'in'"
+        [class.tx--out]="tx.direction === 'out'">
         <span class="tx__icon">
           <span class="material-symbols-outlined">{{ tx.icon }}</span>
         </span>
@@ -97,13 +123,11 @@
       </li>
     </ul>
     <ng-template #txsEmpty>
-      <ul class="tx-list">
-        <li class="tx-list__empty">
-          <span class="vit-label">
-            {{ loadingTxs ? 'Chargement…' : (hasWallet ? 'Aucune transaction récente' : 'Crée un wallet pour voir l\'activité') }}
-          </span>
-        </li>
-      </ul>
+      <div class="empty empty--soft">
+        <span class="vit-label">
+          {{ loadingTxs ? 'Chargement…' : 'Aucune transaction récente' }}
+        </span>
+      </div>
     </ng-template>
   </section>
-</main>
+</section>

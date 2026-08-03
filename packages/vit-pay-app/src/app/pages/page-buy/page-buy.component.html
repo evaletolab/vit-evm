@@ -1,153 +1,134 @@
 <section class="buy-page">
-  <header class="topbar topbar--centered">
+  <header class="topbar">
     <a class="back" [routerLink]="['/']" aria-label="Retour">
       <span class="material-symbols-outlined">arrow_back</span>
     </a>
-    <div class="topbar__title">
-      <h1>Payer en magasin</h1>
-      <p class="topbar__subtitle">Alignez le QR code du commerçant</p>
-    </div>
+    <h1>Envoyer</h1>
     <span class="back back--placeholder" aria-hidden="true"></span>
   </header>
 
-  <!-- scanning : camera live -->
-  <div class="scanner-stage" *ngIf="step === 'scanning'">
-    <video #video class="scanner-stage__video" playsinline muted></video>
-    <div class="scanner-stage__shade" aria-hidden="true"></div>
-    <div class="viseur" aria-hidden="true">
-      <span class="viseur__corner viseur__corner--tl"></span>
-      <span class="viseur__corner viseur__corner--tr"></span>
-      <span class="viseur__corner viseur__corner--bl"></span>
-      <span class="viseur__corner viseur__corner--br"></span>
-      <span class="viseur__line"></span>
-    </div>
-  </div>
-
-  <div class="scan-toolbar" *ngIf="step === 'scanning'">
-    <button class="scan-toolbar__chip scan-toolbar__chip--flash" type="button" aria-label="Flash">
-      <span class="material-symbols-outlined">bolt</span>
-    </button>
-    <a class="scan-toolbar__qr" [routerLink]="['/sent']">
-      <span class="vit-label">Ou afficher</span>
-      <span class="scan-toolbar__qr-title">Mon QR code</span>
-    </a>
-    <button class="scan-toolbar__chip" type="button" (click)="reset()" aria-label="Fermer">
-      <span class="material-symbols-outlined">close</span>
-    </button>
-  </div>
-
-  <!-- confirm : review tx -->
-  <div class="confirm-card" *ngIf="step === 'confirm' || step === 'sending' || step === 'error'">
-    <h2>Confirmer le paiement</h2>
-    <label>
-      <span class="label-text">Destinataire</span>
-      <div class="recipient-row">
-        <input type="text" [(ngModel)]="to" (ngModelChange)="onToChange()" placeholder="0x…, e-mail ou téléphone" [disabled]="step === 'sending'" />
-        <button type="button" class="picker-btn" (click)="openContacts()" [disabled]="step === 'sending'" aria-label="Choisir dans le carnet">
-          <span class="material-symbols-outlined">contacts</span>
-        </button>
-        <button type="button" class="picker-btn" (click)="startScan()" [disabled]="step === 'sending'" aria-label="Scanner un QR code">
-          <span class="material-symbols-outlined">qr_code_scanner</span>
-        </button>
+  <!-- Sans contact : QR à scanner -->
+  <ng-container *ngIf="step === 'scanning'">
+    <div class="scanner-stage">
+      <video #video class="scanner-stage__video" playsinline muted></video>
+      <div class="viseur" aria-hidden="true">
+        <span class="viseur__corner viseur__corner--tl"></span>
+        <span class="viseur__corner viseur__corner--tr"></span>
+        <span class="viseur__corner viseur__corner--bl"></span>
+        <span class="viseur__corner viseur__corner--br"></span>
       </div>
-      <ul class="suggest" *ngIf="suggestions.length">
-        <li *ngFor="let s of suggestions" class="suggest__row" (click)="pickSuggestion(s)">
-          <span class="suggest__avatar">{{ s.name.charAt(0).toUpperCase() }}</span>
-          <div class="suggest__info">
-            <div class="suggest__name">{{ s.name }}</div>
-            <div class="suggest__meta">{{ s.meta }}</div>
-          </div>
-          <span class="material-symbols-outlined" *ngIf="s.remote" title="Depuis ton carnet Google / Microsoft">cloud</span>
-        </li>
-      </ul>
-      <p class="matched" *ngIf="matchedContact">
-        <span class="material-symbols-outlined">verified</span>
-        {{ matchedContact.name }}
-      </p>
+    </div>
+    <p class="hint">Scanne le QR du destinataire</p>
+    <a class="secondary" [routerLink]="['/']">Annuler</a>
+  </ng-container>
+
+  <!-- Avec contact : chip + montant -->
+  <ng-container *ngIf="step === 'confirm' || step === 'sending' || step === 'error'">
+    <div class="counterpart" *ngIf="matchedContact; else missingContact">
+      <span class="counterpart__avatar">{{ matchedContact.name.charAt(0).toUpperCase() }}</span>
+      <div class="counterpart__info">
+        <div class="counterpart__name">
+          {{ matchedContact.name }}
+          <span
+            class="counterpart__badge"
+            [class.counterpart__badge--on]="isWhitelisted"
+            [attr.title]="isWhitelisted ? 'Dans ton carnet' : 'Hors carnet'">
+            <span class="material-symbols-outlined">{{ isWhitelisted ? 'verified' : 'person' }}</span>
+          </span>
+        </div>
+        <div class="counterpart__meta">{{ counterpartMeta }}</div>
+        <p class="counterpart__save-err" *ngIf="saveError">{{ saveError }}</p>
+      </div>
+      <button
+        type="button"
+        class="counterpart__save"
+        (click)="saveCounterpart()"
+        [disabled]="isWhitelisted"
+        [attr.aria-label]="isWhitelisted ? 'Déjà dans le carnet' : 'Enregistrer dans le carnet'">
+        <span class="material-symbols-outlined">{{ isWhitelisted ? 'bookmark_added' : 'bookmark_add' }}</span>
+        {{ isWhitelisted ? 'Enregistré' : 'Enregistrer' }}
+      </button>
+    </div>
+    <ng-template #missingContact>
+      <p class="error-msg" *ngIf="errorMessage">{{ errorMessage }}</p>
+      <p class="hint" *ngIf="!errorMessage">Choisis un contact depuis l'accueil, ou scanne un QR.</p>
+      <button type="button" class="cta" (click)="startScan()">Scanner un QR</button>
+      <a class="secondary" [routerLink]="['/']">Retour à l'accueil</a>
+    </ng-template>
+
+    <ng-container *ngIf="matchedContact">
       <p class="recipient-hint" *ngIf="recipientMode === 'email'">
         <span class="material-symbols-outlined">mail</span>
-        Un lien de paiement sera envoyé par e-mail
+        Lien de paiement par e-mail
       </p>
       <p class="recipient-hint" *ngIf="recipientMode === 'phone'">
         <span class="material-symbols-outlined">sms</span>
-        Un lien de paiement sera envoyé par SMS
+        Lien de paiement par SMS
       </p>
-    </label>
-    <label>
-      <span class="label-text">Montant (xCHF)</span>
-      <input type="text" inputmode="decimal" [(ngModel)]="amount" placeholder="0.00" [disabled]="step === 'sending'" />
-    </label>
-    <p class="error-msg" *ngIf="errorMessage">{{ errorMessage }}</p>
-    <div class="actions">
-      <button class="secondary" (click)="reset()" [disabled]="step === 'sending'">Annuler</button>
-      <button class="cta" (click)="send()" [disabled]="step === 'sending' || !to || !amount">
+      <p class="recipient-hint" *ngIf="recipientMode === 'unknown'">
+        <span class="material-symbols-outlined">link</span>
+        Pas d'adresse — un claim link sera créé
+      </p>
+
+      <vit-amount-field
+        label="Montant"
+        [(ngModel)]="amount"
+        [disabled]="step === 'sending'">
+      </vit-amount-field>
+
+      <p class="error-msg" *ngIf="errorMessage">{{ errorMessage }}</p>
+
+      <button
+        type="button"
+        class="cta"
+        (click)="send()"
+        [disabled]="step === 'sending' || !canSend">
         {{ step === 'sending'
-            ? (recipientMode === 'email' || recipientMode === 'phone' ? 'Création du lien…' : 'Envoi…')
+            ? (resolvedAddress ? 'Envoi…' : 'Création du lien…')
             : (recipientMode === 'email' ? 'Envoyer par e-mail'
                : recipientMode === 'phone' ? 'Envoyer par SMS'
-               : 'Envoyer') }}
+               : resolvedAddress ? 'Envoyer'
+               : 'Créer un claim link') }}
       </button>
-    </div>
-  </div>
 
-  <!-- done : paiement direct on-chain -->
-  <div class="done-card" *ngIf="step === 'done' && !sentViaLink">
-    <span class="material-symbols-outlined check">check_circle</span>
+      <span class="vit-chip vit-chip--success">Frais sponsorisés · Sepolia</span>
+    </ng-container>
+  </ng-container>
+
+  <div class="done" *ngIf="step === 'done' && !sentViaLink">
+    <span class="material-symbols-outlined done__check">check_circle</span>
     <h2>Paiement envoyé</h2>
     <p *ngIf="lastResult?.transactionHash">
       Tx : <code>{{ lastResult?.transactionHash }}</code>
     </p>
-    <button class="cta" (click)="reset()">Nouveau paiement</button>
+    <a class="cta" [routerLink]="['/']">Retour</a>
   </div>
 
-  <!-- done : envoi par lien (e-mail / SMS) -->
-  <div class="done-card" *ngIf="step === 'done' && sentViaLink">
-    <span class="material-symbols-outlined check">check_circle</span>
+  <div class="done" *ngIf="step === 'done' && sentViaLink">
+    <span class="material-symbols-outlined done__check">check_circle</span>
     <h2>Lien de paiement créé</h2>
-    <p class="done-sub">
+    <p class="done__sub" *ngIf="claimKind === 'email' || claimKind === 'phone'">
       {{ claimKind === 'email' ? 'Brouillon e-mail ouvert pour ' : 'SMS ouvert pour ' }}
       <strong>{{ claimRecipient }}</strong>.
-      Le lien reste annulable depuis « Liens » tant qu'il n'est pas réclamé.
+    </p>
+    <p class="done__sub" *ngIf="claimKind !== 'email' && claimKind !== 'phone'">
+      Partage ce lien avec <strong>{{ claimRecipient }}</strong> pour qu'il récupère les fonds.
     </p>
     <div class="claim-url"><code>{{ claimUrl }}</code></div>
-    <div class="actions">
+    <div class="done__actions">
       <button class="secondary" type="button" (click)="copyClaimUrl()">
         <span class="material-symbols-outlined">{{ copied ? 'check' : 'content_copy' }}</span>
         {{ copied ? 'Copié' : 'Copier le lien' }}
       </button>
-      <button class="cta" type="button" (click)="openDraft()">
+      <button
+        class="cta"
+        type="button"
+        (click)="openDraft()"
+        *ngIf="claimKind === 'email' || claimKind === 'phone'">
         <span class="material-symbols-outlined">{{ claimKind === 'email' ? 'mail' : 'sms' }}</span>
-        {{ claimKind === 'email' ? 'Rouvrir l’e-mail' : 'Rouvrir le SMS' }}
+        Rouvrir
       </button>
     </div>
-    <button class="link-back" type="button" (click)="reset()">← Nouveau paiement</button>
-  </div>
-
-  <div class="hint">
-    <span class="vit-chip">xCHF · Sepolia</span>
-    <span>Frais sponsorisés</span>
-  </div>
-
-  <!-- contact picker bottom sheet -->
-  <div class="picker" *ngIf="contactsOpen" (click)="closeContacts()">
-    <div class="picker__sheet" (click)="$event.stopPropagation()">
-      <div class="picker__handle"></div>
-      <h3>Carnet d'adresses</h3>
-      <ul class="picker__list" *ngIf="contacts.length; else pickerEmpty">
-        <li *ngFor="let c of contacts" class="picker__row" (click)="pickContact(c)">
-          <span class="picker__avatar">{{ c.name.charAt(0).toUpperCase() }}</span>
-          <div class="picker__info">
-            <div class="picker__name">{{ c.name }}</div>
-            <div class="picker__addr">{{ c.address.slice(0,6) }}…{{ c.address.slice(-4) }}</div>
-          </div>
-        </li>
-      </ul>
-      <ng-template #pickerEmpty>
-        <p class="picker__empty">
-          Aucun contact.
-          <a [routerLink]="['/contacts']">Ouvrir le carnet</a>
-        </p>
-      </ng-template>
-    </div>
+    <a class="link-back" [routerLink]="['/']">← Accueil</a>
   </div>
 </section>

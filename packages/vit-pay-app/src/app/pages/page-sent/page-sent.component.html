@@ -8,61 +8,54 @@
 
   <p *ngIf="error" class="error">{{ error }}</p>
 
-  <div class="qr-card" *ngIf="!loading && !error && address">
+  <!-- Contrepartie (demande ciblée) — masque le QR -->
+  <div class="counterpart" *ngIf="counterpart">
+    <span class="counterpart__avatar">{{ counterpart.name.charAt(0).toUpperCase() }}</span>
+    <div class="counterpart__info">
+      <div class="counterpart__name">
+        {{ counterpart.name }}
+        <span
+          class="counterpart__badge"
+          [class.counterpart__badge--on]="counterpartWhitelisted"
+          [attr.title]="counterpartWhitelisted ? 'Dans ton carnet' : 'Hors carnet'">
+          <span class="material-symbols-outlined">{{ counterpartWhitelisted ? 'verified' : 'person' }}</span>
+        </span>
+      </div>
+      <div class="counterpart__meta" *ngIf="counterpartMeta">{{ counterpartMeta }}</div>
+      <p class="counterpart__save-err" *ngIf="saveError">{{ saveError }}</p>
+    </div>
+    <button
+      type="button"
+      class="counterpart__save"
+      (click)="saveCounterpart()"
+      [disabled]="counterpartWhitelisted"
+      [attr.aria-label]="counterpartWhitelisted ? 'Déjà dans le carnet' : 'Enregistrer dans le carnet'">
+      <span class="material-symbols-outlined">{{ counterpartWhitelisted ? 'bookmark_added' : 'bookmark_add' }}</span>
+      {{ counterpartWhitelisted ? 'Enregistré' : 'Enregistrer' }}
+    </button>
+  </div>
+
+  <!-- QR : uniquement sans contrepartie -->
+  <div class="qr-card" *ngIf="!loading && !error && address && !counterpart">
     <div class="qr-placeholder">
       <canvas #qrCanvas width="220" height="220"></canvas>
     </div>
     <p class="address-label">Adresse Safe</p>
     <code class="address">{{ shortAddr }}</code>
-    <button class="cta" (click)="copy()">
+  </div>
+
+  <ng-container *ngIf="!loading && !error && address">
+    <vit-amount-field
+      [label]="counterpart ? 'Montant demandé' : 'Montant demandé (optionnel)'"
+      [(ngModel)]="amount"
+      (ngModelChange)="onAmountChange()">
+    </vit-amount-field>
+
+    <button class="cta" type="button" (click)="copy()">
       <span class="material-symbols-outlined">{{ copied ? 'check' : 'content_copy' }}</span>
-      {{ copied ? 'Copié' : 'Copier' }}
+      {{ copied ? 'Copié' : 'Copier le lien' }}
     </button>
-  </div>
 
-  <div class="amount-card" *ngIf="!loading && !error && address">
-    <label class="amount-input">
-      <span class="label-text">Montant demandé (optionnel)</span>
-      <div class="input-row">
-        <input
-          type="text"
-          inputmode="decimal"
-          placeholder="0.00"
-          [(ngModel)]="amount"
-          (ngModelChange)="onAmountChange()" />
-        <span class="unit">xCHF</span>
-      </div>
-    </label>
     <span class="vit-chip vit-chip--success">Frais sponsorisés · Sepolia</span>
-  </div>
-
-  <button class="contact-cta" type="button"
-          *ngIf="!loading && !error && address"
-          (click)="openContacts()">
-    <span class="material-symbols-outlined">contacts</span>
-    Envoyer à un contact
-  </button>
-
-  <!-- contact picker bottom sheet -->
-  <div class="picker" *ngIf="contactsOpen" (click)="closeContacts()">
-    <div class="picker__sheet" (click)="$event.stopPropagation()">
-      <div class="picker__handle"></div>
-      <h3>Carnet d'adresses</h3>
-      <ul class="picker__list" *ngIf="contacts.length; else pickerEmpty">
-        <li *ngFor="let c of contacts" class="picker__row" (click)="pickContact(c)">
-          <span class="picker__avatar">{{ c.name.charAt(0).toUpperCase() }}</span>
-          <div class="picker__info">
-            <div class="picker__name">{{ c.name }}</div>
-            <div class="picker__addr">{{ c.address.slice(0,6) }}…{{ c.address.slice(-4) }}</div>
-          </div>
-        </li>
-      </ul>
-      <ng-template #pickerEmpty>
-        <p class="picker__empty">
-          Aucun contact.
-          <a [routerLink]="['/contacts']">Ouvrir le carnet</a>
-        </p>
-      </ng-template>
-    </div>
-  </div>
+  </ng-container>
 </section>

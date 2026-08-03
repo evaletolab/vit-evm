@@ -25,7 +25,7 @@
       height: 2.5rem;
       border-radius: 50%;
       background: var(--glass);
-      border: 1px solid var(--hairline);
+      border: 0;
       color: var(--text);
       display: flex;
       align-items: center;
@@ -42,7 +42,7 @@
 
   .qr-card {
     background: var(--glass);
-    border: 1px solid var(--hairline);
+    border: 0;
     color: var(--text);
     border-radius: var(--r-card);
     padding: 1.5rem;
@@ -97,28 +97,9 @@
       letter-spacing: 1px;
       color: var(--text);
       background: rgba(255,255,255,.04);
-      border: 1px solid var(--hairline-soft);
+      border: 0;
       padding: 0.4rem 0.85rem;
       border-radius: var(--r-pill);
-    }
-    .cta {
-      background: var(--grad);
-      color: #fff;
-      border: none;
-      padding: 0.75rem 1.35rem;
-      border-radius: var(--r-btn);
-      font: inherit;
-      font-weight: 600;
-      cursor: pointer;
-      display: inline-flex;
-      align-items: center;
-      gap: 0.5rem;
-      box-shadow: var(--shadow-cta);
-      transition: transform .12s ease;
-
-      &:active { transform: translateY(1px); }
-
-      .material-symbols-outlined { font-size: 1.15rem; }
     }
   }
 
@@ -132,197 +113,98 @@
     font-weight: 600;
   }
 
-  .amount-card {
-    background: var(--glass);
-    border: 1px solid var(--hairline);
-    color: var(--text);
-    border-radius: var(--r-card);
-    padding: 1.4rem;
-    display: flex;
-    flex-direction: column;
-    gap: 0.85rem;
-    backdrop-filter: blur(14px);
-
-    .label {
-      font-family: 'JetBrains Mono', monospace;
-      font-size: 11px;
-      letter-spacing: 2px;
-      text-transform: uppercase;
-      color: var(--text-muted);
-    }
-    .amount-input {
-      display: flex;
-      flex-direction: column;
-      gap: 0.5rem;
-
-      .label-text {
-        font-family: 'JetBrains Mono', monospace;
-        font-size: 10px;
-        text-transform: uppercase;
-        letter-spacing: 2px;
-        color: var(--text-muted);
-        font-weight: 700;
-      }
-      .input-row {
-        display: flex;
-        align-items: center;
-        gap: 0.5rem;
-        background: rgba(255, 255, 255, 0.04);
-        border: 1px solid var(--hairline);
-        border-radius: var(--r-tile);
-        padding: 0.85rem 1.1rem;
-        transition: border-color .15s ease, box-shadow .15s ease;
-
-        &:focus-within {
-          border-color: var(--violet);
-          box-shadow: 0 0 0 3px rgba(124,92,255,.18);
-        }
-
-        input {
-          flex: 1;
-          background: transparent;
-          border: none;
-          color: var(--text);
-          font-family: 'Inter', sans-serif;
-          font-size: 2.4rem;
-          font-weight: 700;
-          letter-spacing: -1.5px;
-          outline: none;
-          min-width: 0;
-          background: var(--grad-text);
-          -webkit-background-clip: text;
-          background-clip: text;
-          -webkit-text-fill-color: transparent;
-
-          &::placeholder {
-            -webkit-text-fill-color: var(--text-dim);
-            color: var(--text-dim);
-            background: none;
-          }
-        }
-        .unit {
-          font-family: 'JetBrains Mono', monospace;
-          font-size: 0.85rem;
-          letter-spacing: 2px;
-          font-weight: 700;
-          color: var(--text-muted);
-          text-transform: uppercase;
-        }
-      }
-    }
-    .vit-chip { align-self: flex-start; }
-  }
-
-  .contact-cta {
-    display: inline-flex;
+  .counterpart {
+    display: grid;
+    grid-template-columns: auto 1fr auto;
     align-items: center;
-    justify-content: center;
-    gap: 0.5rem;
-    padding: 0.85rem 1.2rem;
+    gap: 0.85rem;
+    padding: 0.85rem 0.95rem;
     border-radius: var(--r-tile);
     background: var(--glass);
-    border: 1px solid var(--hairline);
-    color: var(--text);
-    font-family: 'Inter', sans-serif;
-    font-weight: 600;
-    font-size: 0.95rem;
-    cursor: pointer;
-    transition: background 0.15s, border-color 0.15s;
+    border: 0;
+    backdrop-filter: blur(10px);
 
-    &:hover { background: rgba(255,255,255,.06); border-color: var(--violet); }
-    .material-symbols-outlined { font-size: 20px; color: var(--violet); }
-  }
-
-  .picker {
-    position: fixed;
-    inset: 0;
-    background: rgba(0,0,0,.55);
-    backdrop-filter: blur(4px);
-    z-index: 200;
-    display: flex;
-    align-items: flex-end;
-    justify-content: center;
-    padding: 0 1rem 1rem;
-    box-sizing: border-box;
-
-    &__sheet {
-      width: 100%;
-      max-width: calc(var(--vit-page-max) - 1rem);
-      max-height: 65vh;
-      overflow-y: auto;
-      background: var(--surface-1);
-      border: 1px solid var(--hairline);
-      border-radius: 24px;
-      padding: 1rem 1.1rem 1.4rem;
-      animation: sent-sheet-up .2s ease-out;
-
-      h3 {
-        margin: 0.25rem 0 0.85rem;
-        font-size: 1rem;
-        letter-spacing: -0.02em;
-      }
-    }
-    &__handle {
-      width: 38px;
-      height: 4px;
-      border-radius: 4px;
-      background: var(--hairline);
-      margin: 0 auto 0.75rem;
-    }
-    &__list {
-      list-style: none;
-      margin: 0;
-      padding: 0;
-      display: flex;
-      flex-direction: column;
-      gap: 0.5rem;
-    }
-    &__row {
-      display: grid;
-      grid-template-columns: auto 1fr;
-      align-items: center;
-      gap: 0.85rem;
-      padding: 0.6rem 0.75rem;
-      border-radius: var(--r-tile);
-      background: var(--glass);
-      border: 1px solid var(--hairline-soft);
-      cursor: pointer;
-
-      &:hover { background: rgba(255,255,255,.08); }
-    }
     &__avatar {
-      width: 38px;
-      height: 38px;
-      border-radius: 12px;
+      width: 42px;
+      height: 42px;
+      border-radius: 14px;
       background: var(--grad);
       color: #fff;
       display: flex;
       align-items: center;
       justify-content: center;
-      font-family: 'Inter', sans-serif;
       font-weight: 700;
+      font-size: 1.1rem;
     }
+    &__info { min-width: 0; }
     &__name {
-      font-family: 'Inter', sans-serif;
+      display: inline-flex;
+      align-items: center;
+      gap: 0.35rem;
       font-weight: 600;
-      font-size: 0.9rem;
-      color: var(--text);
+      font-size: 0.95rem;
     }
-    &__addr {
+    &__badge {
+      display: inline-flex;
+      color: var(--text-dim);
+      .material-symbols-outlined { font-size: 1rem; }
+      &--on { color: var(--positive); }
+    }
+    &__meta {
       font-family: 'JetBrains Mono', monospace;
-      font-size: 11px;
+      font-size: 0.72rem;
       color: var(--text-muted);
     }
-    &__empty {
-      text-align: center;
-      color: var(--text-muted);
-      margin: 1.5rem 0;
-      a { color: var(--violet); margin-left: 6px; }
+    &__save-err {
+      margin: 0.25rem 0 0;
+      font-size: 0.72rem;
+      color: var(--danger, #c44);
+    }
+    &__save {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.25rem;
+      padding: 0.45rem 0.7rem;
+      border-radius: 999px;
+      border: 0;
+      background: var(--glass);
+      color: var(--text);
+      font: inherit;
+      font-size: 0.75rem;
+      font-weight: 600;
+      cursor: pointer;
+      flex-shrink: 0;
+      white-space: nowrap;
+
+      .material-symbols-outlined { font-size: 1.05rem; }
+
+      &:disabled {
+        color: var(--positive);
+        border-color: color-mix(in srgb, var(--positive) 35%, transparent);
+        cursor: default;
+      }
     }
   }
 
-  @keyframes sent-sheet-up {
-    from { transform: translateY(100%); }
-    to   { transform: translateY(0); }
+  .cta {
+    width: 100%;
+    background: var(--grad);
+    color: #fff;
+    border: none;
+    padding: 0.9rem 1.35rem;
+    border-radius: var(--r-btn);
+    font: inherit;
+    font-weight: 600;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    box-shadow: var(--shadow-cta);
+
+    &:active { transform: translateY(1px); }
+    .material-symbols-outlined { font-size: 1.15rem; }
   }
+
+  .vit-chip { align-self: flex-start; }
 }
