@@ -3,6 +3,7 @@
  *
  * Le callback est appelé hors de la zone Angular (rAF / promesse native) :
  * l'appelant doit le réentrer via `NgZone.run` s'il met à jour la vue.
+ * S'il retourne `false`, le scan continue (QR ignoré) ; sinon la caméra s'arrête.
  */
 import jsQR from 'jsqr';
 
@@ -11,26 +12,31 @@ interface BarcodeDetectorLike {
   detect(source: CanvasImageSource): Promise<DetectedBarcode[]>;
 }
 
+export type QrScanHandler = (value: string) => boolean | void;
+
 export class QrScanner {
   private stream?: MediaStream;
   private detector?: BarcodeDetectorLike;
   private rafId?: number;
   private canvas?: HTMLCanvasElement;
   private video?: HTMLVideoElement;
-  private onResult?: (value: string) => void;
+  private onResult?: QrScanHandler;
   private running = false;
 
-  async start(video: HTMLVideoElement, onResult: (value: string) => void): Promise<void> {
+  async start(video: HTMLVideoElement, onResult: QrScanHandler): Promise<void> {
     if (!navigator.mediaDevices?.getUserMedia) {
       throw new Error('La caméra n\'est pas disponible sur ce navigateur.');
     }
 
+    this.stop();
     this.video = video;
     this.onResult = onResult;
     this.stream = await navigator.mediaDevices.getUserMedia({
-      video: { facingMode: 'environment' },
+      video: { facingMode: { ideal: 'environment' } },
     });
     video.srcObject = this.stream;
+    video.setAttribute('playsinline', 'true');
+    video.muted = true;
     await video.play();
 
     const Ctor = (globalThis as unknown as {
@@ -58,6 +64,7 @@ export class QrScanner {
     this.stream = undefined;
     if (this.video) this.video.srcObject = null;
     this.video = undefined;
+    this.onResult = undefined;
   }
 
   private tick(): void {
@@ -101,7 +108,11 @@ export class QrScanner {
 
   private emit(value: string): void {
     const cb = this.onResult;
+    const accepted = cb?.(value);
+    if (accepted === false) {
+      this.rafId = requestAnimationFrame(() => this.tick());
+      return;
+    }
     this.stop();
-    cb?.(value);
   }
 }

@@ -24,7 +24,7 @@
       height: 2.5rem;
       border-radius: 50%;
       background: var(--glass);
-      border: 1px solid var(--hairline);
+      border: 0;
       color: var(--text);
       display: flex;
       align-items: center;
@@ -34,11 +34,22 @@
       cursor: pointer;
       flex-shrink: 0;
     }
+    &__actions {
+      display: flex;
+      align-items: center;
+      gap: 0.45rem;
+      flex-shrink: 0;
+    }
     .add {
       background: var(--grad);
       border: none;
       box-shadow: var(--shadow-cta);
       color: #fff;
+    }
+    .add--ghost {
+      background: var(--glass);
+      color: var(--text);
+      box-shadow: none;
     }
     .back--placeholder {
       background: transparent;
@@ -72,14 +83,7 @@
     margin: 0;
   }
 
-  .actions {
-    display: flex;
-    gap: 0.5rem;
-    flex-wrap: wrap;
-  }
-
   .cta, .secondary {
-    flex: 1 1 auto;
     display: inline-flex;
     align-items: center;
     justify-content: center;
@@ -91,11 +95,9 @@
     font-weight: 600;
     font-size: 0.9rem;
     cursor: pointer;
-    transition: transform .1s ease;
 
     &:active { transform: scale(0.97); }
     &:disabled { opacity: 0.4; cursor: not-allowed; }
-
     .material-symbols-outlined { font-size: 1.1rem; }
   }
   .cta {
@@ -105,9 +107,31 @@
   }
   .secondary {
     background: var(--glass);
-    border: 1px solid var(--hairline);
+    border: 0;
     color: var(--text);
     backdrop-filter: blur(10px);
+  }
+
+  .phone-import { width: 100%; }
+
+  .scan-cta {
+    width: 100%;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    padding: 0.85rem 1rem;
+    border-radius: var(--r-btn);
+    border: 0;
+    background: var(--glass);
+    color: var(--text);
+    font: inherit;
+    font-weight: 600;
+    font-size: 0.95rem;
+    cursor: pointer;
+    backdrop-filter: blur(10px);
+
+    .material-symbols-outlined { font-size: 1.25rem; }
   }
 
   /* === Liste === */
@@ -128,7 +152,7 @@
     padding: 0.85rem 0.95rem;
     border-radius: var(--r-tile);
     background: var(--glass);
-    border: 1px solid var(--hairline);
+    border: 0;
     backdrop-filter: blur(10px);
 
     &__avatar {
@@ -184,7 +208,7 @@
     height: 34px;
     border-radius: 12px;
     background: var(--glass);
-    border: 1px solid var(--hairline-soft);
+    border: 0;
     color: var(--text-muted);
     display: flex;
     align-items: center;
@@ -204,7 +228,19 @@
     backdrop-filter: blur(10px);
 
     .vit-label { display: block; margin-bottom: 8px; }
-    p { color: var(--text-muted); font-size: 0.85rem; margin: 0; }
+    p { color: var(--text-muted); font-size: 0.85rem; margin: 0; line-height: 1.45; }
+
+    &__actions {
+      display: flex;
+      flex-direction: column;
+      gap: 0.55rem;
+      margin-top: 1.1rem;
+
+      .cta, .secondary {
+        width: 100%;
+        flex: none;
+      }
+    }
   }
 
   /* === Form === */
@@ -229,7 +265,7 @@
       input {
         font: inherit;
         padding: 0.75rem 0.95rem;
-        border: 1px solid var(--hairline);
+        border: 0;
         background: rgba(255,255,255,.04);
         color: var(--text);
         border-radius: var(--r-tile);
@@ -261,7 +297,7 @@
     padding: 0.75rem;
     border-radius: var(--r-tile);
     background: var(--glass);
-    border: 1px solid var(--hairline-soft);
+    border: 0;
 
     &__item {
       display: flex;
@@ -271,7 +307,7 @@
       padding: 0.55rem 0.75rem;
       border-radius: 12px;
       background: rgba(255,255,255,.04);
-      border: 1px solid var(--hairline-soft);
+      border: 0;
       color: var(--text);
       cursor: pointer;
       font: inherit;
@@ -360,14 +396,14 @@
     object-fit: cover;
     border-radius: var(--r-card);
     background: #000;
-    border: 1px solid var(--hairline);
+    border: 0;
   }
 
   /* === Recherche + carnets distants === */
   .search {
     font: inherit;
     padding: 0.7rem 0.95rem;
-    border: 1px solid var(--hairline);
+    border: 0;
     background: rgba(255,255,255,.04);
     color: var(--text);
     border-radius: var(--r-tile);
@@ -385,7 +421,7 @@
     padding: 0.6rem 0.85rem;
     border-radius: var(--r-tile);
     background: var(--glass);
-    border: 1px solid var(--hairline-soft);
+    border: 0;
     color: var(--text-muted);
     text-decoration: none;
     font-size: 0.82rem;

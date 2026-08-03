@@ -157,6 +157,104 @@ export class ContactsService {
   }
 
   /**
+   * Recherche pour fusion depuis une carte partagée.
+   * Discriminant fort = adresse publique :
+   * - avec address → match UNIQUEMENT sur cette address (jamais email/tél) ;
+   * - sans address → match email/tél seulement parmi les fiches encore sans address.
+   * Ainsi on n'écrase jamais « ma » fiche (autre address) quand on scanne quelqu'un.
+   */
+  findMatch(
+    owner: string,
+    draft: { address?: string; email?: string; tel?: string },
+  ): Contact | undefined {
+    const list = this.list(owner);
+    const address = draft.address?.trim();
+    if (address) {
+      const a = address.toLowerCase();
+      return list.find((c) => c.address && c.address.toLowerCase() === a);
+    }
+
+    const email = draft.email?.trim().toLowerCase();
+    if (email) {
+      const byEmail = list.find(
+        (c) => !c.address && c.email?.toLowerCase() === email,
+      );
+      if (byEmail) return byEmail;
+    }
+
+    const tel = draft.tel?.trim();
+    if (tel) {
+      const norm = (v: string) => v.replace(/[\s().-]/g, '');
+      const t = norm(tel);
+      const byTel = list.find((c) => !c.address && c.tel && norm(c.tel) === t);
+      if (byTel) return byTel;
+    }
+    return undefined;
+  }
+
+  /**
+   * Ajoute / met à jour un contact issu d'un lien partagé (`c=` / carte).
+   * L'adresse publique est le discriminant fort — pas de fusion cross-identity
+   * via email/tél si une address est déjà présente.
+   */
+  upsertFromShare(
+    owner: string,
+    draft: { name: string; address?: string; email?: string; tel?: string },
+  ): Contact {
+    const draftAddress = draft.address?.trim()
+      ? ethers.getAddress(draft.address)
+      : '';
+
+    // Ne jamais enregistrer sa propre Safe comme contact « autre ».
+    if (draftAddress && draftAddress.toLowerCase() === owner.toLowerCase()) {
+      throw new Error('Cette carte est la tienne.');
+    }
+
+    const existing = this.findMatch(owner, {
+      address: draftAddress || undefined,
+      email: draft.email,
+      tel: draft.tel,
+    });
+
+    // Garde-fou : si une fiche existe déjà avec une address différente, on crée
+    // une nouvelle entrée (ne devrait pas arriver via findMatch, mais évite
+    // toute régression).
+    if (
+      existing?.address &&
+      draftAddress &&
+      existing.address.toLowerCase() !== draftAddress.toLowerCase()
+    ) {
+      return this.upsert(owner, {
+        name: draft.name.trim() || 'Contact',
+        address: draftAddress,
+        email: draft.email?.trim() || undefined,
+        tel: draft.tel?.trim() || undefined,
+        source: 'manual',
+        status: 'confirmed',
+      });
+    }
+
+    const address = draftAddress || existing?.address || '';
+    const email = draft.email?.trim() || existing?.email;
+    const tel = draft.tel?.trim() || existing?.tel;
+    const name = draft.name.trim() || existing?.name || 'Contact';
+    const source =
+      existing && existing.source !== 'pending' ? existing.source : 'manual';
+
+    return this.upsert(owner, {
+      id: existing?.id,
+      name,
+      address,
+      email,
+      tel,
+      note: existing?.note,
+      source,
+      status: address ? 'confirmed' : existing?.status ?? 'pending',
+      claimId: existing?.claimId,
+    });
+  }
+
+  /**
    * Best-effort import depuis le carnet d'adresses du device (Android Chrome).
    * Retourne `null` si l'API n'existe pas (iOS, desktop sans support).
    * L'utilisateur devra coller l'address manuellement — l'API native n'expose

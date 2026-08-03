@@ -1,5 +1,6 @@
 import {
   buildContactShareUrl,
+  buildReceiveShareUrl,
   decodeContactCard,
   encodeContactCard,
   extractCardParam,
@@ -43,5 +44,18 @@ describe('contact-share', () => {
     expect(extractCardParam(url)).toBe(encoded);
     expect(extractCardParam(encoded)).toBe(encoded);
     expect(extractCardParam('https://example.com/other')).toBeNull();
+  });
+
+  it('builds a receive URL with address, amount and contact card', () => {
+    const url = buildReceiveShareUrl({
+      address: '0x1111111111111111111111111111111111111111',
+      amount: '12.5',
+      contact: { n: 'Léa', t: '+41790000000' },
+      hashRoute: true,
+    });
+    expect(url).toContain('/#/buy?');
+    expect(url).toContain('to=0x1111111111111111111111111111111111111111');
+    expect(url).toContain('amount=12.5');
+    expect(url).toContain('c=');
   });
 });

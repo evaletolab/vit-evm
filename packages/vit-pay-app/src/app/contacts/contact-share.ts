@@ -67,6 +67,26 @@ export function buildContactShareUrl(encoded: string, hashRoute: boolean): strin
 }
 
 /**
+ * Lien de réception ViT : préremplit l'écran Envoyer du payeur avec mon Safe,
+ * le montant (optionnel) et ma carte de contact (`c=`).
+ */
+export function buildReceiveShareUrl(opts: {
+  address: string;
+  amount?: string;
+  contact?: ContactCardPayload;
+  hashRoute: boolean;
+}): string {
+  const params = new URLSearchParams({ to: opts.address });
+  const amount = opts.amount?.trim();
+  if (amount && Number(amount) > 0) params.set('amount', amount);
+  if (opts.contact?.n?.trim()) {
+    params.set('c', encodeContactCard(opts.contact));
+  }
+  const path = opts.hashRoute ? '/#/buy' : '/buy';
+  return `${appRoot()}${path}?${params.toString()}`;
+}
+
+/**
  * Extrait le payload d'une valeur scannée : accepte l'URL complète comme le
  * payload nu, ce qui rend le scan tolérant aux QR régénérés à la main.
  */

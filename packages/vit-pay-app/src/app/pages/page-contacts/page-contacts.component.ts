@@ -67,6 +67,13 @@ export class PageContactsComponent implements OnInit, OnDestroy {
 
   short = shortAddress;
 
+  contactMeta(c: Contact): string {
+    if (c.tel) return c.tel;
+    if (c.email) return c.email;
+    if (c.address) return shortAddress(c.address);
+    return 'Sans coordonnées';
+  }
+
   constructor(
     private wallet: WalletService,
     private contactsSvc: ContactsService,
@@ -294,10 +301,15 @@ export class PageContactsComponent implements OnInit, OnDestroy {
 
   async startScan(): Promise<void> {
     this.error = '';
+    this.notice = '';
     this.view = 'scan';
     // laisse le *ngIf rendre la <video> avant de brancher le flux
-    await new Promise((r) => setTimeout(r, 50));
-    const video = this.scanVideo?.nativeElement;
+    await new Promise((r) => setTimeout(r, 80));
+    let video = this.scanVideo?.nativeElement;
+    for (let i = 0; !video && i < 10; i++) {
+      await new Promise((r) => setTimeout(r, 40));
+      video = this.scanVideo?.nativeElement;
+    }
     if (!video) {
       this.error = 'Élément vidéo introuvable.';
       this.view = 'list';
@@ -318,17 +330,14 @@ export class PageContactsComponent implements OnInit, OnDestroy {
     this.view = 'list';
   }
 
-  private onScanned(value: string): void {
+  private onScanned(value: string): boolean {
     const raw = extractCardParam(value);
-    if (!raw) {
-      this.error = "Ce QR n'est pas une carte de contact ViT.";
-      this.view = 'list';
-      return;
-    }
+    if (!raw) return false; // ignore, continue le scan
     this.acceptCard(raw);
+    return true;
   }
 
-  /** Pré-remplit le formulaire depuis une carte reçue (URL `?add=` ou QR). */
+  /** Enregistre automatiquement une carte reçue (URL `?add=` ou QR) — sans doublon. */
   private acceptCard(raw: string): void {
     const card = decodeContactCard(raw);
     if (!card) {
@@ -341,13 +350,20 @@ export class PageContactsComponent implements OnInit, OnDestroy {
       this.view = 'list';
       return;
     }
-    this.resetForm();
-    this.formName = card.n;
-    this.formAddress = card.a || '';
-    this.formTel = card.t || '';
-    this.formEmail = card.e || '';
-    this.notice = `Carte reçue de « ${card.n} ». Vérifie puis enregistre.`;
-    this.view = 'form';
+    try {
+      const saved = this.contactsSvc.upsertFromShare(this.owner, {
+        name: card.n,
+        address: card.a,
+        tel: card.t,
+        email: card.e,
+      });
+      this.reloadContacts();
+      this.notice = `« ${saved.name} » ajouté au carnet.`;
+      this.view = 'list';
+    } catch (e: unknown) {
+      this.error = e instanceof Error ? e.message : 'Impossible d\'ajouter le contact';
+      this.view = 'list';
+    }
     // Évite de re-déclencher l'ajout au refresh / retour arrière.
     void this.router.navigate([], { relativeTo: this.route, queryParams: {} });
   }
