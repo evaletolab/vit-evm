@@ -1,4 +1,14 @@
 <ng-container *ngIf="tab === 'menu'">
+  <header class="account-head">
+    <a class="back" [routerLink]="['/']" aria-label="Retour">
+      <span class="material-symbols-outlined">arrow_back</span>
+    </a>
+    <div class="account-head__id">
+      <h1>{{ profileTitle }}</h1>
+      <span class="account-head__meta" *ngIf="profileHandle">{{ profileHandle }}</span>
+    </div>
+  </header>
+
   <nav class="account-links">
     <a class="account-tile" [routerLink]="['/contacts']">
       <span class="account-tile__icon">
@@ -66,13 +76,24 @@
       <span class="material-symbols-outlined account-tile__chev">chevron_right</span>
     </a>
 
+    <a *ngIf="devMode" class="account-tile" [routerLink]="['/wallet']">
+      <span class="account-tile__icon">
+        <span class="material-symbols-outlined">water_drop</span>
+      </span>
+      <div class="account-tile__body">
+        <div class="account-tile__title">Mint xCHF de test</div>
+        <div class="account-tile__meta">Faucet MockZCHF · mode dev</div>
+      </div>
+      <span class="material-symbols-outlined account-tile__chev">chevron_right</span>
+    </a>
+
     <button class="account-tile" type="button" (click)="openSettings()">
       <span class="account-tile__icon">
         <span class="material-symbols-outlined">tune</span>
       </span>
       <div class="account-tile__body">
         <div class="account-tile__title">Réglages</div>
-        <div class="account-tile__meta">Couleurs · mode dev</div>
+        <div class="account-tile__meta">Profil · couleurs · mode dev</div>
       </div>
       <span class="material-symbols-outlined account-tile__chev">chevron_right</span>
     </button>
@@ -88,6 +109,69 @@
     </button>
     <h2>Réglages</h2>
   </header>
+
+  <div class="settings-card">
+    <h3>Profil</h3>
+    <p class="settings-hint">
+      Ces infos apparaissent sur ta carte ViT et quand tu partages un paiement.
+      L'adresse Safe reste en lecture seule.
+    </p>
+
+    <label class="field">
+      <span class="field__label">Pseudo</span>
+      <input
+        type="text"
+        [(ngModel)]="displayName"
+        name="displayName"
+        placeholder="Léa"
+        autocomplete="nickname"
+        [disabled]="profileBusy" />
+    </label>
+
+    <label class="field" *ngIf="walletName">
+      <span class="field__label">Identifiant ViT</span>
+      <input type="text" [value]="walletName + '@' + nameDomain" disabled />
+    </label>
+
+    <label class="field" *ngIf="shortAddr">
+      <span class="field__label">Adresse Safe</span>
+      <input type="text" [value]="shortAddr" disabled />
+    </label>
+
+    <label class="field">
+      <span class="field__label">Téléphone</span>
+      <input
+        type="tel"
+        [(ngModel)]="profileTel"
+        name="profileTel"
+        placeholder="+41 79 000 00 00"
+        inputmode="tel"
+        autocomplete="tel"
+        [disabled]="profileBusy" />
+    </label>
+
+    <label class="field">
+      <span class="field__label">E-mail</span>
+      <input
+        type="email"
+        [(ngModel)]="profileEmail"
+        name="profileEmail"
+        placeholder="lea@example.com"
+        autocomplete="email"
+        [disabled]="profileBusy" />
+    </label>
+
+    <p class="profile-error" *ngIf="profileError">{{ profileError }}</p>
+
+    <button
+      type="button"
+      class="vit-btn vit-btn--primary profile-save"
+      (click)="saveProfile()"
+      [disabled]="profileBusy || displayName.trim().length < 2">
+      <span class="material-symbols-outlined">{{ profileSaved ? 'check' : 'save' }}</span>
+      {{ profileBusy ? 'Enregistrement…' : profileSaved ? 'Enregistré' : 'Enregistrer le profil' }}
+    </button>
+  </div>
 
   <div class="settings-card">
     <h3>Couleurs</h3>
